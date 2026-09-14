@@ -45,6 +45,19 @@ def test_nfd_tokenizers_see_combining_marks(tokenizers_dir):
     assert "Ì£" in nfd_bytes  # byte-level rendering of U+0323
 
 
+def test_pretokenizers_keep_nfd_marks_on_letters():
+    import unicodedata
+    from tokenizers import Regex, pre_tokenizers
+    from vitok.tokenizer_spec import STAGE1_REGEX, STAGE2_REGEX
+
+    text = unicodedata.normalize("NFD", "Một người Việt đến.. tốt")
+    for regex in (STAGE1_REGEX, STAGE2_REGEX):
+        split = pre_tokenizers.Split(pattern=Regex(regex), behavior="isolated", invert=False)
+        pieces = [p for p, _ in split.pre_tokenize_str(text)]
+        # no piece may start with a combining mark (a mark cut off from its letter)
+        assert not any(unicodedata.category(p[0]) == "Mn" for p in pieces), (regex, pieces)
+
+
 def test_superbpe_inherits_merges(tokenizers_dir):
     meta = json.loads((tokenizers_dir / "train_meta.json").read_text())
     for norm in ("nfc", "nfd"):

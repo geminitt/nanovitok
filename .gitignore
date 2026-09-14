@@ -7,3 +7,4 @@ data/
 runs/
 outputs/
 *.parquet
+vitok-code.zip

@@ -26,7 +26,9 @@ STAGE1_REGEX = (
 )
 
 # Stage 2 (superwords): SuperBPE's extension regex, which no longer splits on single spaces.
-STAGE2_REGEX = r"\p{N}{1,3}| ?[^\s\p{L}\p{N}]{2,}[\r\n/]*| +(?!\S)"
+# \p{M} is excluded from the punctuation class: otherwise two stacked NFD marks (ô + sắc in "ố")
+# are isolated as punctuation, and every inherited stage-1 merge containing them is lost.
+STAGE2_REGEX = r"\p{N}{1,3}| ?[^\s\p{L}\p{M}\p{N}]{2,}[\r\n/]*| +(?!\S)"
 
 
 def parse(condition: str) -> tuple[str, str]:
