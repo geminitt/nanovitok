@@ -1,0 +1,63 @@
+diff --git a/nanochat/common.py b/nanochat/common.py
+index 1310ddf..8de452d 100644
+--- a/nanochat/common.py
++++ b/nanochat/common.py
+@@ -183,9 +183,10 @@ def compute_init(device_type="cuda"): # cuda|cpu|mps
+     # Reproducibility
+     # Note that we set the global seeds here, but most of the code uses explicit rng objects.
+     # The only place where global rng might be used is nn.Module initialization of the model weights.
+-    torch.manual_seed(42)
++    seed = int(os.environ.get("NANOCHAT_SEED", 42))  # vitok: vary init across seeds, data order unchanged
++    torch.manual_seed(seed)
+     if device_type == "cuda":
+-        torch.cuda.manual_seed(42)
++        torch.cuda.manual_seed(seed)
+     # skipping full reproducibility for now, possibly investigate slowdown later
+     # torch.use_deterministic_algorithms(True)
+ 
+diff --git a/nanochat/tokenizer.py b/nanochat/tokenizer.py
+index 36880f5..00f10eb 100644
+--- a/nanochat/tokenizer.py
++++ b/nanochat/tokenizer.py
+@@ -265,6 +265,10 @@ def get_tokenizer():
+     from nanochat.common import get_base_dir
+     base_dir = get_base_dir()
+     tokenizer_dir = os.path.join(base_dir, "tokenizer")
++    if os.path.exists(os.path.join(tokenizer_dir, "tokenizer.json")):
++        # vitok: Hugging Face tokenizers (BPE/SuperBPE x NFC/NFD)
++        from vitok.hf_tokenizer import HFTokenizer
++        return HFTokenizer.from_directory(tokenizer_dir)
+     return RustBPETokenizer.from_directory(tokenizer_dir)
+ 
+ def get_token_bytes(device="cpu"):
+diff --git a/scripts/base_train.py b/scripts/base_train.py
+index d1af271..1b49bee 100644
+--- a/scripts/base_train.py
++++ b/scripts/base_train.py
+@@ -59,6 +59,7 @@ parser.add_argument("--target-param-data-ratio", type=float, default=12, help="c
+ # Optimization
+ parser.add_argument("--device-batch-size", type=int, default=32, help="per-device batch size. good number to reduce to 16,8,4,... if you OOM on VRAM.")
+ parser.add_argument("--total-batch-size", type=int, default=-1, help="total batch size in tokens. decent numbers are e.g. 524288. (-1 = auto-compute optimal)")
++parser.add_argument("--scaling-batch-size", type=int, default=-1, help="vitok: batch size (tokens) used for LR/weight-decay scaling instead of --total-batch-size, so tokenizers with different seq lengths share hyperparameters (-1 = disable)")
+ parser.add_argument("--embedding-lr", type=float, default=0.3, help="learning rate for embedding parameters (Adam)")
+ parser.add_argument("--unembedding-lr", type=float, default=0.008, help="learning rate for unembedding parameters (Adam)")
+ parser.add_argument("--weight-decay", type=float, default=0.28, help="cautious weight decay for the Muon optimizer (for weights)")
+@@ -285,7 +286,8 @@ if total_batch_size == -1:
+ 
+ # 3) Knowing the batch size, we can now calculate a learning rate correction (bigger batch size allows higher learning rates)
+ batch_lr_scale = 1.0
+-batch_ratio = total_batch_size / B_REF # B/B_ref
++scaling_batch_size = args.scaling_batch_size if args.scaling_batch_size > 0 else total_batch_size
++batch_ratio = scaling_batch_size / B_REF # B/B_ref
+ if batch_ratio != 1.0:
+     # SGD: linear scaling with batch size is standard (not used in nanochat)
+     # AdamW: sqrt scaling is standard: η ∝ √(B/B_ref)
+@@ -299,7 +301,7 @@ if batch_ratio != 1.0:
+ # Above, we used learning rate scaling η ∝ √(B/B_ref). So it's a matter of ~10 lines of math to derive that to keep T_epoch constant, we need:
+ # λ = λ_ref · √(B/B_ref) · (D_ref/D)
+ # Note that these papers study AdamW, *not* Muon. We are blindly following AdamW theory for scaling hoping it ~works for Muon too.
+-weight_decay_scaled = args.weight_decay * math.sqrt(total_batch_size / B_REF) * (D_REF / target_tokens)
++weight_decay_scaled = args.weight_decay * math.sqrt(scaling_batch_size / B_REF) * (D_REF / target_tokens)
+ if weight_decay_scaled != args.weight_decay:
+     print0(f"Scaling weight decay from {args.weight_decay:.6f} to {weight_decay_scaled:.6f} for depth {args.depth}")
+ 
