@@ -16,6 +16,7 @@ huggingface_hub = "*"
 filelock = "*"
 psutil = "*"
 pytest = "*"
+ipykernel = ">=7.3.0,<8"
 
 [pypi-dependencies]
 tiktoken = "*"

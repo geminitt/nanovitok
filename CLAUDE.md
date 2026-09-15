@@ -31,7 +31,8 @@ After editing nanochat, regenerate the patch: `git -C third_party/nanochat diff 
 
 ## Layout
 
-- `src/vitok/` — `data` (FineWeb-2 vie_Latn splits), `train_tokenizers` (runs in SuperBPE's forked `tokenizers`),
+- `src/vitok/` — `data` (FineWeb-2 vie_Latn splits), `train_tokenizers` (stage 1 = HF `BpeTrainer`), `superbpe` (stage 2 in numpy;
+  the SuperBPE fork can't finish it on 500MB and is only used to check it on 3MB in notebook 01),
   `tokenizer_spec` (stdlib-only constants), `hf_tokenizer` (nanochat wrapper), `compression`, `conditions`
   (equal-text config), `eval` (per-doc nats), `minimal_pairs`, `stats`, `analysis`, `kaggle_run` (per-GPU queue).
 - `patches/nanochat.patch` — 3 small changes: load `tokenizer.json` if present, `--scaling-batch-size`, `NANOCHAT_SEED`.
