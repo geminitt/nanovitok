@@ -6,6 +6,6 @@ __pycache__/
 data/
 runs/
 outputs/
-kaggle-run-version/
+kaggle/
 *.parquet
 vitok-code.zip

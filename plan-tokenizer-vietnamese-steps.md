@@ -545,15 +545,20 @@ tokenizer-vi/
 
 Lượng văn bản quy về token của `bpe-nfc` (các điều kiện khác cùng lượng văn bản, cùng số bước):
 
-| Cỡ | Văn bản (token bpe-nfc) | Số bước (64 × 1024 token/bước) | Ước tính mỗi run trên T4 | Số run | Tổng |
-|---|---|---|---|---|---|
-| d6 | 250M | ~3.800 | ~0,4 giờ | 4 | ~1,6 giờ |
-| d8 | 500M | ~7.600 | ~1,4 giờ | 4 + 2 seed | ~8,4 giờ |
-| d10 | 1B | ~15.300 | ~5 giờ | 2 | ~10 giờ |
-| Smoke test, eval, dự phòng | | | | | ~3 giờ |
-| **Tổng** | | | | | **~23 giờ** |
+**Đo thật ở bước 7** (smoke test 2026-09-16, `results/throughput_d*.json`; mỗi run một GPU, 2 run song song):
 
-- Ước tính dựa trên FLOPs ≈ 6 × tham số × token và hiệu suất T4 fp16 giả định; **sai số có thể gấp 2**. Con số thật lấy từ bước 7.
+| Cỡ | Số bước | bpe-nfc (đo) | super-nfc (đo) | Cách xếp phiên | Thời gian phiên |
+|---|---|---|---|---|---|
+| d6 | 3.814 | 0,71 giờ (669 ms/bước) | 0,57 giờ (534 ms/bước) | 4 điều kiện, 2 mỗi GPU | ~1,4 giờ |
+| d8 | 7.629 | 2,87 giờ (1.352 ms/bước) | 2,30 giờ (1.084 ms/bước) | 4 điều kiện, 2 mỗi GPU | ~5,7 giờ |
+| d8 seed 1 | 7.629 | | | `bpe-nfc` và `super-nfc`, 1 mỗi GPU | ~2,9 giờ |
+| d10 | 15.258 | 8,75 giờ (2.063 ms/bước) | 8,39 giờ (1.979 ms/bước) | **1 điều kiện mỗi GPU** (2 điều kiện/GPU vượt 12 giờ) | ~8,8 giờ |
+| **Tổng** | | | | | **~19 giờ** |
+
+Ước tính ban đầu (giữ lại để đối chiếu): d6 ~0,4 giờ, d8 ~1,4 giờ, d10 ~5 giờ mỗi run — tức thực tế chậm hơn 1,5–2 lần, nằm trong biên "sai số có thể gấp 2".
+
+- Peak memory đo được: d6 6,4GB, d8 9,0GB (`device-batch-size` 32), d10 7,1GB (`device-batch-size` 16). Còn dư so với 16GB của T4.
+- d10 vượt ngưỡng 6 giờ/run của Cổng 0 (8,75 giờ) nhưng vẫn gọn trong một phiên 12 giờ nếu mỗi GPU chỉ chạy một điều kiện.
 - SuperBPE dùng ít token hơn cho cùng văn bản, nên run SuperBPE **nhanh hơn** con số trong bảng.
 - Chạy 2 run song song trên T4 ×2 để giảm thời gian chờ; quota Kaggle tính theo thời gian session.
 - ~23 giờ vừa quota ~30 giờ/tuần, nhưng nên **trải qua 2 tuần**, và giữ dự phòng cho run lỗi.
