@@ -1,0 +1,17 @@
+{
+  "gate": 3,
+  "decided_on": "2026-09-16",
+  "rule": "plan section 4: d10 trains bpe-nfc plus whichever SuperBPE variant has the lowest bpc clean at d8 seed 0",
+  "inputs_d8_seed0_bpc_clean": {
+    "bpe-nfc": 1.0019,
+    "bpe-nfd": 1.0026,
+    "super-nfc": 1.0037,
+    "super-nfd": 1.0039
+  },
+  "decision": ["bpe-nfc", "super-nfc"],
+  "note": "super-nfc beats super-nfd by 0.0002 bpc, which is inside the measured seed noise (<=0.0005 bpc); the rule is applied as pre-registered anyway, and this tie must be reported as such",
+  "seed_noise_bpc_clean": {
+    "d6": {"bpe-nfc": -0.0001, "super-nfc": 0.0005},
+    "d8": {"bpe-nfc": 0.0005, "super-nfc": -0.0000}
+  }
+}
