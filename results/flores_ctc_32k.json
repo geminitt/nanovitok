@@ -1,0 +1,62 @@
+{
+  "calibration": {
+    "split": "dev+devtest",
+    "counts": {
+      "devtest": 35272,
+      "dev": 33625,
+      "dev+devtest": 68897
+    },
+    "published": 68619,
+    "gap": 278,
+    "gap_frac": 0.004051356038415016
+  },
+  "lines": 2009,
+  "chars_nfc": 270586,
+  "published": {
+    "bpe_16384": 68619,
+    "bpe_32768": 67011,
+    "superbpe_32768_t0.9": 52831
+  },
+  "montok": {
+    "bpe_16384": {
+      "ctc": 68897,
+      "vocab_size": 16384,
+      "chars_per_token": 3.9273988707781182
+    },
+    "bpe_32768": {
+      "ctc": 67288,
+      "vocab_size": 32768,
+      "chars_per_token": 4.021311377957437
+    },
+    "superbpe_32768_t0.9": {
+      "ctc": 53115,
+      "vocab_size": 32768,
+      "chars_per_token": 5.0943424644638995
+    }
+  },
+  "ours": {
+    "bpe-nfc": {
+      "ctc": 68074,
+      "vocab_size": 32009,
+      "chars_per_token": 3.974880277345242
+    },
+    "bpe-nfd": {
+      "ctc": 68060,
+      "vocab_size": 32009,
+      "chars_per_token": 3.975697913605642
+    },
+    "super-nfc": {
+      "ctc": 52436,
+      "vocab_size": 32009,
+      "chars_per_token": 5.1603097108856515
+    },
+    "super-nfd": {
+      "ctc": 52423,
+      "vocab_size": 32009,
+      "chars_per_token": 5.161589378707819
+    }
+  },
+  "token_reduction_nfc": 0.22972059817257695,
+  "token_reduction_nfd": 0.22975315897737292,
+  "token_reduction_published_32k": 0.21160704958887344
+}

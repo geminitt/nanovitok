@@ -1,0 +1,6 @@
+[bpe-nfc_d6_s0] train: --depth=6 --max-seq-len=1024 --device-batch-size=32 --total-batch-size=65536 --scaling-batch-size=65536 --num-iterations=3814 --window-pattern=L --run=dummy --model-tag=d6 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
+[bpe-nfc_d6_s0] eval
+[bpe-nfc_d6_s0] done -> /kaggle/working/results/bpe-nfc_d6_s0.json
+[bpe-nfd_d6_s0] train: --depth=6 --max-seq-len=1024 --device-batch-size=32 --total-batch-size=65536 --scaling-batch-size=65536 --num-iterations=3814 --window-pattern=L --run=dummy --model-tag=d6 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
+[bpe-nfd_d6_s0] eval
+[bpe-nfd_d6_s0] done -> /kaggle/working/results/bpe-nfd_d6_s0.json

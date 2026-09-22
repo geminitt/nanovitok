@@ -1,0 +1,3 @@
+[bpe-nfc_d8_s1] train: --depth=8 --max-seq-len=1024 --device-batch-size=32 --total-batch-size=65536 --scaling-batch-size=65536 --num-iterations=7629 --window-pattern=L --run=dummy --model-tag=d8 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
+[bpe-nfc_d8_s1] eval
+[bpe-nfc_d8_s1] done -> /kaggle/working/results/bpe-nfc_d8_s1.json

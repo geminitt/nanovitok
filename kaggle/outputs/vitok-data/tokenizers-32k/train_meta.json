@@ -1,0 +1,21 @@
+{
+  "vocab_size": 32000,
+  "transition": 0.9,
+  "corpus_bytes": 500181599,
+  "nfc": {
+    "n_alphabet": 256,
+    "n_inherited_merges": 28544,
+    "stage2_ids": 102826392,
+    "stage2_new_merges": 3200,
+    "encode_seconds": 194,
+    "merge_seconds": 470
+  },
+  "nfd": {
+    "n_alphabet": 256,
+    "n_inherited_merges": 28544,
+    "stage2_ids": 102893537,
+    "stage2_new_merges": 3200,
+    "encode_seconds": 223,
+    "merge_seconds": 469
+  }
+}

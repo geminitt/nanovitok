@@ -1,0 +1,67 @@
+{
+  "n_docs": 500,
+  "bpe-nfc": {
+    "superword_occurrences": 0,
+    "superwords_outside_2_4_syllables": 0,
+    "match_rate": 0.0,
+    "baseline_rate": 0.0,
+    "by_syllables": {},
+    "docs_skipped": 8
+  },
+  "bpe-nfd": {
+    "superword_occurrences": 0,
+    "superwords_outside_2_4_syllables": 0,
+    "match_rate": 0.0,
+    "baseline_rate": 0.0,
+    "by_syllables": {},
+    "docs_skipped": 8
+  },
+  "super-nfc": {
+    "superword_occurrences": 38568,
+    "superwords_outside_2_4_syllables": 4175,
+    "match_rate": 0.6559842356357602,
+    "baseline_rate": 0.25183667434789037,
+    "by_syllables": {
+      "2": {
+        "occurrences": 37271,
+        "match_rate": 0.6760752327546886,
+        "baseline_rate": 0.26029110872515854
+      },
+      "3": {
+        "occurrences": 1247,
+        "match_rate": 0.0817963111467522,
+        "baseline_rate": 0.009175522001181349
+      },
+      "4": {
+        "occurrences": 50,
+        "match_rate": 0.0,
+        "baseline_rate": 0.0017013403715779123
+      }
+    },
+    "docs_skipped": 8
+  },
+  "super-nfd": {
+    "superword_occurrences": 38568,
+    "superwords_outside_2_4_syllables": 4176,
+    "match_rate": 0.6559842356357602,
+    "baseline_rate": 0.25183667434789037,
+    "by_syllables": {
+      "2": {
+        "occurrences": 37271,
+        "match_rate": 0.6760752327546886,
+        "baseline_rate": 0.26029110872515854
+      },
+      "3": {
+        "occurrences": 1247,
+        "match_rate": 0.0817963111467522,
+        "baseline_rate": 0.009175522001181349
+      },
+      "4": {
+        "occurrences": 50,
+        "match_rate": 0.0,
+        "baseline_rate": 0.0017013403715779123
+      }
+    },
+    "docs_skipped": 8
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "bpe-nfc_d6_s1": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 656.1,
+    "tok_per_sec": 97390,
+    "peak_mib": 6398.95,
+    "loss_first": 9.68133,
+    "loss_last": 2.715188,
+    "full_iterations": 3814,
+    "full_run_hours": 0.7
+  },
+  "super-nfc_d6_s1": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 564.7,
+    "tok_per_sec": 95493,
+    "peak_mib": 5364.31,
+    "loss_first": 9.681156,
+    "loss_last": 3.387572,
+    "full_iterations": 3814,
+    "full_run_hours": 0.6
+  }
+}

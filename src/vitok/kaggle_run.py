@@ -1,4 +1,4 @@
-"""Train + evaluate a queue of conditions on one GPU (used by kaggle/02_train_eval.ipynb).
+"""Train + evaluate a queue of conditions on one GPU (used by kaggle/notebooks/02_train_eval.ipynb).
 
     python -m vitok.kaggle_run --gpu 0 --conditions bpe-nfc bpe-nfd --depth 6 --seed 0 \
         --data /kaggle/input/vitok-data --nanochat /kaggle/working/nanochat --work /kaggle/working

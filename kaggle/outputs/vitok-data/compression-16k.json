@@ -1,0 +1,286 @@
+{
+  "bpe-nfc": {
+    "tokens": 5148164,
+    "chars_nfc": 19875319,
+    "chars_per_token": 3.8606615873154,
+    "tokens_per_syllable": 1.1906415961489938,
+    "superword_vocab": 0,
+    "superword_token_share": 0.0,
+    "top_superwords": [],
+    "vocab_size": 16000
+  },
+  "bpe-nfd": {
+    "tokens": 5149062,
+    "chars_nfc": 19875319,
+    "chars_per_token": 3.859988285244963,
+    "tokens_per_syllable": 1.190849281093246,
+    "superword_vocab": 0,
+    "superword_token_share": 0.0,
+    "top_superwords": [],
+    "vocab_size": 16000
+  },
+  "super-nfc": {
+    "tokens": 4234304,
+    "chars_nfc": 19875319,
+    "chars_per_token": 4.693880977841931,
+    "tokens_per_syllable": 0.9792886304981872,
+    "superword_vocab": 1503,
+    "superword_token_share": 0.1957917995495836,
+    "top_superwords": [
+      [
+        " có thể",
+        9466
+      ],
+      [
+        " sử dụng",
+        6654
+      ],
+      [
+        " sản phẩm",
+        4591
+      ],
+      [
+        " là một",
+        4206
+      ],
+      [
+        " Việt Nam",
+        3091
+      ],
+      [
+        " khách hàng",
+        3058
+      ],
+      [
+        ", không",
+        2943
+      ],
+      [
+        " thực hiện",
+        2884
+      ],
+      [
+        " thời gian",
+        2883
+      ],
+      [
+        ", nhưng",
+        2873
+      ],
+      [
+        " thông tin",
+        2761
+      ],
+      [
+        " của bạn",
+        2755
+      ],
+      [
+        ", các",
+        2687
+      ],
+      [
+        " hiệu quả",
+        2633
+      ],
+      [
+        " lựa chọn",
+        2606
+      ],
+      [
+        " chất lượng",
+        2547
+      ],
+      [
+        " thiết kế",
+        2540
+      ],
+      [
+        " phát triển",
+        2498
+      ],
+      [
+        " gia đình",
+        2434
+      ],
+      [
+        " không có",
+        2392
+      ],
+      [
+        " hoạt động",
+        2364
+      ],
+      [
+        " của mình",
+        2317
+      ],
+      [
+        " dịch vụ",
+        2272
+      ],
+      [
+        " chúng ta",
+        2271
+      ],
+      [
+        " rất nhiều",
+        2243
+      ],
+      [
+        " không thể",
+        2194
+      ],
+      [
+        " một số",
+        2158
+      ],
+      [
+        ", có",
+        2146
+      ],
+      [
+        ", và",
+        2122
+      ],
+      [
+        " đối với",
+        2086
+      ]
+    ],
+    "vocab_size": 16000
+  },
+  "super-nfd": {
+    "tokens": 4235827,
+    "chars_nfc": 19875319,
+    "chars_per_token": 4.692193283625606,
+    "tokens_per_syllable": 0.9796408623134392,
+    "superword_vocab": 1503,
+    "superword_token_share": 0.19572565168501924,
+    "top_superwords": [
+      [
+        " có thể",
+        9466
+      ],
+      [
+        " sử dụng",
+        6654
+      ],
+      [
+        " sản phẩm",
+        4591
+      ],
+      [
+        " là một",
+        4206
+      ],
+      [
+        " Việt Nam",
+        3091
+      ],
+      [
+        " khách hàng",
+        3058
+      ],
+      [
+        ", không",
+        2943
+      ],
+      [
+        " thực hiện",
+        2884
+      ],
+      [
+        " thời gian",
+        2883
+      ],
+      [
+        ", nhưng",
+        2873
+      ],
+      [
+        " thông tin",
+        2761
+      ],
+      [
+        " của bạn",
+        2755
+      ],
+      [
+        ", các",
+        2687
+      ],
+      [
+        " hiệu quả",
+        2633
+      ],
+      [
+        " lựa chọn",
+        2606
+      ],
+      [
+        " chất lượng",
+        2547
+      ],
+      [
+        " thiết kế",
+        2540
+      ],
+      [
+        " phát triển",
+        2498
+      ],
+      [
+        " gia đình",
+        2434
+      ],
+      [
+        " không có",
+        2392
+      ],
+      [
+        " hoạt động",
+        2364
+      ],
+      [
+        " của mình",
+        2319
+      ],
+      [
+        " dịch vụ",
+        2272
+      ],
+      [
+        " chúng ta",
+        2271
+      ],
+      [
+        " rất nhiều",
+        2243
+      ],
+      [
+        " không thể",
+        2194
+      ],
+      [
+        " một số",
+        2158
+      ],
+      [
+        ", có",
+        2146
+      ],
+      [
+        ", và",
+        2122
+      ],
+      [
+        " đối với",
+        2086
+      ]
+    ],
+    "vocab_size": 16000
+  },
+  "token_reduction_nfc": 0.17751182751753825,
+  "token_reduction_nfd": 0.17735948799995027
+}

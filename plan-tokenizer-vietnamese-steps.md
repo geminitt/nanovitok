@@ -409,13 +409,19 @@ Làm song song với bước 10: phân tích d6 và d8 trước, thêm d10 khi x
 
 ### 6.1. Kích thước model (nanochat, `--aspect-ratio 64`, `--head-dim 128`)
 
-| Depth | n_embd | Tham số không embedding (≈12·d²·L) | Embedding + head, vocab 16k | Tổng ≈ |
-|---|---|---|---|---|
-| d6 | 384 | ~11M | ~12M | ~23M |
-| d8 | 512 | ~25M | ~16M | ~41M |
-| d10 | 640 | ~49M | ~20M | ~70M |
+**Số đo thật** (từ khối `Parameter counts` trong `runs/*/train.log`, vocab đệm lên 16.064):
 
-Số chính xác: in ra từ model thật ở bước 7 (kiến trúc nanochat có thêm vài thành phần nhỏ).
+| Depth | n_embd | `transformer_matrices` (không embedding) | `wte` | `value_embeds` | `lm_head` | **Tổng** | FLOPs/token |
+|---|---|---|---|---|---|---|---|
+| d6 | 384 | 10.616.940 | 6.168.576 | 18.505.728 (3 bảng) | 6.168.576 | **41.459.858** | 1,29e8 |
+| d8 | 512 | 25.166.016 | 8.224.768 | 32.899.072 (4 bảng) | 8.224.768 | **74.514.666** | 2,51e8 (seq 1024) / 2,42e8 (seq 840) |
+| d10 | 640 | 49.152.300 | 10.280.960 | 51.404.800 (5 bảng) | 10.280.960 | **121.119.066** | chưa đo |
+
+d6 và d8 đọc từ log thật; d10 dựng model trên `torch.device("meta")` rồi gọi `num_scaling_params()` — cùng cách đó tái tạo đúng từng con số của d6 và d8.
+
+Ước tính ban đầu (~23M / ~41M / ~70M) **thiếu `value_embeds`**: nanochat gắn value embedding cho **các lớp lẻ** (`has_ve`: lớp `i` có value embedding khi `i % 2 == (n_layer-1) % 2`), tức 3 bảng ở d6, 4 ở d8, 5 ở d10, mỗi bảng cỡ `vocab × n_embd`. Ở d10, riêng phần này (51,4M) đã lớn hơn cả thân model (49,2M). Phần không embedding thì đúng như công thức 12·d²·L.
+
+Vì vậy đồ thị H3 phải vẽ theo cột `transformer_matrices` (10,6M → 25,2M → ~49M), không phải theo tổng: phần embedding giống hệt nhau ở mọi điều kiện nên chỉ làm lệch trục.
 
 ### 6.2. Vì sao vocab 16k
 
@@ -511,8 +517,17 @@ Chênh lệch có ý nghĩa nếu khoảng 95% không chứa 0.
 - Một vocab size, một điểm chuyển giai đoạn của SuperBPE.
 - Chỉ đo mô hình hoá ngôn ngữ (bpc, cặp tối thiểu), **không đo benchmark tác vụ**: model quá nhỏ.
 - Văn bản bỏ dấu là **mô phỏng**; người gõ thật bỏ dấu không đều và có lỗi gõ.
-- Ít seed; độ nhiễu giữa seed chỉ đo ở d8 cho 2 điều kiện.
+- Ít seed: chỉ 2 seed, và chỉ cho `bpe-nfc` + `super-nfc` ở d6 và d8. Hai seed cho **một** hiệu số, không đủ tính độ lệch chuẩn.
 - Chạy fp16 trên T4, có patch nanochat; kết quả tuyệt đối có thể khác một chút so với bf16.
+
+**Phát hiện thêm khi chạy thật (16/09/2026), bắt buộc ghi vào báo cáo:**
+
+- **Thanh nhiễu seed là cận dưới.** `NANOCHAT_SEED` chỉ đổi khởi tạo trọng số, còn dataloader của nanochat không xáo trộn dữ liệu, nên hai seed thấy đúng cùng dữ liệu theo cùng thứ tự. Nhiễu đo được (≤0,0005 bpc trên `clean`) chỉ gồm khởi tạo và tính bất định của fp16, chưa gồm nhiễu do thứ tự dữ liệu.
+- **Bootstrap theo văn bản báo "significant" cho những chênh lệch nằm trong nhiễu seed.** Rõ nhất ở H2 tại d8: hiệu ứng ≤0,005 bpc trong khi nhiễu seed trên `strip100` là 0,004–0,007. Mọi kết luận phải đối chiếu với thanh nhiễu seed, không chỉ nhìn khoảng tin cậy.
+- **Cặp tối thiểu chạm trần**: 0,992–0,996 ở mọi điều kiện và mọi cỡ, chỉ 13–20 cặp bất đồng trên 3.000, McNemar không bao giờ có ý nghĩa. Nguyên nhân: âm tiết thay thường hiếm hơn âm tiết gốc nên chỉ cần thống kê tần suất là đúng. Phép đo này không phân biệt được các điều kiện.
+- **`superword_token_share` (19,6% ở 16k) là cận dưới**: `vitok.compression` không đếm token vắt qua ký tự xuống dòng.
+- **Số văn bản test bị bỏ vì vượt context khác nhau giữa các điều kiện** (3–4 với `bpe-*`, 4–13 với `super-*` do context 840 token). Phân tích lấy giao nên công bằng, nhưng tập giao bị chi phối bởi điều kiện SuperBPE. Tập bị bỏ **không đổi theo cỡ model và seed**, nên các so sánh giữa d6/d8/d10 vẫn trên cùng một tập văn bản.
+- **Tham số**: bảng ước tính ban đầu thiếu `value_embeds` của nanochat; cỡ thật là 41M / 74M / ~111M tổng, tức 10,6M / 25,2M / ~49M nếu không tính embedding (mục 6.1).
 
 ## 9. Cấu trúc thư mục đề nghị
 
@@ -557,6 +572,7 @@ Lượng văn bản quy về token của `bpe-nfc` (các điều kiện khác c�
 
 Ước tính ban đầu (giữ lại để đối chiếu): d6 ~0,4 giờ, d8 ~1,4 giờ, d10 ~5 giờ mỗi run — tức thực tế chậm hơn 1,5–2 lần, nằm trong biên "sai số có thể gấp 2".
 
+- **Thời gian thật của các phiên đầy đủ**: d6 4 điều kiện 1,67 giờ; d8 4 điều kiện 5,93 giờ; d8 seed 1 2,59 giờ; **d10 2 điều kiện 10,3 giờ** (ước tính từ smoke là 8,8 giờ — phiên d10 chạy chậm hơn 15%, chỉ còn 1,7 giờ dự phòng trước giới hạn 12 giờ). Tốc độ giữa các phiên Kaggle dao động ±15%, phải tính dự phòng theo đó.
 - Peak memory đo được: d6 6,4GB, d8 9,0GB (`device-batch-size` 32), d10 7,1GB (`device-batch-size` 16). Còn dư so với 16GB của T4.
 - d10 vượt ngưỡng 6 giờ/run của Cổng 0 (8,75 giờ) nhưng vẫn gọn trong một phiên 12 giờ nếu mỗi GPU chỉ chạy một điều kiện.
 - SuperBPE dùng ít token hơn cho cùng văn bản, nên run SuperBPE **nhanh hơn** con số trong bảng.

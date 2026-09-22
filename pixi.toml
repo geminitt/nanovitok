@@ -17,11 +17,13 @@ filelock = "*"
 psutil = "*"
 pytest = "*"
 ipykernel = ">=7.3.0,<8"
+matplotlib = ">=3.11.1,<4"
 
 [pypi-dependencies]
 tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
+underthesea = ">=9.5.0, <10"
 
 [tasks]
 test = "pytest -q tests"

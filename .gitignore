@@ -1,11 +1,25 @@
-third_party/
+# --- Môi trường và công cụ (tạo lại được từ pixi.toml / patches/) ---
 .pixi/
+third_party/
 __pycache__/
 *.egg-info/
 .pytest_cache/
-data/
-runs/
-outputs/
-kaggle/
-*.parquet
+.ipynb_checkpoints/
+
+# --- Thư mục làm việc tạm ở gốc repo (chỉ gốc; không chặn kaggle/outputs/**/runs/) ---
+/data/
+/runs/
+/outputs/
+
+# --- Gói mã tải lên Kaggle, tạo lại mỗi lần chạy ---
 vitok-code.zip
+
+# --- Dữ liệu thô FineWeb-2: tải lại được bằng vitok.data ---
+*.parquet
+
+# --- Kết quả Kaggle: giữ log + JSON kết quả, bỏ phần trùng lặp và nhị phân ---
+# bản sao tokenizer trong từng lượt train, trùng với kaggle/outputs/vitok-data/tokenizers-*
+kaggle/outputs/results-*/runs/*/tokenizer/
+# tensor nhị phân (token_bytes.pt, checkpoint nếu có)
+*.pt
+*.safetensors

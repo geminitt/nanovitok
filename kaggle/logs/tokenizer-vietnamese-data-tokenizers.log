@@ -1,0 +1,658 @@
+10.0s 1 0.00s - Debugger warning: It seems that frozen modules are being used, which may
+10.0s 2 0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+10.0s 3 0.00s - to python to disable frozen modules.
+10.0s 4 0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+10.9s 5 0.00s - Debugger warning: It seems that frozen modules are being used, which may
+10.9s 6 0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+10.9s 7 0.00s - to python to disable frozen modules.
+10.9s 8 0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+12.9s 9 $ pip install -q -e /tmp/vitok
+25.0s 10 $ python -m vitok.data --out /kaggle/working/vitok-data --pretrain-bytes 10000000000.0 --tok-train-bytes 500000000.0 --cache-dir /tmp/hf_raw
+28.6s 11 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+28.8s 12 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+28.8s 13 
+28.8s 14 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+430.4s 15 {
+430.4s 16 "tok_train_bytes": 500000544,
+430.4s 17 "tok_train_docs": 95296,
+430.4s 18 "pretrain_bytes": 10000000292,
+430.4s 19 "pretrain_chars": 7588133801,
+430.4s 20 "pretrain_docs": 1813149,
+430.4s 21 "train_shards": 20,
+430.4s 22 "test_docs": 2000
+430.4s 23 }
+430.6s 24 {
+430.6s 25 "tok_train_bytes": 500000544,
+430.6s 26 "tok_train_docs": 95296,
+430.6s 27 "pretrain_bytes": 10000000292,
+430.6s 28 "pretrain_chars": 7588133801,
+430.6s 29 "pretrain_docs": 1813149,
+430.6s 30 "train_shards": 20,
+430.6s 31 "test_docs": 2000
+430.6s 32 }
+431.7s 33 $ python -m vitok.minimal_pairs --test /kaggle/working/vitok-data/test.jsonl --syllables /kaggle/working/vitok-data/syllables.json --out /kaggle/working/vitok-data/minimal_pairs.jsonl
+432.5s 34 wrote 3000 pairs to /kaggle/working/vitok-data/minimal_pairs.jsonl
+432.5s 35 nhiều -> nhiêu: Cách làm đẹp da mặt tự nhiên tại nhà với cà chua, nha đam, mật ong… được rất nhi
+432.5s 36 thể -> thề: Nguồn thạch tín có thề từ nước, thức ăn và thuốc.
+432.5s 37 Là -> Lạ: Lạ loại sơn lý tưởng để thi công sân tennis trên nền xi măng hay bê tông.
+432.5s 38 với -> vơi: Nếu tổng vốn sở hữu của nhà đầu tư nước ngoài dưới 51%, Doanh Nghiệp thực hiện c
+432.5s 39 máy -> may: Tại thời điểm chương trình bắt đầu có 2 sản phẩm niêm là chuột may tính Genius T
+432.5s 40 wrote 3000 pairs to /kaggle/working/vitok-data/minimal_pairs.jsonl
+432.5s 41 nhiều -> nhiêu: Cách làm đẹp da mặt tự nhiên tại nhà với cà chua, nha đam, mật ong… được rất nhi
+432.5s 42 thể -> thề: Nguồn thạch tín có thề từ nước, thức ăn và thuốc.
+432.5s 43 Là -> Lạ: Lạ loại sơn lý tưởng để thi công sân tennis trên nền xi măng hay bê tông.
+432.5s 44 với -> vơi: Nếu tổng vốn sở hữu của nhà đầu tư nước ngoài dưới 51%, Doanh Nghiệp thực hiện c
+432.5s 45 máy -> may: Tại thời điểm chương trình bắt đầu có 2 sản phẩm niêm là chuột may tính Genius T
+432.6s 46 $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+432.9s 47 info: downloading installer
+433.1s 48 info: downloading installer
+433.1s 49 
+433.1s 50 info: downloading installer
+433.6s 51 info: profile set to minimal
+433.6s 52 info: default host tuple is x86_64-unknown-linux-gnu
+433.6s 53 info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+433.8s 54 info: profile set to minimal
+433.8s 55 info: default host tuple is x86_64-unknown-linux-gnu
+433.8s 56 info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+433.8s 57 
+433.8s 58 info: profile set to minimal
+433.8s 59 info: default host tuple is x86_64-unknown-linux-gnu
+433.8s 60 info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+434.0s 61 info: latest update on 2026-09-03 for version 1.98.1 (48a229cea 2026-09-01)
+434.0s 62 info: downloading 3 components
+434.2s 63 info: latest update on 2026-09-03 for version 1.98.1 (48a229cea 2026-09-01)
+434.2s 64 info: downloading 3 components
+434.2s 65 
+434.2s 66 info: latest update on 2026-09-03 for version 1.98.1 (48a229cea 2026-09-01)
+434.2s 67 info: downloading 3 components
+448.6s 68 info: default toolchain set to stable-x86_64-unknown-linux-gnu
+448.6s 69 
+448.6s 70 stable-x86_64-unknown-linux-gnu installed - rustc 1.98.1 (48a229cea 2026-09-01)
+448.6s 71 
+448.6s 72 
+448.6s 73 Rust is installed now. Great!
+448.6s 74 
+448.6s 75 To get started you may need to restart your current shell.
+448.6s 76 This would reload your PATH environment variable to include
+448.6s 77 Cargo's bin directory ($HOME/.cargo/bin).
+448.6s 78 
+448.6s 79 To configure your current shell, you need to source the
+448.6s 80 corresponding env file under $HOME/.cargo.
+448.6s 81 
+448.6s 82 Consider running the right command for your shell (note the leading DOT):
+448.6s 83 . "$HOME/.cargo/env" # For sh/ash/dash/pdksh/bash
+448.6s 84 cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
+448.6s 85 CC_x86_64-unknown-linux-gnu = None
+448.6s 86 cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
+448.6s 87 CC_x86_64_unknown_linux_gnu = None
+448.6s 88 cargo:rerun-if-env-changed=HOST_CC
+448.6s 89 HOST_CC = None
+448.6s 90 cargo:rerun-if-env-changed=CC
+448.6s 91 CC = None
+448.6s 92 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+448.8s 93 info: default toolchain set to stable-x86_64-unknown-linux-gnu
+448.8s 94 
+448.8s 95 info: default toolchain set to stable-x86_64-unknown-linux-gnu
+448.8s 96 
+448.8s 97 stable-x86_64-unknown-linux-gnu installed - rustc 1.98.1 (48a229cea 2026-09-01)
+448.8s 98 
+448.8s 99 
+448.8s 100 Rust is installed now. Great!
+448.8s 101 
+448.8s 102 To get started you may need to restart your current shell.
+448.8s 103 This would reload your PATH environment variable to include
+448.8s 104 Cargo's bin directory ($HOME/.cargo/bin).
+448.8s 105 
+448.8s 106 To configure your current shell, you need to source the
+448.8s 107 corresponding env file under $HOME/.cargo.
+448.8s 108 
+448.8s 109 Consider running the right command for your shell (note the leading DOT):
+448.8s 110 . "$HOME/.cargo/env" # For sh/ash/dash/pdksh/bash
+448.8s 111 cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
+448.8s 112 CC_x86_64-unknown-linux-gnu = None
+448.8s 113 cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
+448.8s 114 CC_x86_64_unknown_linux_gnu = None
+448.8s 115 cargo:rerun-if-env-changed=HOST_CC
+448.8s 116 HOST_CC = None
+448.8s 117 cargo:rerun-if-env-changed=CC
+448.8s 118 CC = None
+448.8s 119 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+448.8s 120 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+448.8s 121 CRATE_CC_NO_DEFAULTS = None
+448.8s 122 cargo:rerun-if-env-changed=CFLAGS
+448.8s 123 CFLAGS = None
+448.8s 124 cargo:rerun-if-env-changed=HOST_CFLAGS
+448.8s 125 HOST_CFLAGS = None
+448.8s 126 cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
+448.8s 127 CFLAGS_x86_64_unknown_linux_gnu = None
+448.8s 128 cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
+448.8s 129 CFLAGS_x86_64-unknown-linux-gnu = None
+448.8s 130 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+448.8s 131 CRATE_CC_NO_DEFAULTS = None
+448.8s 132 cargo:rerun-if-env-changed=CFLAGS
+448.8s 133 CFLAGS = None
+448.8s 134 cargo:rerun-if-env-changed=HOST_CFLAGS
+448.8s 135 HOST_CFLAGS = None
+448.8s 136 cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
+448.8s 137 CFLAGS_x86_64_unknown_linux_gnu = None
+448.8s 138 cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
+448.8s 139 CFLAGS_x86_64-unknown-linux-gnu = None
+448.8s 140 $ git clone https://github.com/PythonNut/superbpe /tmp/superbpe
+448.9s 141 Cloning into '/tmp/superbpe'...
+449.1s 142 Cloning into '/tmp/superbpe'...
+449.1s 143 
+449.1s 144 Cloning into '/tmp/superbpe'...
+455.0s 145 Updating files:  39% (262/669)Updating files:  40% (268/669)Updating files:  41% (275/669)Updating files:  42% (281/669)Updating files:  43% (288/669)Updating files:  44% (295/669)Updating files:  45% (302/669)Updating files:  46% (308/669)Updating files:  47% (315/669)Updating files:  39% (262/669)Updating files:  40% (268/669)Updating files:  41% (275/669)Updating files:  42% (281/669)Updating files:  43% (288/669)Updating files:  44% (295/669)Updating files:  45% (302/669)Updating files:  46% (308/669)Updating files:  47% (315/669)
+455.3s 146 Updating files:  39% (262/669)Updating files:  40% (268/669)Updating files:  41% (275/669)Updating files:  42% (281/669)Updating files:  43% (288/669)Updating files:  44% (295/669)Updating files:  45% (302/669)Updating files:  46% (308/669)Updating files:  47% (315/669)Updating files:  48% (322/669)Updating files:  49% (328/669)Updating files:  50% (335/669)Updating files:  51% (342/669)Updating files:  52% (348/669)Updating files:  53% (355/669)Updating files:  54% (362/669)Updating files:  55% (368/669)Updating files:  56% (375/669)Updating files:  48% (322/669)Updating files:  49% (328/669)Updating files:  50% (335/669)Updating files:  51% (342/669)Updating files:  52% (348/669)Updating files:  53% (355/669)Updating files:  54% (362/669)Updating files:  55% (368/669)Updating files:  56% (375/669)
+455.6s 147 Updating files:  48% (322/669)Updating files:  49% (328/669)Updating files:  50% (335/669)Updating files:  51% (342/669)Updating files:  52% (348/669)Updating files:  53% (355/669)Updating files:  54% (362/669)Updating files:  55% (368/669)Updating files:  56% (375/669)Updating files:  57% (382/669)Updating files:  58% (389/669)Updating files:  59% (395/669)Updating files:  60% (402/669)Updating files:  61% (409/669)Updating files:  62% (415/669)Updating files:  63% (422/669)Updating files:  64% (429/669)Updating files:  65% (435/669)Updating files:  66% (442/669)Updating files:  67% (449/669)Updating files:  68% (455/669)Updating files:  69% (462/669)Updating files:  70% (469/669)Updating files:  71% (475/669)Updating files:  72% (482/669)Updating files:  73% (489/669)Updating files:  74% (496/669)Updating files:  57% (382/669)Updating files:  58% (389/669)Updating files:  59% (395/669)Updating files:  60% (402/669)Updating files:  61% (409/669)Updating files:  62% (415/669)Updating files:  63% (422/669)Updating files:  64% (429/669)Updating files:  65% (435/669)Updating files:  66% (442/669)Updating files:  67% (449/669)Updating files:  68% (455/669)Updating files:  69% (462/669)Updating files:  70% (469/669)Updating files:  71% (475/669)Updating files:  72% (482/669)Updating files:  73% (489/669)Updating files:  74% (496/669)
+455.9s 148 Updating files:  57% (382/669)Updating files:  58% (389/669)Updating files:  59% (395/669)Updating files:  60% (402/669)Updating files:  61% (409/669)Updating files:  62% (415/669)Updating files:  63% (422/669)Updating files:  64% (429/669)Updating files:  65% (435/669)Updating files:  66% (442/669)Updating files:  67% (449/669)Updating files:  68% (455/669)Updating files:  69% (462/669)Updating files:  70% (469/669)Updating files:  71% (475/669)Updating files:  72% (482/669)Updating files:  73% (489/669)Updating files:  74% (496/669)Updating files:  74% (498/669)Updating files:  75% (502/669)Updating files:  76% (509/669)Updating files:  77% (516/669)Updating files:  78% (522/669)Updating files:  79% (529/669)Updating files:  80% (536/669)Updating files:  81% (542/669)Updating files:  82% (549/669)Updating files:  83% (556/669)Updating files:  74% (498/669)Updating files:  75% (502/669)Updating files:  76% (509/669)Updating files:  77% (516/669)Updating files:  78% (522/669)Updating files:  79% (529/669)Updating files:  80% (536/669)Updating files:  81% (542/669)Updating files:  82% (549/669)Updating files:  83% (556/669)
+456.2s 149 Updating files:  74% (498/669)Updating files:  75% (502/669)Updating files:  76% (509/669)Updating files:  77% (516/669)Updating files:  78% (522/669)Updating files:  79% (529/669)Updating files:  80% (536/669)Updating files:  81% (542/669)Updating files:  82% (549/669)Updating files:  83% (556/669)Updating files:  84% (562/669)Updating files:  85% (569/669)Updating files:  86% (576/669)Updating files:  87% (583/669)Updating files:  88% (589/669)Updating files:  89% (596/669)Updating files:  90% (603/669)Updating files:  91% (609/669)Updating files:  92% (616/669)Updating files:  93% (623/669)Updating files:  94% (629/669)Updating files:  95% (636/669)Updating files:  96% (643/669)Updating files:  97% (649/669)Updating files:  98% (656/669)Updating files:  99% (663/669)Updating files:  84% (562/669)Updating files:  85% (569/669)Updating files:  86% (576/669)Updating files:  87% (583/669)Updating files:  88% (589/669)Updating files:  89% (596/669)Updating files:  90% (603/669)Updating files:  91% (609/669)Updating files:  92% (616/669)Updating files:  93% (623/669)Updating files:  94% (629/669)Updating files:  95% (636/669)Updating files:  96% (643/669)Updating files:  97% (649/669)Updating files:  98% (656/669)Updating files:  99% (663/669)
+456.2s 150 Updating files:  84% (562/669)Updating files:  85% (569/669)Updating files:  86% (576/669)Updating files:  87% (583/669)Updating files:  88% (589/669)Updating files:  89% (596/669)Updating files:  90% (603/669)Updating files:  91% (609/669)Updating files:  92% (616/669)Updating files:  93% (623/669)Updating files:  94% (629/669)Updating files:  95% (636/669)Updating files:  96% (643/669)Updating files:  97% (649/669)Updating files:  98% (656/669)Updating files:  99% (663/669)Updating files: 100% (669/669)Updating files: 100% (669/669), done.
+456.2s 151 $ cd /tmp/superbpe && git checkout bbd09768fc28a875cef48e6bdd66e3a17454628e && git submodule update --init --depth 1
+456.4s 152 Updating files: 100% (669/669)Updating files: 100% (669/669), done.
+456.4s 153 
+456.4s 154 Updating files: 100% (669/669)Updating files: 100% (669/669), done.
+456.5s 155 Note: switching to 'bbd09768fc28a875cef48e6bdd66e3a17454628e'.
+456.5s 156 
+456.5s 157 You are in 'detached HEAD' state. You can look around, make experimental
+456.5s 158 changes and commit them, and you can discard any commits you make in this
+456.5s 159 state without impacting any branches by switching back to a branch.
+456.5s 160 
+456.5s 161 If you want to create a new branch to retain commits you create, you may
+456.5s 162 do so (now or later) by using -c with the switch command. Example:
+456.5s 163 
+456.5s 164 git switch -c <new-branch-name>
+456.5s 165 
+456.5s 166 Or undo this operation with:
+456.5s 167 
+456.5s 168 git switch -
+456.5s 169 
+456.5s 170 Turn off this advice by setting config variable advice.detachedHead to false
+456.5s 171 
+456.5s 172 HEAD is now at bbd0976 fix bug caused by ByteLevel being imported from two different places
+456.5s 173 Submodule 'tokenizers-superbpe' (https://github.com/alisawuffles/tokenizers-superbpe.git) registered for path 'tokenizers_superbpe'
+456.5s 174 Cloning into '/tmp/superbpe/tokenizers_superbpe'...
+456.7s 175 Note: switching to 'bbd09768fc28a875cef48e6bdd66e3a17454628e'.
+456.7s 176 
+456.7s 177 You are in 'detached HEAD' state. You can look around, make experimental
+456.7s 178 changes and commit them, and you can discard any commits you make in this
+456.7s 179 state without impacting any branches by switching back to a branch.
+456.7s 180 
+456.7s 181 If you want to create a new branch to retain commits you create, you may
+456.7s 182 do so (now or later) by using -c with the switch command. Example:
+456.7s 183 
+456.7s 184 git switch -c <new-branch-name>
+456.7s 185 
+456.7s 186 Or undo this operation with:
+456.7s 187 
+456.7s 188 git switch -
+456.7s 189 
+456.7s 190 Turn off this advice by setting config variable advice.detachedHead to false
+456.7s 191 
+456.7s 192 HEAD is now at bbd0976 fix bug caused by ByteLevel being imported from two different places
+456.7s 193 Submodule 'tokenizers-superbpe' (https://github.com/alisawuffles/tokenizers-superbpe.git) registered for path 'tokenizers_superbpe'
+456.7s 194 Cloning into '/tmp/superbpe/tokenizers_superbpe'...
+456.7s 195 
+456.7s 196 Note: switching to 'bbd09768fc28a875cef48e6bdd66e3a17454628e'.
+456.7s 197 
+456.7s 198 You are in 'detached HEAD' state. You can look around, make experimental
+456.7s 199 changes and commit them, and you can discard any commits you make in this
+456.7s 200 state without impacting any branches by switching back to a branch.
+456.7s 201 
+456.7s 202 If you want to create a new branch to retain commits you create, you may
+456.7s 203 do so (now or later) by using -c with the switch command. Example:
+456.7s 204 
+456.7s 205 git switch -c <new-branch-name>
+456.7s 206 
+456.7s 207 Or undo this operation with:
+456.7s 208 
+456.7s 209 git switch -
+456.7s 210 
+456.7s 211 Turn off this advice by setting config variable advice.detachedHead to false
+456.7s 212 
+456.7s 213 HEAD is now at bbd0976 fix bug caused by ByteLevel being imported from two different places
+456.7s 214 Submodule 'tokenizers-superbpe' (https://github.com/alisawuffles/tokenizers-superbpe.git) registered for path 'tokenizers_superbpe'
+456.7s 215 Cloning into '/tmp/superbpe/tokenizers_superbpe'...
+459.4s 216 Submodule path 'tokenizers_superbpe': checked out '757f2a55c0820ed47064e1fe473deea39b7b611b'
+459.4s 217 Submodule path 'tokenizers_superbpe': checked out '757f2a55c0820ed47064e1fe473deea39b7b611b'
+459.4s 218 $ pip install -q /tmp/superbpe/tokenizers_superbpe/bindings/python
+472.3s 219 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 1.3 MB/s eta 0:00:00
+472.5s 220 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 1.3 MB/s eta 0:00:00
+589.8s 221 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+589.8s 222 transformers 5.0.0 requires huggingface-hub<2.0,>=1.3.0, but you have huggingface-hub 0.36.2 which is incompatible.
+589.8s 223 transformers 5.0.0 requires tokenizers<=0.23.0,>=0.22.0, but you have tokenizers 0.20.1 which is incompatible.
+590.0s 224 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+590.0s 225 transformers 5.0.0 requires huggingface-hub<2.0,>=1.3.0, but you have huggingface-hub 0.36.2 which is incompatible.
+590.0s 226 transformers 5.0.0 requires tokenizers<=0.23.0,>=0.22.0, but you have tokenizers 0.20.1 which is incompatible.
+590.0s 227 
+590.0s 228 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+590.0s 229 transformers 5.0.0 requires huggingface-hub<2.0,>=1.3.0, but you have huggingface-hub 0.36.2 which is incompatible.
+590.0s 230 transformers 5.0.0 requires tokenizers<=0.23.0,>=0.22.0, but you have tokenizers 0.20.1 which is incompatible.
+590.0s 231 $ python -m vitok.train_tokenizers --corpus /tmp/tok_small.txt --out /tmp/check-fork --vocab-size 4000 --transition 0.9 --stage2 fork --workdir /tmp/check_work_fork > /tmp/check_fork.log
+606.9s 232 $ python -m vitok.train_tokenizers --corpus /tmp/tok_small.txt --out /tmp/check-fast --vocab-size 4000 --transition 0.9 --stage2 fast --workdir /tmp/check_work_fast > /tmp/check_fast.log
+612.9s 233 inherited merges the fork skipped: 0
+612.9s 234 super-nfc: fork 3744 merges, fast 3744, first difference at None
+612.9s 235 super-nfd: fork 3744 merges, fast 3744, first difference at None
+612.9s 236 Calling do_train_original()
+612.9s 237 
+612.9s 238 
+612.9s 239 
+612.9s 240 stage 2: encoded 677,830 ids with 3344 inherited merges in 1s
+612.9s 241 stage 2: 100 merges, vocab 3700/4000, last '.ĠÄĲ' x169, 0s
+612.9s 242 stage 2: 200 merges, vocab 3800/4000, last 'ĠquanĠtÃ¢m' x113, 0s
+612.9s 243 stage 2: 300 merges, vocab 3900/4000, last 'Ġgiáº£iĠthÃŃch' x90, 0s
+612.9s 244 stage 2: 400 merges, vocab 4000/4000, last 'Ġbáº¥tĠcá»©' x76, 1s
+612.9s 245 Calling do_train_original()
+612.9s 246 
+612.9s 247 
+612.9s 248 
+612.9s 249 stage 2: encoded 674,738 ids with 3344 inherited merges in 1s
+612.9s 250 stage 2: 100 merges, vocab 3700/4000, last 'ĠcoÌĤngĠty' x168, 0s
+612.9s 251 stage 2: 200 merges, vocab 3800/4000, last 'ĠthiÌ£ĠtruÌĽoÌĽÌĢng' x115, 0s
+612.9s 252 stage 2: 300 merges, vocab 3900/4000, last 'ĠthuÌīĠtuÌ£c' x90, 0s
+612.9s 253 stage 2: 400 merges, vocab 4000/4000, last 'ĠÄĳeÌĤÌĢĠnghiÌ£' x76, 1s
+612.9s 254 {
+612.9s 255 "vocab_size": 4000,
+612.9s 256 "transition": 0.9,
+612.9s 257 "corpus_bytes": 3000186,
+612.9s 258 "nfc": {
+612.9s 259 "n_alphabet": 256,
+612.9s 260 "n_inherited_merges": 3344,
+612.9s 261 "stage2_ids": 677830,
+612.9s 262 "stage2_new_merges": 400,
+612.9s 263 "encode_seconds": 1,
+612.9s 264 "merge_seconds": 1
+612.9s 265 },
+612.9s 266 "nfd": {
+612.9s 267 "n_alphabet": 256,
+612.9s 268 "n_inherited_merges": 3344,
+612.9s 269 "stage2_ids": 674738,
+612.9s 270 "stage2_new_merges": 400,
+612.9s 271 "encode_seconds": 1,
+612.9s 272 "merge_seconds": 1
+612.9s 273 }
+612.9s 274 }
+612.9s 275 
+612.9s 276 $ python -m vitok.train_tokenizers --corpus /tmp/tok_train.txt --out /kaggle/working/vitok-data/tokenizers-16k --vocab-size 16000 --transition 0.9 --workdir /tmp/tok_work_16k
+714.9s 277 Calling do_train_original()
+715.1s 278 Calling do_train_original()
+715.6s 279 
+715.8s 280 
+718.4s 281 
+718.6s 282 
+722.1s 283 
+722.3s 284 
+904.8s 285 stage 2: encoded 104,564,258 ids with 14144 inherited merges in 182s
+905.0s 286 stage 2: encoded 104,564,258 ids with 14144 inherited merges in 182s
+928.7s 287 stage 2: 100 merges, vocab 14500/16000, last 'ĠthamĠgia' x25895, 19s
+928.9s 288 stage 2: 100 merges, vocab 14500/16000, last 'ĠthamĠgia' x25895, 19s
+944.7s 289 stage 2: 200 merges, vocab 14600/16000, last 'Ġtrá»ŁĠnÃªn' x18316, 35s
+944.9s 290 stage 2: 200 merges, vocab 14600/16000, last 'Ġtrá»ŁĠnÃªn' x18316, 35s
+959.2s 291 stage 2: 300 merges, vocab 14700/16000, last 'ĠdÃłnhĠcho' x14123, 49s
+959.4s 292 stage 2: 300 merges, vocab 14700/16000, last 'ĠdÃłnhĠcho' x14123, 49s
+973.1s 293 stage 2: 400 merges, vocab 14800/16000, last 'ĠngÆ°á»ĿiĠdÃ¢n' x11652, 63s
+973.3s 294 stage 2: 400 merges, vocab 14800/16000, last 'ĠngÆ°á»ĿiĠdÃ¢n' x11652, 63s
+990.5s 295 stage 2: 500 merges, vocab 14900/16000, last 'Ġsá»±Ġkiá»ĩn' x10048, 81s
+990.7s 296 stage 2: 500 merges, vocab 14900/16000, last 'Ġsá»±Ġkiá»ĩn' x10048, 81s
+1004.9s 297 stage 2: 600 merges, vocab 15000/16000, last 'ĠtheoĠdÃµi' x8895, 95s
+1005.1s 298 stage 2: 600 merges, vocab 15000/16000, last 'ĠtheoĠdÃµi' x8895, 95s
+1019.2s 299 stage 2: 700 merges, vocab 15100/16000, last 'ĠSÃłiĠGÃ²n' x7889, 109s
+1019.4s 300 stage 2: 700 merges, vocab 15100/16000, last 'ĠSÃłiĠGÃ²n' x7889, 109s
+1033.8s 301 stage 2: 800 merges, vocab 15200/16000, last 'Ġlá»Ľn,' x7149, 124s
+1034.0s 302 stage 2: 800 merges, vocab 15200/16000, last 'Ġlá»Ľn,' x7149, 124s
+1047.2s 303 stage 2: 900 merges, vocab 15300/16000, last 'Ġmáº·cĠdÃ¹' x6484, 137s
+1047.4s 304 stage 2: 900 merges, vocab 15300/16000, last 'Ġmáº·cĠdÃ¹' x6484, 137s
+1061.0s 305 stage 2: 1000 merges, vocab 15400/16000, last 'Ġsá»ĳĠtiá»ģn' x5983, 151s
+1061.2s 306 stage 2: 1000 merges, vocab 15400/16000, last 'Ġsá»ĳĠtiá»ģn' x5983, 151s
+1075.3s 307 stage 2: 1100 merges, vocab 15500/16000, last 'ĠyÃªnĠtÃ¢m' x5437, 165s
+1075.5s 308 stage 2: 1100 merges, vocab 15500/16000, last 'ĠyÃªnĠtÃ¢m' x5437, 165s
+1088.9s 309 stage 2: 1200 merges, vocab 15600/16000, last 'ĠÄĳÃ¢yĠlÃłĠmá»Ļt' x4974, 179s
+1089.1s 310 stage 2: 1200 merges, vocab 15600/16000, last 'ĠÄĳÃ¢yĠlÃłĠmá»Ļt' x4974, 179s
+1102.3s 311 stage 2: 1300 merges, vocab 15700/16000, last 'ĠvÃ¬ĠváºŃy' x4607, 192s
+1102.5s 312 stage 2: 1300 merges, vocab 15700/16000, last 'ĠvÃ¬ĠváºŃy' x4607, 192s
+1116.6s 313 stage 2: 1400 merges, vocab 15800/16000, last 'Ġdá»±aĠvÃło' x4321, 207s
+1116.8s 314 stage 2: 1400 merges, vocab 15800/16000, last 'Ġdá»±aĠvÃło' x4321, 207s
+1129.7s 315 stage 2: 1500 merges, vocab 15900/16000, last ',ĠnhÃ¬n' x4039, 220s
+1129.9s 316 stage 2: 1500 merges, vocab 15900/16000, last ',ĠnhÃ¬n' x4039, 220s
+1142.9s 317 stage 2: 1600 merges, vocab 16000/16000, last 'ĠnháºŃnĠxÃ©t' x3796, 233s
+1143.1s 318 stage 2: 1600 merges, vocab 16000/16000, last 'ĠnháºŃnĠxÃ©t' x3796, 233s
+1268.7s 319 Calling do_train_original()
+1268.9s 320 Calling do_train_original()
+1269.3s 321 
+1269.5s 322 
+1272.7s 323 
+1272.9s 324 
+1276.4s 325 
+1276.6s 326 
+1485.5s 327 stage 2: encoded 104,566,917 ids with 14144 inherited merges in 209s
+1485.7s 328 stage 2: encoded 104,566,917 ids with 14144 inherited merges in 209s
+1509.3s 329 stage 2: 100 merges, vocab 14500/16000, last 'ĠthamĠgia' x25895, 19s
+1509.5s 330 stage 2: 100 merges, vocab 14500/16000, last 'ĠthamĠgia' x25895, 19s
+1525.3s 331 stage 2: 200 merges, vocab 14600/16000, last 'ĠtroÌĽÌīĠneÌĤn' x18316, 35s
+1525.5s 332 stage 2: 200 merges, vocab 14600/16000, last 'ĠtroÌĽÌīĠneÌĤn' x18316, 35s
+1540.2s 333 stage 2: 300 merges, vocab 14700/16000, last 'ĠdaÌĢnhĠcho' x14124, 50s
+1540.4s 334 stage 2: 300 merges, vocab 14700/16000, last 'ĠdaÌĢnhĠcho' x14124, 50s
+1555.8s 335 stage 2: 400 merges, vocab 14800/16000, last 'ĠnguÌĽoÌĽÌĢiĠdaÌĤn' x11652, 65s
+1556.0s 336 stage 2: 400 merges, vocab 14800/16000, last 'ĠnguÌĽoÌĽÌĢiĠdaÌĤn' x11652, 65s
+1569.9s 337 stage 2: 500 merges, vocab 14900/16000, last 'ĠsuÌĽÌ£ĠkieÌ£ÌĤn' x10048, 79s
+1570.1s 338 stage 2: 500 merges, vocab 14900/16000, last 'ĠsuÌĽÌ£ĠkieÌ£ÌĤn' x10048, 79s
+1583.8s 339 stage 2: 600 merges, vocab 15000/16000, last 'ĠtheoĠdoÌĥi' x8895, 93s
+1584.0s 340 stage 2: 600 merges, vocab 15000/16000, last 'ĠtheoĠdoÌĥi' x8895, 93s
+1602.3s 341 stage 2: 700 merges, vocab 15100/16000, last 'ĠSaÌĢiĠGoÌĢn' x7889, 112s
+1602.5s 342 stage 2: 700 merges, vocab 15100/16000, last 'ĠSaÌĢiĠGoÌĢn' x7889, 112s
+1616.8s 343 stage 2: 800 merges, vocab 15200/16000, last 'ĠcuÌīaĠnhaÌĢ' x7147, 126s
+1617.0s 344 stage 2: 800 merges, vocab 15200/16000, last 'ĠcuÌīaĠnhaÌĢ' x7147, 126s
+1630.0s 345 stage 2: 900 merges, vocab 15300/16000, last 'ĠmaÌ£ÌĨcĠduÌĢ' x6484, 140s
+1630.2s 346 stage 2: 900 merges, vocab 15300/16000, last 'ĠmaÌ£ÌĨcĠduÌĢ' x6484, 140s
+1643.5s 347 stage 2: 1000 merges, vocab 15400/16000, last 'ĠsoÌĤÌģĠtieÌĤÌĢn' x5983, 153s
+1643.7s 348 stage 2: 1000 merges, vocab 15400/16000, last 'ĠsoÌĤÌģĠtieÌĤÌĢn' x5983, 153s
+1657.7s 349 stage 2: 1100 merges, vocab 15500/16000, last 'ĠyeÌĤnĠtaÌĤm' x5437, 167s
+1657.9s 350 stage 2: 1100 merges, vocab 15500/16000, last 'ĠyeÌĤnĠtaÌĤm' x5437, 167s
+1671.0s 351 stage 2: 1200 merges, vocab 15600/16000, last 'ĠÄĳaÌĤyĠlaÌĢĠmoÌ£ÌĤt' x4974, 181s
+1671.2s 352 stage 2: 1200 merges, vocab 15600/16000, last 'ĠÄĳaÌĤyĠlaÌĢĠmoÌ£ÌĤt' x4974, 181s
+1684.3s 353 stage 2: 1300 merges, vocab 15700/16000, last ',ĠcoÌĤng' x4605, 194s
+1684.5s 354 stage 2: 1300 merges, vocab 15700/16000, last ',ĠcoÌĤng' x4605, 194s
+1698.0s 355 stage 2: 1400 merges, vocab 15800/16000, last 'ĠduÌĽÌ£aĠvaÌĢo' x4321, 208s
+1698.2s 356 stage 2: 1400 merges, vocab 15800/16000, last 'ĠduÌĽÌ£aĠvaÌĢo' x4321, 208s
+1711.0s 357 stage 2: 1500 merges, vocab 15900/16000, last ',ĠnhiÌĢn' x4039, 221s
+1711.2s 358 stage 2: 1500 merges, vocab 15900/16000, last ',ĠnhiÌĢn' x4039, 221s
+1724.1s 359 stage 2: 1600 merges, vocab 16000/16000, last 'ĠnhaÌ£ÌĤnĠxeÌģt' x3796, 234s
+1724.3s 360 stage 2: 1600 merges, vocab 16000/16000, last 'ĠnhaÌ£ÌĤnĠxeÌģt' x3796, 234s
+1724.4s 361 {
+1724.4s 362 "vocab_size": 16000,
+1724.4s 363 "transition": 0.9,
+1724.4s 364 "corpus_bytes": 500181599,
+1724.4s 365 "nfc": {
+1724.4s 366 "n_alphabet": 256,
+1724.4s 367 "n_inherited_merges": 14144,
+1724.4s 368 "stage2_ids": 104564258,
+1724.4s 369 "stage2_new_merges": 1600,
+1724.4s 370 "encode_seconds": 182,
+1724.4s 371 "merge_seconds": 238
+1724.4s 372 },
+1724.4s 373 "nfd": {
+1724.4s 374 "n_alphabet": 256,
+1724.4s 375 "n_inherited_merges": 14144,
+1724.4s 376 "stage2_ids": 104566917,
+1724.4s 377 "stage2_new_merges": 1600,
+1724.4s 378 "encode_seconds": 209,
+1724.4s 379 "merge_seconds": 239
+1724.4s 380 }
+1724.4s 381 }
+1724.5s 382 {
+1724.5s 383 "vocab_size": 16000,
+1724.5s 384 "transition": 0.9,
+1724.5s 385 "corpus_bytes": 500181599,
+1724.5s 386 "nfc": {
+1724.5s 387 "n_alphabet": 256,
+1724.5s 388 "n_inherited_merges": 14144,
+1724.5s 389 "stage2_ids": 104564258,
+1724.5s 390 "stage2_new_merges": 1600,
+1724.5s 391 "encode_seconds": 182,
+1724.5s 392 "merge_seconds": 238
+1724.5s 393 },
+1724.5s 394 "nfd": {
+1724.5s 395 "n_alphabet": 256,
+1724.5s 396 "n_inherited_merges": 14144,
+1724.5s 397 "stage2_ids": 104566917,
+1724.5s 398 "stage2_new_merges": 1600,
+1724.5s 399 "encode_seconds": 209,
+1724.5s 400 "merge_seconds": 239
+1724.5s 401 }
+1724.5s 402 }
+1724.5s 403 $ python -m vitok.compression --tokenizers /kaggle/working/vitok-data/tokenizers-16k --docs /kaggle/working/vitok-data/shards/shard_99999.parquet --out /kaggle/working/vitok-data/compression-16k.json
+1771.9s 404 bpe-nfc    chars/token=3.861 tokens/syllable=1.191 superword share=0.0%
+1771.9s 405 bpe-nfd    chars/token=3.860 tokens/syllable=1.191 superword share=0.0%
+1771.9s 406 super-nfc  chars/token=4.694 tokens/syllable=0.979 superword share=19.6%
+1771.9s 407 super-nfd  chars/token=4.692 tokens/syllable=0.980 superword share=19.6%
+1771.9s 408 SuperBPE token reduction (nfc): 17.8%  -> Gate 1 PASS (>=15%)
+1771.9s 409 SuperBPE token reduction (nfd): 17.7%  -> Gate 1 PASS (>=15%)
+1772.2s 410 bpe-nfc    chars/token=3.861 tokens/syllable=1.191 superword share=0.0%
+1772.2s 411 bpe-nfd    chars/token=3.860 tokens/syllable=1.191 superword share=0.0%
+1772.2s 412 super-nfc  chars/token=4.694 tokens/syllable=0.979 superword share=19.6%
+1772.2s 413 super-nfd  chars/token=4.692 tokens/syllable=0.980 superword share=19.6%
+1772.2s 414 SuperBPE token reduction (nfc): 17.8%  -> Gate 1 PASS (>=15%)
+1772.2s 415 SuperBPE token reduction (nfd): 17.7%  -> Gate 1 PASS (>=15%)
+1772.2s 416 $ python -m vitok.train_tokenizers --corpus /tmp/tok_train.txt --out /kaggle/working/vitok-data/tokenizers-32k --vocab-size 32000 --transition 0.9 --workdir /tmp/tok_work_32k
+1875.3s 417 Calling do_train_original()
+1875.6s 418 Calling do_train_original()
+1876.4s 419 
+1876.6s 420 
+1879.2s 421 
+1879.4s 422 
+1884.5s 423 
+1884.7s 424 
+2079.0s 425 stage 2: encoded 102,826,392 ids with 28544 inherited merges in 194s
+2079.2s 426 stage 2: encoded 102,826,392 ids with 28544 inherited merges in 194s
+2104.9s 427 stage 2: 100 merges, vocab 28900/32000, last 'ĠthamĠgia' x25895, 21s
+2105.1s 428 stage 2: 100 merges, vocab 28900/32000, last 'ĠthamĠgia' x25895, 21s
+2122.3s 429 stage 2: 200 merges, vocab 29000/32000, last 'Ġtrá»ŁĠnÃªn' x18316, 38s
+2122.5s 430 stage 2: 200 merges, vocab 29000/32000, last 'Ġtrá»ŁĠnÃªn' x18316, 38s
+2138.0s 431 stage 2: 300 merges, vocab 29100/32000, last 'ĠdÃłnhĠcho' x14123, 54s
+2138.2s 432 stage 2: 300 merges, vocab 29100/32000, last 'ĠdÃłnhĠcho' x14123, 54s
+2152.9s 433 stage 2: 400 merges, vocab 29200/32000, last 'ĠngÆ°á»ĿiĠdÃ¢n' x11652, 69s
+2153.1s 434 stage 2: 400 merges, vocab 29200/32000, last 'ĠngÆ°á»ĿiĠdÃ¢n' x11652, 69s
+2167.8s 435 stage 2: 500 merges, vocab 29300/32000, last 'Ġsá»±Ġkiá»ĩn' x10048, 83s
+2168.0s 436 stage 2: 500 merges, vocab 29300/32000, last 'Ġsá»±Ġkiá»ĩn' x10048, 83s
+2182.3s 437 stage 2: 600 merges, vocab 29400/32000, last 'ĠtheoĠdÃµi' x8895, 98s
+2182.5s 438 stage 2: 600 merges, vocab 29400/32000, last 'ĠtheoĠdÃµi' x8895, 98s
+2197.4s 439 stage 2: 700 merges, vocab 29500/32000, last 'ĠSÃłiĠGÃ²n' x7889, 113s
+2197.6s 440 stage 2: 700 merges, vocab 29500/32000, last 'ĠSÃłiĠGÃ²n' x7889, 113s
+2213.9s 441 stage 2: 800 merges, vocab 29600/32000, last 'Ġcá»§aĠnhÃł' x7147, 130s
+2214.1s 442 stage 2: 800 merges, vocab 29600/32000, last 'Ġcá»§aĠnhÃł' x7147, 130s
+2230.7s 443 stage 2: 900 merges, vocab 29700/32000, last 'Ġtá»ĳtĠhÆ¡n' x6477, 146s
+2230.9s 444 stage 2: 900 merges, vocab 29700/32000, last 'Ġtá»ĳtĠhÆ¡n' x6477, 146s
+2244.8s 445 stage 2: 1000 merges, vocab 29800/32000, last 'Ġsá»ĳĠtiá»ģn' x5983, 160s
+2245.0s 446 stage 2: 1000 merges, vocab 29800/32000, last 'Ġsá»ĳĠtiá»ģn' x5983, 160s
+2259.5s 447 stage 2: 1100 merges, vocab 29900/32000, last 'ĠyÃªnĠtÃ¢m' x5437, 175s
+2259.7s 448 stage 2: 1100 merges, vocab 29900/32000, last 'ĠyÃªnĠtÃ¢m' x5437, 175s
+2273.5s 449 stage 2: 1200 merges, vocab 30000/32000, last 'ĠthÃłnhĠmá»Ļt' x4971, 189s
+2273.7s 450 stage 2: 1200 merges, vocab 30000/32000, last 'ĠthÃłnhĠmá»Ļt' x4971, 189s
+2287.3s 451 stage 2: 1300 merges, vocab 30100/32000, last ',ĠcÃ´ng' x4605, 203s
+2287.5s 452 stage 2: 1300 merges, vocab 30100/32000, last ',ĠcÃ´ng' x4605, 203s
+2301.5s 453 stage 2: 1400 merges, vocab 30200/32000, last 'Ġdá»±aĠvÃło' x4321, 217s
+2301.7s 454 stage 2: 1400 merges, vocab 30200/32000, last 'Ġdá»±aĠvÃło' x4321, 217s
+2314.7s 455 stage 2: 1500 merges, vocab 30300/32000, last ',ĠnhÃ¬n' x4039, 230s
+2314.9s 456 stage 2: 1500 merges, vocab 30300/32000, last ',ĠnhÃ¬n' x4039, 230s
+2328.1s 457 stage 2: 1600 merges, vocab 30400/32000, last 'ĠcÅ©ngĠchá»ī' x3794, 244s
+2328.3s 458 stage 2: 1600 merges, vocab 30400/32000, last 'ĠcÅ©ngĠchá»ī' x3794, 244s
+2341.5s 459 stage 2: 1700 merges, vocab 30500/32000, last 'ĠngÃ´iĠsao' x3605, 257s
+2341.7s 460 stage 2: 1700 merges, vocab 30500/32000, last 'ĠngÃ´iĠsao' x3605, 257s
+2354.6s 461 stage 2: 1800 merges, vocab 30600/32000, last '.ĠVá»ģ' x3427, 270s
+2354.8s 462 stage 2: 1800 merges, vocab 30600/32000, last '.ĠVá»ģ' x3427, 270s
+2368.5s 463 stage 2: 1900 merges, vocab 30700/32000, last 'Ġláº§nĠnÃły' x3276, 284s
+2368.7s 464 stage 2: 1900 merges, vocab 30700/32000, last 'Ġláº§nĠnÃły' x3276, 284s
+2382.1s 465 stage 2: 2000 merges, vocab 30800/32000, last 'ĠbÃłiĠhá»įc' x3117, 298s
+2382.4s 466 stage 2: 2000 merges, vocab 30800/32000, last 'ĠbÃłiĠhá»įc' x3117, 298s
+2395.8s 467 stage 2: 2100 merges, vocab 30900/32000, last 'Ġvá»ĽiĠnÆ°á»Ľc' x2973, 311s
+2396.0s 468 stage 2: 2100 merges, vocab 30900/32000, last 'Ġvá»ĽiĠnÆ°á»Ľc' x2973, 311s
+2409.2s 469 stage 2: 2200 merges, vocab 31000/32000, last 'Ġcáº£iĠtiáº¿n' x2835, 325s
+2409.4s 470 stage 2: 2200 merges, vocab 31000/32000, last 'Ġcáº£iĠtiáº¿n' x2835, 325s
+2422.7s 471 stage 2: 2300 merges, vocab 31100/32000, last 'Ġngoáº¡iĠgiao' x2716, 338s
+2422.9s 472 stage 2: 2300 merges, vocab 31100/32000, last 'Ġngoáº¡iĠgiao' x2716, 338s
+2436.2s 473 stage 2: 2400 merges, vocab 31200/32000, last 'Ġtáº¥tĠcáº£Ġmá»įiĠngÆ°á»Ŀi' x2610, 352s
+2436.5s 474 stage 2: 2400 merges, vocab 31200/32000, last 'Ġtáº¥tĠcáº£Ġmá»įiĠngÆ°á»Ŀi' x2610, 352s
+2450.7s 475 stage 2: 2500 merges, vocab 31300/32000, last 'Ġhá»įcĠtrÃ²' x2511, 366s
+2450.9s 476 stage 2: 2500 merges, vocab 31300/32000, last 'Ġhá»įcĠtrÃ²' x2511, 366s
+2464.0s 477 stage 2: 2600 merges, vocab 31400/32000, last 'ĠmÃ¡yĠmÃ³c' x2409, 380s
+2464.2s 478 stage 2: 2600 merges, vocab 31400/32000, last 'ĠmÃ¡yĠmÃ³c' x2409, 380s
+2477.7s 479 stage 2: 2700 merges, vocab 31500/32000, last 'ĠhÆ¡nĠkhi' x2327, 393s
+2477.9s 480 stage 2: 2700 merges, vocab 31500/32000, last 'ĠhÆ¡nĠkhi' x2327, 393s
+2491.6s 481 stage 2: 2800 merges, vocab 31600/32000, last 'ĠdoanhĠnhÃ¢n' x2252, 407s
+2491.8s 482 stage 2: 2800 merges, vocab 31600/32000, last 'ĠdoanhĠnhÃ¢n' x2252, 407s
+2505.4s 483 stage 2: 2900 merges, vocab 31700/32000, last 'ĠtimĠmáº¡ch' x2165, 421s
+2505.6s 484 stage 2: 2900 merges, vocab 31700/32000, last 'ĠtimĠmáº¡ch' x2165, 421s
+2520.9s 485 stage 2: 3000 merges, vocab 31800/32000, last 'ĠtÃ´iĠsáº½' x2095, 437s
+2521.1s 486 stage 2: 3000 merges, vocab 31800/32000, last 'ĠtÃ´iĠsáº½' x2095, 437s
+2534.8s 487 stage 2: 3100 merges, vocab 31900/32000, last 'ĠnhÆ°Ġtháº¿ĠnÃło?Ċ' x2024, 450s
+2535.0s 488 stage 2: 3100 merges, vocab 31900/32000, last 'ĠnhÆ°Ġtháº¿ĠnÃło?Ċ' x2024, 450s
+2548.6s 489 stage 2: 3200 merges, vocab 32000/32000, last 'ĠkinhĠtáº¿,' x1950, 464s
+2548.8s 490 stage 2: 3200 merges, vocab 32000/32000, last 'ĠkinhĠtáº¿,' x1950, 464s
+2680.9s 491 Calling do_train_original()
+2681.1s 492 Calling do_train_original()
+2681.5s 493 
+2681.7s 494 
+2685.0s 495 
+2685.2s 496 
+2690.0s 497 
+2690.2s 498 
+2913.2s 499 stage 2: encoded 102,893,537 ids with 28544 inherited merges in 223s
+2913.4s 500 stage 2: encoded 102,893,537 ids with 28544 inherited merges in 223s
+2938.9s 501 stage 2: 100 merges, vocab 28900/32000, last 'ĠthamĠgia' x25895, 20s
+2939.1s 502 stage 2: 100 merges, vocab 28900/32000, last 'ĠthamĠgia' x25895, 20s
+2956.1s 503 stage 2: 200 merges, vocab 29000/32000, last 'ĠtroÌĽÌīĠneÌĤn' x18316, 37s
+2956.3s 504 stage 2: 200 merges, vocab 29000/32000, last 'ĠtroÌĽÌīĠneÌĤn' x18316, 37s
+2971.7s 505 stage 2: 300 merges, vocab 29100/32000, last 'ĠdaÌĢnhĠcho' x14123, 53s
+2971.9s 506 stage 2: 300 merges, vocab 29100/32000, last 'ĠdaÌĢnhĠcho' x14123, 53s
+2986.6s 507 stage 2: 400 merges, vocab 29200/32000, last 'ĠnguÌĽoÌĽÌĢiĠdaÌĤn' x11652, 68s
+2986.8s 508 stage 2: 400 merges, vocab 29200/32000, last 'ĠnguÌĽoÌĽÌĢiĠdaÌĤn' x11652, 68s
+3001.6s 509 stage 2: 500 merges, vocab 29300/32000, last 'ĠsuÌĽÌ£ĠkieÌ£ÌĤn' x10048, 83s
+3001.8s 510 stage 2: 500 merges, vocab 29300/32000, last 'ĠsuÌĽÌ£ĠkieÌ£ÌĤn' x10048, 83s
+3015.9s 511 stage 2: 600 merges, vocab 29400/32000, last 'ĠtheoĠdoÌĥi' x8895, 97s
+3016.1s 512 stage 2: 600 merges, vocab 29400/32000, last 'ĠtheoĠdoÌĥi' x8895, 97s
+3030.6s 513 stage 2: 700 merges, vocab 29500/32000, last 'ĠSaÌĢiĠGoÌĢn' x7889, 112s
+3030.8s 514 stage 2: 700 merges, vocab 29500/32000, last 'ĠSaÌĢiĠGoÌĢn' x7889, 112s
+3045.5s 515 stage 2: 800 merges, vocab 29600/32000, last 'ĠloÌĽÌģn,' x7140, 127s
+3045.7s 516 stage 2: 800 merges, vocab 29600/32000, last 'ĠloÌĽÌģn,' x7140, 127s
+3059.1s 517 stage 2: 900 merges, vocab 29700/32000, last 'ĠtoÌĤÌģtĠhoÌĽn' x6478, 140s
+3059.3s 518 stage 2: 900 merges, vocab 29700/32000, last 'ĠtoÌĤÌģtĠhoÌĽn' x6478, 140s
+3073.1s 519 stage 2: 1000 merges, vocab 29800/32000, last 'ĠmoÌĽÌģi,' x5982, 154s
+3073.3s 520 stage 2: 1000 merges, vocab 29800/32000, last 'ĠmoÌĽÌģi,' x5982, 154s
+3087.8s 521 stage 2: 1100 merges, vocab 29900/32000, last 'ĠyeÌĤnĠtaÌĤm' x5437, 169s
+3088.0s 522 stage 2: 1100 merges, vocab 29900/32000, last 'ĠyeÌĤnĠtaÌĤm' x5437, 169s
+3102.1s 523 stage 2: 1200 merges, vocab 30000/32000, last 'ĠthaÌĢnhĠmoÌ£ÌĤt' x4971, 183s
+3102.3s 524 stage 2: 1200 merges, vocab 30000/32000, last 'ĠthaÌĢnhĠmoÌ£ÌĤt' x4971, 183s
+3116.1s 525 stage 2: 1300 merges, vocab 30100/32000, last ',ĠcoÌĤng' x4605, 197s
+3116.3s 526 stage 2: 1300 merges, vocab 30100/32000, last ',ĠcoÌĤng' x4605, 197s
+3130.4s 527 stage 2: 1400 merges, vocab 30200/32000, last 'ĠduÌĽÌ£aĠvaÌĢo' x4321, 211s
+3130.6s 528 stage 2: 1400 merges, vocab 30200/32000, last 'ĠduÌĽÌ£aĠvaÌĢo' x4321, 211s
+3144.0s 529 stage 2: 1500 merges, vocab 30300/32000, last ',ĠnhiÌĢn' x4039, 225s
+3144.2s 530 stage 2: 1500 merges, vocab 30300/32000, last ',ĠnhiÌĢn' x4039, 225s
+3158.6s 531 stage 2: 1600 merges, vocab 30400/32000, last 'ĠcuÌĥngĠchiÌī' x3794, 240s
+3158.8s 532 stage 2: 1600 merges, vocab 30400/32000, last 'ĠcuÌĥngĠchiÌī' x3794, 240s
+3172.6s 533 stage 2: 1700 merges, vocab 30500/32000, last 'ĠngoÌĤiĠsao' x3605, 254s
+3172.8s 534 stage 2: 1700 merges, vocab 30500/32000, last 'ĠngoÌĤiĠsao' x3605, 254s
+3186.3s 535 stage 2: 1800 merges, vocab 30600/32000, last '.ĠVeÌĤÌĢ' x3427, 267s
+3186.5s 536 stage 2: 1800 merges, vocab 30600/32000, last '.ĠVeÌĤÌĢ' x3427, 267s
+3200.7s 537 stage 2: 1900 merges, vocab 30700/32000, last 'ĠlaÌĤÌĢnĠnaÌĢy' x3276, 282s
+3200.9s 538 stage 2: 1900 merges, vocab 30700/32000, last 'ĠlaÌĤÌĢnĠnaÌĢy' x3276, 282s
+3214.5s 539 stage 2: 2000 merges, vocab 30800/32000, last 'ĠbaÌĢiĠhoÌ£c' x3117, 296s
+3214.7s 540 stage 2: 2000 merges, vocab 30800/32000, last 'ĠbaÌĢiĠhoÌ£c' x3117, 296s
+3228.3s 541 stage 2: 2100 merges, vocab 30900/32000, last 'ĠvoÌĽÌģiĠnuÌĽoÌĽÌģc' x2973, 309s
+3228.5s 542 stage 2: 2100 merges, vocab 30900/32000, last 'ĠvoÌĽÌģiĠnuÌĽoÌĽÌģc' x2973, 309s
+3241.9s 543 stage 2: 2200 merges, vocab 31000/32000, last 'ĠcaÌīiĠtieÌĤÌģn' x2835, 323s
+3242.1s 544 stage 2: 2200 merges, vocab 31000/32000, last 'ĠcaÌīiĠtieÌĤÌģn' x2835, 323s
+3255.4s 545 stage 2: 2300 merges, vocab 31100/32000, last 'ĠngoaÌ£iĠgiao' x2716, 336s
+3255.6s 546 stage 2: 2300 merges, vocab 31100/32000, last 'ĠngoaÌ£iĠgiao' x2716, 336s
+3269.0s 547 stage 2: 2400 merges, vocab 31200/32000, last 'ĠtaÌĤÌģtĠcaÌīĠmoÌ£iĠnguÌĽoÌĽÌĢi' x2610, 350s
+3269.2s 548 stage 2: 2400 merges, vocab 31200/32000, last 'ĠtaÌĤÌģtĠcaÌīĠmoÌ£iĠnguÌĽoÌĽÌĢi' x2610, 350s
+3283.6s 549 stage 2: 2500 merges, vocab 31300/32000, last 'ĠhoÌ£cĠtroÌĢ' x2510, 365s
+3283.8s 550 stage 2: 2500 merges, vocab 31300/32000, last 'ĠhoÌ£cĠtroÌĢ' x2510, 365s
+3297.2s 551 stage 2: 2600 merges, vocab 31400/32000, last 'ĠmaÌģyĠmoÌģc' x2409, 378s
+3297.4s 552 stage 2: 2600 merges, vocab 31400/32000, last 'ĠmaÌģyĠmoÌģc' x2409, 378s
+3310.9s 553 stage 2: 2700 merges, vocab 31500/32000, last 'ĠhoÌĽnĠkhi' x2327, 392s
+3311.1s 554 stage 2: 2700 merges, vocab 31500/32000, last 'ĠhoÌĽnĠkhi' x2327, 392s
+3324.9s 555 stage 2: 2800 merges, vocab 31600/32000, last 'ĠdoanhĠnhaÌĤn' x2252, 406s
+3325.1s 556 stage 2: 2800 merges, vocab 31600/32000, last 'ĠdoanhĠnhaÌĤn' x2252, 406s
+3338.8s 557 stage 2: 2900 merges, vocab 31700/32000, last 'ĠtimĠmaÌ£ch' x2165, 420s
+3339.0s 558 stage 2: 2900 merges, vocab 31700/32000, last 'ĠtimĠmaÌ£ch' x2165, 420s
+3354.5s 559 stage 2: 3000 merges, vocab 31800/32000, last 'ĠÄĳaÌģnhĠgiaÌģĠcao' x2096, 436s
+3354.7s 560 stage 2: 3000 merges, vocab 31800/32000, last 'ĠÄĳaÌģnhĠgiaÌģĠcao' x2096, 436s
+3368.0s 561 stage 2: 3100 merges, vocab 31900/32000, last 'ĠnhuÌĽĠtheÌĤÌģĠnaÌĢo?Ċ' x2024, 449s
+3368.2s 562 stage 2: 3100 merges, vocab 31900/32000, last 'ĠnhuÌĽĠtheÌĤÌģĠnaÌĢo?Ċ' x2024, 449s
+3381.8s 563 stage 2: 3200 merges, vocab 32000/32000, last 'ĠtreÌĤnĠsaÌĤn' x1950, 463s
+3382.0s 564 stage 2: 3200 merges, vocab 32000/32000, last 'ĠtreÌĤnĠsaÌĤn' x1950, 463s
+3382.2s 565 {
+3382.2s 566 "vocab_size": 32000,
+3382.2s 567 "transition": 0.9,
+3382.2s 568 "corpus_bytes": 500181599,
+3382.2s 569 "nfc": {
+3382.2s 570 "n_alphabet": 256,
+3382.2s 571 "n_inherited_merges": 28544,
+3382.2s 572 "stage2_ids": 102826392,
+3382.2s 573 "stage2_new_merges": 3200,
+3382.2s 574 "encode_seconds": 194,
+3382.2s 575 "merge_seconds": 470
+3382.2s 576 },
+3382.2s 577 "nfd": {
+3382.2s 578 "n_alphabet": 256,
+3382.2s 579 "n_inherited_merges": 28544,
+3382.2s 580 "stage2_ids": 102893537,
+3382.2s 581 "stage2_new_merges": 3200,
+3382.2s 582 "encode_seconds": 223,
+3382.2s 583 "merge_seconds": 469
+3382.2s 584 }
+3382.2s 585 }
+3382.3s 586 {
+3382.3s 587 "vocab_size": 32000,
+3382.3s 588 "transition": 0.9,
+3382.3s 589 "corpus_bytes": 500181599,
+3382.3s 590 "nfc": {
+3382.3s 591 "n_alphabet": 256,
+3382.3s 592 "n_inherited_merges": 28544,
+3382.3s 593 "stage2_ids": 102826392,
+3382.3s 594 "stage2_new_merges": 3200,
+3382.3s 595 "encode_seconds": 194,
+3382.3s 596 "merge_seconds": 470
+3382.3s 597 },
+3382.3s 598 "nfd": {
+3382.3s 599 "n_alphabet": 256,
+3382.3s 600 "n_inherited_merges": 28544,
+3382.3s 601 "stage2_ids": 102893537,
+3382.3s 602 "stage2_new_merges": 3200,
+3382.3s 603 "encode_seconds": 223,
+3382.3s 604 "merge_seconds": 469
+3382.3s 605 }
+3382.3s 606 }
+3382.3s 607 $ python -m vitok.compression --tokenizers /kaggle/working/vitok-data/tokenizers-32k --docs /kaggle/working/vitok-data/shards/shard_99999.parquet --out /kaggle/working/vitok-data/compression-32k.json
+3431.9s 608 bpe-nfc    chars/token=3.921 tokens/syllable=1.172 superword share=0.0%
+3431.9s 609 bpe-nfd    chars/token=3.917 tokens/syllable=1.174 superword share=0.0%
+3431.9s 610 super-nfc  chars/token=5.074 tokens/syllable=0.906 superword share=25.8%
+3431.9s 611 super-nfd  chars/token=5.068 tokens/syllable=0.907 superword share=25.7%
+3431.9s 612 SuperBPE token reduction (nfc): 22.7%  -> Gate 1 PASS (>=15%)
+3431.9s 613 SuperBPE token reduction (nfd): 22.7%  -> Gate 1 PASS (>=15%)
+3432.1s 614 bpe-nfc    chars/token=3.921 tokens/syllable=1.172 superword share=0.0%
+3432.1s 615 bpe-nfd    chars/token=3.917 tokens/syllable=1.174 superword share=0.0%
+3432.1s 616 super-nfc  chars/token=5.074 tokens/syllable=0.906 superword share=25.8%
+3432.1s 617 super-nfd  chars/token=5.068 tokens/syllable=0.907 superword share=25.7%
+3432.1s 618 SuperBPE token reduction (nfc): 22.7%  -> Gate 1 PASS (>=15%)
+3432.1s 619 SuperBPE token reduction (nfd): 22.7%  -> Gate 1 PASS (>=15%)
+3435.7s 620 16k bpe-nfc    round-trip failures: 0/1000
+3438.8s 621 16k bpe-nfd    round-trip failures: 0/1000
+3441.3s 622 16k super-nfc  round-trip failures: 0/1000
+3444.2s 623 16k super-nfd  round-trip failures: 0/1000
+3444.2s 624 16k top superwords (super-nfc): [' có thể', ' sử dụng', ' sản phẩm', ' là một', ' Việt Nam', ' khách hàng', ', không', ' thực hiện', ' thời gian', ', nhưng', ' thông tin', ' của bạn', ', các', ' hiệu quả', ' lựa chọn', ' chất lượng', ' thiết kế', ' phát triển', ' gia đình', ' không có', ' hoạt động', ' của mình', ' dịch vụ', ' chúng ta', ' rất nhiều', ' không thể', ' một số', ', có', ', và', ' đối với']
+3448.2s 625 32k bpe-nfc    round-trip failures: 0/1000
+3453.8s 626 32k bpe-nfd    round-trip failures: 0/1000
+3456.8s 627 32k super-nfc  round-trip failures: 0/1000
+3460.4s 628 32k super-nfd  round-trip failures: 0/1000
+3460.4s 629 32k top superwords (super-nfc): [' có thể', ' sử dụng', ' sản phẩm', ' là một', ' Việt Nam', ', nhưng', ' của bạn', ', không', ', các', ' khách hàng', ' thời gian', ' thiết kế', ' phát triển', ' lựa chọn', ' của mình', ' thực hiện', ' thông tin', ' hiệu quả', ' hoạt động', ', và', ' không có', ' của các', ' đầu tư', ' chúng ta', ', có', ' thị trường', ' dịch vụ', ' một số', ' dự án', ' rất nhiều']
+3460.4s 630 Viet tokens (bpe-nfd 16k): ['TieÌĤÌģng', 'ĠVieÌ£ÌĤt']
+3460.4s 631 {'tok_train_bytes': 500000544, 'tok_train_docs': 95296, 'pretrain_bytes': 10000000292, 'pretrain_chars': 7588133801, 'pretrain_docs': 1813149, 'train_shards': 20, 'test_docs': 2000}
+3460.4s 632 $ du -sh /kaggle/working/vitok-data/*
+3460.4s 633 8.0K	/kaggle/working/vitok-data/compression-16k.json
+3460.4s 634 8.0K	/kaggle/working/vitok-data/compression-32k.json
+3460.4s 635 1016K	/kaggle/working/vitok-data/minimal_pairs.jsonl
+3460.4s 636 3.5G	/kaggle/working/vitok-data/shards
+3460.4s 637 4.0K	/kaggle/working/vitok-data/stats.json
+3460.4s 638 1.6M	/kaggle/working/vitok-data/syllables.json
+3460.4s 639 5.4M	/kaggle/working/vitok-data/test.jsonl
+3460.4s 640 4.5M	/kaggle/working/vitok-data/tokenizers-16k
+3460.4s 641 8.9M	/kaggle/working/vitok-data/tokenizers-32k
+3460.4s 642 8.0K	/kaggle/working/vitok-data/compression-16k.json
+3460.4s 643 8.0K	/kaggle/working/vitok-data/compression-32k.json
+3460.4s 644 1016K	/kaggle/working/vitok-data/minimal_pairs.jsonl
+3460.4s 645 3.5G	/kaggle/working/vitok-data/shards
+3460.4s 646 4.0K	/kaggle/working/vitok-data/stats.json
+3460.4s 647 1.6M	/kaggle/working/vitok-data/syllables.json
+3460.4s 648 5.4M	/kaggle/working/vitok-data/test.jsonl
+3460.4s 649 4.5M	/kaggle/working/vitok-data/tokenizers-16k
+3460.4s 650 8.9M	/kaggle/working/vitok-data/tokenizers-32k
+3466.5s 651 /usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+3466.5s 652 cells[i][c] = re.sub('\\\\\|', '|', cell)
+3466.8s 653 /usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+3466.8s 654 text = re.sub(r'_', '\_', text) # Escape underscores in display text
+3467.7s 655 [NbConvertApp] Converting notebook __notebook__.ipynb to notebook
+3468.1s 656 [NbConvertApp] Writing 35228 bytes to __notebook__.ipynb
+3471.7s 657 [NbConvertApp] Converting notebook __notebook__.ipynb to html
+3473.6s 658 [NbConvertApp] Writing 323849 bytes to __results__.html

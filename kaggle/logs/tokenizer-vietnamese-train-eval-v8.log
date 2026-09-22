@@ -1,0 +1,210 @@
+11.6s 1 0.00s - Debugger warning: It seems that frozen modules are being used, which may
+11.6s 2 0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+11.6s 3 0.00s - to python to disable frozen modules.
+11.6s 4 0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+12.4s 5 0.00s - Debugger warning: It seems that frozen modules are being used, which may
+12.4s 6 0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+12.4s 7 0.00s - to python to disable frozen modules.
+12.4s 8 0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+14.4s 9 $ git clone https://github.com/karpathy/nanochat /tmp/nanochat
+14.5s 10 Cloning into '/tmp/nanochat'...
+14.7s 11 Cloning into '/tmp/nanochat'...
+14.7s 12 
+14.7s 13 Cloning into '/tmp/nanochat'...
+15.8s 14 $ cd /tmp/nanochat && git checkout 92d63d4e8bb4df75c3b71618f31ddde2378b2bcd && git apply /tmp/vitok/patches/nanochat.patch
+15.8s 15 Note: switching to '92d63d4e8bb4df75c3b71618f31ddde2378b2bcd'.
+15.8s 16 
+15.8s 17 You are in 'detached HEAD' state. You can look around, make experimental
+15.8s 18 changes and commit them, and you can discard any commits you make in this
+15.8s 19 state without impacting any branches by switching back to a branch.
+15.8s 20 
+15.8s 21 If you want to create a new branch to retain commits you create, you may
+15.8s 22 do so (now or later) by using -c with the switch command. Example:
+15.8s 23 
+15.8s 24 git switch -c <new-branch-name>
+15.8s 25 
+15.8s 26 Or undo this operation with:
+15.8s 27 
+15.8s 28 git switch -
+15.8s 29 
+15.8s 30 Turn off this advice by setting config variable advice.detachedHead to false
+15.8s 31 
+15.8s 32 HEAD is now at 92d63d4 clean up fragile code
+15.8s 33 $ pip install -q -e /tmp/vitok tiktoken rustbpe wandb jinja2 pyyaml
+16.0s 34 Note: switching to '92d63d4e8bb4df75c3b71618f31ddde2378b2bcd'.
+16.0s 35 
+16.0s 36 You are in 'detached HEAD' state. You can look around, make experimental
+16.0s 37 changes and commit them, and you can discard any commits you make in this
+16.0s 38 state without impacting any branches by switching back to a branch.
+16.0s 39 
+16.0s 40 If you want to create a new branch to retain commits you create, you may
+16.0s 41 do so (now or later) by using -c with the switch command. Example:
+16.0s 42 
+16.0s 43 git switch -c <new-branch-name>
+16.0s 44 
+16.0s 45 Or undo this operation with:
+16.0s 46 
+16.0s 47 git switch -
+16.0s 48 
+16.0s 49 Turn off this advice by setting config variable advice.detachedHead to false
+16.0s 50 
+16.0s 51 HEAD is now at 92d63d4 clean up fragile code
+16.0s 52 
+16.0s 53 Note: switching to '92d63d4e8bb4df75c3b71618f31ddde2378b2bcd'.
+16.0s 54 
+16.0s 55 You are in 'detached HEAD' state. You can look around, make experimental
+16.0s 56 changes and commit them, and you can discard any commits you make in this
+16.0s 57 state without impacting any branches by switching back to a branch.
+16.0s 58 
+16.0s 59 If you want to create a new branch to retain commits you create, you may
+16.0s 60 do so (now or later) by using -c with the switch command. Example:
+16.0s 61 
+16.0s 62 git switch -c <new-branch-name>
+16.0s 63 
+16.0s 64 Or undo this operation with:
+16.0s 65 
+16.0s 66 git switch -
+16.0s 67 
+16.0s 68 Turn off this advice by setting config variable advice.detachedHead to false
+16.0s 69 
+16.0s 70 HEAD is now at 92d63d4 clean up fragile code
+24.9s 71 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 11.4 MB/s eta 0:00:00
+25.1s 72 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 11.4 MB/s eta 0:00:00
+27.3s 73 data: /kaggle/input/datasets/spritker/vitok-data/vitok-data
+36.9s 74 torch 2.10.0+cu128 | GPUs: 2 ['Tesla T4', 'Tesla T4']
+36.9s 75 capability (7, 5)
+37.2s 76 tokenizers OK
+337.5s 77 bpe-nfc_d8_s1 | step 00135/07629 (1.77%) | loss: 4.713062 | lrm: 1.00 | dt: 1167.29ms | tok/sec: 56,143 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 14 | total time: 2.41m | eta: 144.7m
+337.5s 78 super-nfc_d8_s1 | step 00135/07629 (1.77%) | loss: 5.569943 | lrm: 1.00 | dt: 1013.93ms | tok/sec: 53,021 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 14 | total time: 2.11m | eta: 126.2m
+637.5s 79 bpe-nfc_d8_s1 | step 00390/07629 (5.11%) | loss: 3.558664 | lrm: 1.00 | dt: 1152.08ms | tok/sec: 56,885 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 38 | total time: 7.34m | eta: 139.8m
+637.5s 80 super-nfc_d8_s1 | step 00441/07629 (5.78%) | loss: 4.208546 | lrm: 1.00 | dt: 1012.85ms | tok/sec: 53,077 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 43 | total time: 7.28m | eta: 121.5m
+937.5s 81 bpe-nfc_d8_s1 | step 00592/07629 (7.76%) | loss: 3.295634 | lrm: 1.00 | dt: 1143.15ms | tok/sec: 57,329 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 57 | total time: 11.22m | eta: 135.6m
+937.5s 82 super-nfc_d8_s1 | step 00695/07629 (9.11%) | loss: 3.931814 | lrm: 1.00 | dt: 1005.23ms | tok/sec: 53,480 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 67 | total time: 11.57m | eta: 117.1m
+1237.5s 83 bpe-nfc_d8_s1 | step 00892/07629 (11.69%) | loss: 3.214929 | lrm: 1.00 | dt: 1330.40ms | tok/sec: 49,260 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 85 | total time: 16.95m | eta: 129.5m
+1237.5s 84 super-nfc_d8_s1 | step 00996/07629 (13.06%) | loss: 3.805146 | lrm: 1.00 | dt: 1005.69ms | tok/sec: 53,455 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 5 | total time: 16.62m | eta: 111.8m
+1537.5s 85 bpe-nfc_d8_s1 | step 01142/07629 (14.97%) | loss: 3.024484 | lrm: 1.00 | dt: 1137.30ms | tok/sec: 57,624 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 18 | total time: 21.72m | eta: 124.5m
+1537.5s 86 super-nfc_d8_s1 | step 01296/07629 (16.99%) | loss: 3.618195 | lrm: 1.00 | dt: 1001.59ms | tok/sec: 53,674 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 32 | total time: 21.64m | eta: 106.6m
+1837.5s 87 bpe-nfc_d8_s1 | step 01392/07629 (18.25%) | loss: 2.922226 | lrm: 1.00 | dt: 1145.03ms | tok/sec: 57,234 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 39 | total time: 26.49m | eta: 119.5m
+1837.5s 88 super-nfc_d8_s1 | step 01546/07629 (20.26%) | loss: 3.515067 | lrm: 1.00 | dt: 1010.36ms | tok/sec: 53,208 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 53 | total time: 25.82m | eta: 102.3m
+2137.5s 89 bpe-nfc_d8_s1 | step 01642/07629 (21.52%) | loss: 2.773624 | lrm: 1.00 | dt: 1143.47ms | tok/sec: 57,313 | bf16_mfu: 0.00 | epoch: 1 pq: 1 rg: 61 | total time: 31.24m | eta: 114.6m
+2137.5s 90 super-nfc_d8_s1 | step 01849/07629 (24.24%) | loss: 4.013332 | lrm: 1.00 | dt: 1010.39ms | tok/sec: 53,207 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 3 | total time: 30.88m | eta: 97.1m
+2437.5s 91 bpe-nfc_d8_s1 | step 01892/07629 (24.80%) | loss: 3.244601 | lrm: 1.00 | dt: 1137.91ms | tok/sec: 57,593 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 6 | total time: 36.02m | eta: 109.8m
+2437.5s 92 super-nfc_d8_s1 | step 02153/07629 (28.22%) | loss: 3.785294 | lrm: 1.00 | dt: 998.31ms | tok/sec: 53,851 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 35 | total time: 35.99m | eta: 92.0m
+2737.5s 93 bpe-nfc_d8_s1 | step 02142/07629 (28.08%) | loss: 3.146483 | lrm: 1.00 | dt: 1143.84ms | tok/sec: 57,294 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 33 | total time: 40.78m | eta: 105.0m
+2737.5s 94 super-nfc_d8_s1 | step 02458/07629 (32.22%) | loss: 3.631518 | lrm: 1.00 | dt: 1003.95ms | tok/sec: 53,548 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 65 | total time: 41.09m | eta: 86.8m
+3037.5s 95 bpe-nfc_d8_s1 | step 02392/07629 (31.35%) | loss: 3.021622 | lrm: 1.00 | dt: 1143.78ms | tok/sec: 57,297 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 58 | total time: 45.56m | eta: 100.2m
+3037.5s 96 super-nfc_d8_s1 | step 02712/07629 (35.55%) | loss: 3.648132 | lrm: 0.99 | dt: 1009.64ms | tok/sec: 53,246 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 90 | total time: 45.34m | eta: 82.5m
+3337.5s 97 bpe-nfc_d8_s1 | step 02642/07629 (34.63%) | loss: 3.011168 | lrm: 1.00 | dt: 1144.23ms | tok/sec: 57,275 | bf16_mfu: 0.00 | epoch: 1 pq: 2 rg: 82 | total time: 50.32m | eta: 95.3m
+3337.5s 98 super-nfc_d8_s1 | step 03016/07629 (39.53%) | loss: 3.540935 | lrm: 0.93 | dt: 1016.31ms | tok/sec: 52,897 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 23 | total time: 50.43m | eta: 77.4m
+3637.5s 99 bpe-nfc_d8_s1 | step 02895/07629 (37.95%) | loss: 2.961283 | lrm: 0.96 | dt: 1146.51ms | tok/sec: 57,161 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 11 | total time: 55.16m | eta: 90.5m
+3637.5s 100 super-nfc_d8_s1 | step 03320/07629 (43.52%) | loss: 3.441279 | lrm: 0.88 | dt: 1001.94ms | tok/sec: 53,655 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 52 | total time: 55.52m | eta: 72.3m
+3937.5s 101 bpe-nfc_d8_s1 | step 03145/07629 (41.22%) | loss: 2.857985 | lrm: 0.91 | dt: 1142.15ms | tok/sec: 57,379 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 34 | total time: 59.93m | eta: 85.7m
+3937.5s 102 super-nfc_d8_s1 | step 03573/07629 (46.83%) | loss: 3.480655 | lrm: 0.83 | dt: 996.59ms | tok/sec: 53,943 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 74 | total time: 59.75m | eta: 68.0m
+4237.5s 103 bpe-nfc_d8_s1 | step 03395/07629 (44.50%) | loss: 2.935298 | lrm: 0.86 | dt: 1139.94ms | tok/sec: 57,490 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 57 | total time: 64.69m | eta: 80.9m
+4237.5s 104 super-nfc_d8_s1 | step 03878/07629 (50.83%) | loss: 3.337775 | lrm: 0.77 | dt: 1005.92ms | tok/sec: 53,443 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 14 | total time: 64.86m | eta: 62.9m
+4537.5s 105 bpe-nfc_d8_s1 | step 03645/07629 (47.78%) | loss: 2.823296 | lrm: 0.81 | dt: 1146.79ms | tok/sec: 57,147 | bf16_mfu: 0.00 | epoch: 1 pq: 3 rg: 80 | total time: 69.46m | eta: 76.1m
+4537.5s 106 super-nfc_d8_s1 | step 04180/07629 (54.79%) | loss: 3.233670 | lrm: 0.71 | dt: 1004.10ms | tok/sec: 53,540 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 40 | total time: 69.93m | eta: 57.8m
+4837.6s 107 bpe-nfc_d8_s1 | step 03948/07629 (51.75%) | loss: 2.723908 | lrm: 0.76 | dt: 1143.66ms | tok/sec: 57,303 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 18 | total time: 75.24m | eta: 70.3m
+4837.6s 108 super-nfc_d8_s1 | step 04481/07629 (58.74%) | loss: 3.688260 | lrm: 0.65 | dt: 1005.20ms | tok/sec: 53,481 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 70 | total time: 74.99m | eta: 52.8m
+5137.6s 109 bpe-nfc_d8_s1 | step 04198/07629 (55.03%) | loss: 2.592784 | lrm: 0.71 | dt: 1140.62ms | tok/sec: 57,456 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 40 | total time: 80.01m | eta: 65.5m
+5137.6s 110 super-nfc_d8_s1 | step 04735/07629 (62.07%) | loss: 3.473447 | lrm: 0.60 | dt: 999.99ms | tok/sec: 53,760 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 14 | total time: 79.25m | eta: 48.5m
+5437.6s 111 bpe-nfc_d8_s1 | step 04448/07629 (58.30%) | loss: 3.006761 | lrm: 0.66 | dt: 1164.63ms | tok/sec: 56,271 | bf16_mfu: 0.00 | epoch: 1 pq: 4 rg: 65 | total time: 84.80m | eta: 60.8m
+5437.6s 112 super-nfc_d8_s1 | step 05035/07629 (66.00%) | loss: 3.416223 | lrm: 0.55 | dt: 1021.03ms | tok/sec: 52,652 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 44 | total time: 84.29m | eta: 43.5m
+5737.6s 113 bpe-nfc_d8_s1 | step 04700/07629 (61.61%) | loss: 2.912486 | lrm: 0.61 | dt: 1151.76ms | tok/sec: 56,900 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 9 | total time: 89.62m | eta: 56.0m
+5737.6s 114 super-nfc_d8_s1 | step 05337/07629 (69.96%) | loss: 3.343776 | lrm: 0.49 | dt: 1016.43ms | tok/sec: 52,890 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 73 | total time: 89.37m | eta: 38.5m
+6037.6s 115 bpe-nfc_d8_s1 | step 04950/07629 (64.88%) | loss: 2.769485 | lrm: 0.56 | dt: 1156.47ms | tok/sec: 56,668 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 34 | total time: 94.41m | eta: 51.2m
+6037.6s 116 super-nfc_d8_s1 | step 05590/07629 (73.27%) | loss: 3.299907 | lrm: 0.44 | dt: 1011.98ms | tok/sec: 53,123 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 0 | total time: 93.61m | eta: 34.2m
+6337.6s 117 bpe-nfc_d8_s1 | step 05200/07629 (68.16%) | loss: 2.734529 | lrm: 0.52 | dt: 1142.03ms | tok/sec: 57,385 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 58 | total time: 99.18m | eta: 46.4m
+6337.6s 118 super-nfc_d8_s1 | step 05893/07629 (77.24%) | loss: 3.279598 | lrm: 0.38 | dt: 1008.65ms | tok/sec: 53,299 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 28 | total time: 98.70m | eta: 29.1m
+6637.6s 119 bpe-nfc_d8_s1 | step 05450/07629 (71.44%) | loss: 2.706567 | lrm: 0.47 | dt: 1145.66ms | tok/sec: 57,203 | bf16_mfu: 0.00 | epoch: 1 pq: 5 rg: 81 | total time: 103.97m | eta: 41.6m
+6637.6s 120 super-nfc_d8_s1 | step 06193/07629 (81.18%) | loss: 3.142848 | lrm: 0.33 | dt: 1005.77ms | tok/sec: 53,451 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 54 | total time: 103.73m | eta: 24.1m
+6937.6s 121 bpe-nfc_d8_s1 | step 05700/07629 (74.71%) | loss: 2.685025 | lrm: 0.42 | dt: 1142.02ms | tok/sec: 57,385 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 9 | total time: 108.73m | eta: 36.9m
+6937.6s 122 super-nfc_d8_s1 | step 06493/07629 (85.11%) | loss: 3.020693 | lrm: 0.27 | dt: 1002.97ms | tok/sec: 53,600 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 0 | total time: 108.78m | eta: 19.1m
+7237.7s 123 bpe-nfc_d8_s1 | step 05950/07629 (77.99%) | loss: 2.669527 | lrm: 0.37 | dt: 1151.57ms | tok/sec: 56,910 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 31 | total time: 113.53m | eta: 32.1m
+7237.7s 124 super-nfc_d8_s1 | step 06744/07629 (88.40%) | loss: 3.461730 | lrm: 0.22 | dt: 1015.27ms | tok/sec: 52,951 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 25 | total time: 113.00m | eta: 14.9m
+7537.7s 125 bpe-nfc_d8_s1 | step 06200/07629 (81.27%) | loss: 2.643079 | lrm: 0.32 | dt: 1164.44ms | tok/sec: 56,281 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 53 | total time: 118.31m | eta: 27.3m
+7537.7s 126 super-nfc_d8_s1 | step 07044/07629 (92.33%) | loss: 3.276577 | lrm: 0.16 | dt: 1007.60ms | tok/sec: 53,354 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 56 | total time: 118.05m | eta: 9.8m
+7837.7s 127 bpe-nfc_d8_s1 | step 06450/07629 (84.55%) | loss: 2.505480 | lrm: 0.28 | dt: 1147.13ms | tok/sec: 57,130 | bf16_mfu: 0.00 | epoch: 1 pq: 6 rg: 74 | total time: 123.10m | eta: 22.5m
+7837.7s 128 super-nfc_d8_s1 | step 07346/07629 (96.29%) | loss: 3.289558 | lrm: 0.10 | dt: 1015.86ms | tok/sec: 52,920 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 86 | total time: 123.12m | eta: 4.7m
+8137.7s 129 bpe-nfc_d8_s1 | step 06700/07629 (87.82%) | loss: 2.893805 | lrm: 0.23 | dt: 1154.00ms | tok/sec: 56,790 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 18 | total time: 127.90m | eta: 17.8m
+8137.7s 130 super-nfc_d8_s1 | step 07599/07629 (99.61%) | loss: 3.213127 | lrm: 0.06 | dt: 1007.18ms | tok/sec: 53,376 | bf16_mfu: 0.00 | epoch: 1 pq: 8 rg: 15 | total time: 127.38m | eta: 0.5m
+8437.7s 131 bpe-nfc_d8_s1 | step 06950/07629 (91.10%) | loss: 2.798758 | lrm: 0.18 | dt: 1183.87ms | tok/sec: 55,357 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 44 | total time: 132.80m | eta: 13.0m
+8437.7s 132 super-nfc_d8_s1 | Minimum validation bpb: 0.716800
+8737.7s 133 bpe-nfc_d8_s1 | step 07200/07629 (94.38%) | loss: 2.633077 | lrm: 0.13 | dt: 1175.17ms | tok/sec: 55,767 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 69 | total time: 137.70m | eta: 8.2m
+8737.7s 134 super-nfc_d8_s1 | Minimum validation bpb: 0.716800
+9037.7s 135 bpe-nfc_d8_s1 | step 07450/07629 (97.65%) | loss: 2.611923 | lrm: 0.08 | dt: 1182.28ms | tok/sec: 55,431 | bf16_mfu: 0.00 | epoch: 1 pq: 7 rg: 93 | total time: 142.61m | eta: 3.4m
+9037.7s 136 super-nfc_d8_s1 | Minimum validation bpb: 0.716800
+9337.5s 137 bpe-nfc_d8_s1 | Minimum validation bpb: 0.720146
+9337.5s 138 super-nfc_d8_s1 | Minimum validation bpb: 0.716800
+9337.5s 139 GPU0 exit=0
+9337.5s 140 [bpe-nfc_d8_s1] train: --depth=8 --max-seq-len=1024 --device-batch-size=32 --total-batch-size=65536 --scaling-batch-size=65536 --num-iterations=7629 --window-pattern=L --run=dummy --model-tag=d8 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
+9337.5s 141 [bpe-nfc_d8_s1] eval
+9337.5s 142 [bpe-nfc_d8_s1] done -> /kaggle/working/results/bpe-nfc_d8_s1.json
+9337.5s 143 GPU1 exit=0
+9337.5s 144 [super-nfc_d8_s1] train: --depth=8 --max-seq-len=840 --device-batch-size=32 --total-batch-size=53760 --scaling-batch-size=65536 --num-iterations=7629 --window-pattern=L --run=dummy --model-tag=d8 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
+9337.5s 145 [super-nfc_d8_s1] eval
+9337.5s 146 [super-nfc_d8_s1] done -> /kaggle/working/results/super-nfc_d8_s1.json
+9337.6s 147 bpe-nfc_d8_s1: torch.float16, scaler=True, 1146.1ms/step, 55,656 tok/s, peak 8981.77MiB, loss 9.681 -> 2.614, full run = 7629 steps ~ 2.43h
+9337.6s 148 super-nfc_d8_s1: torch.float16, scaler=True, 1007.2ms/step, 53,225 tok/s, peak 7569.42MiB, loss 9.682 -> 3.195, full run = 7629 steps ~ 2.13h
+9337.6s 149 GPU0 bpe-nfc + bpe-nfd: ~4.9h of the 12h session
+9337.6s 150 GPU1 super-nfc + super-nfd: ~4.3h of the 12h session
+9337.7s 151 $ python -m vitok.analysis --results /kaggle/working/results --compression /kaggle/input/datasets/spritker/vitok-data/vitok-data/compression-16k.json --out /kaggle/working/results/summary_d8_s1.md
+9337.9s 152 # Results summary
+9337.9s 153 
+9337.9s 154 ## d8
+9337.9s 155 
+9337.9s 156 | run | bpc clean | bpc strip50 | bpc strip100 | pair acc | chars/token |
+9337.9s 157 |---|---|---|---|---|---|
+9337.9s 158 | bpe-nfc s1 | 1.0023 | 2.0941 | 2.0105 | 0.993 | 3.861 |
+9337.9s 159 | super-nfc s1 | 1.0037 | 2.1243 | 2.0241 | 0.992 | 4.694 |
+9337.9s 160 
+9337.9s 161 Documents scored by every run: clean 1996, strip100 1987
+9337.9s 162 
+9337.9s 163 | hypothesis | A − B | variant | Δbpc | 95% CI | significant |
+9337.9s 164 |---|---|---|---|---|---|
+9337.9s 165 
+9337.9s 166 | pairs | A − B | A only right | B only right | p |
+9337.9s 167 |---|---|---|---|---|
+9337.9s 168 
+9337.9s 169 # Results summary
+9337.9s 170 
+9337.9s 171 ## d8
+9337.9s 172 
+9337.9s 173 | run | bpc clean | bpc strip50 | bpc strip100 | pair acc | chars/token |
+9337.9s 174 |---|---|---|---|---|---|
+9337.9s 175 | bpe-nfc s1 | 1.0023 | 2.0941 | 2.0105 | 0.993 | 3.861 |
+9337.9s 176 | super-nfc s1 | 1.0037 | 2.1243 | 2.0241 | 0.992 | 4.694 |
+9337.9s 177 
+9337.9s 178 Documents scored by every run: clean 1996, strip100 1987
+9337.9s 179 
+9337.9s 180 | hypothesis | A − B | variant | Δbpc | 95% CI | significant |
+9337.9s 181 |---|---|---|---|---|---|
+9337.9s 182 
+9337.9s 183 | pairs | A − B | A only right | B only right | p |
+9337.9s 184 |---|---|---|---|---|
+9337.9s 185 
+9337.9s 186 # Results summary
+9337.9s 187 
+9337.9s 188 ## d8
+9337.9s 189 
+9337.9s 190 | run | bpc clean | bpc strip50 | bpc strip100 | pair acc | chars/token |
+9337.9s 191 |---|---|---|---|---|---|
+9337.9s 192 | bpe-nfc s1 | 1.0023 | 2.0941 | 2.0105 | 0.993 | 3.861 |
+9337.9s 193 | super-nfc s1 | 1.0037 | 2.1243 | 2.0241 | 0.992 | 4.694 |
+9337.9s 194 
+9337.9s 195 Documents scored by every run: clean 1996, strip100 1987
+9337.9s 196 
+9337.9s 197 | hypothesis | A − B | variant | Δbpc | 95% CI | significant |
+9337.9s 198 |---|---|---|---|---|---|
+9337.9s 199 
+9337.9s 200 | pairs | A − B | A only right | B only right | p |
+9337.9s 201 |---|---|---|---|---|
+9337.9s 202 
+9341.2s 203 /usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+9341.2s 204 cells[i][c] = re.sub('\\\\\|', '|', cell)
+9341.4s 205 /usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+9341.4s 206 text = re.sub(r'_', '\_', text) # Escape underscores in display text
+9342.1s 207 [NbConvertApp] Converting notebook __notebook__.ipynb to notebook
+9342.5s 208 [NbConvertApp] Writing 30148 bytes to __notebook__.ipynb
+9344.9s 209 [NbConvertApp] Converting notebook __notebook__.ipynb to html
+9345.8s 210 [NbConvertApp] Writing 332103 bytes to __results__.html

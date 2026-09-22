@@ -1,0 +1,9 @@
+{
+  "tok_train_bytes": 500000544,
+  "tok_train_docs": 95296,
+  "pretrain_bytes": 10000000292,
+  "pretrain_chars": 7588133801,
+  "pretrain_docs": 1813149,
+  "train_shards": 20,
+  "test_docs": 2000
+}

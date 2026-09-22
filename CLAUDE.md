@@ -10,13 +10,13 @@ Pre-registered analysis: `docs/analysis_plan.md`. The user communicates in Vietn
 - **Never install or use `uv`.** Python envs: **pixi** (`pixi.toml`). Rust/CLI tools: **mise**.
   System packages: apt, following `~/wsl/apt-packages.txt`; ask before anything needing sudo.
 - **No training on the local machine.** Tokenizer training, pretraining and evaluation run on **Kaggle**
-  (`kaggle/01_data_tokenizers.ipynb` CPU, `kaggle/02_train_eval.ipynb` T4×2). Locally: code + CPU unit tests only.
+  (`kaggle/notebooks/01_data_tokenizers.ipynb` CPU, `kaggle/notebooks/02_train_eval.ipynb` T4×2). Locally: code + CPU unit tests only.
 
 ## Commands
 
 ```bash
 pixi run test          # CPU unit + nanochat integration tests (needs third_party/nanochat, see below)
-pixi run python -m vitok.analysis --results results --compression compression-16k.json --out results/summary.md
+pixi run python -m vitok.analysis --results kaggle/outputs --compression kaggle/outputs/vitok-data/compression-16k.json --out results/summary.md --figures figures
 ```
 
 `third_party/` is gitignored. Recreate it with:
@@ -33,10 +33,11 @@ After editing nanochat, regenerate the patch: `git -C third_party/nanochat diff 
 
 - `src/vitok/` — `data` (FineWeb-2 vie_Latn splits), `train_tokenizers` (stage 1 = HF `BpeTrainer`), `superbpe` (stage 2 in numpy;
   the SuperBPE fork can't finish it on 500MB and is only used to check it on 3MB in notebook 01),
-  `tokenizer_spec` (stdlib-only constants), `hf_tokenizer` (nanochat wrapper), `compression`, `conditions`
+  `tokenizer_spec` (stdlib-only constants), `hf_tokenizer` (nanochat wrapper), `compression`, `flores_ctc` (compare with arXiv 2510.21909 on FLORES-200), `wordhood` (H4), `conditions`
   (equal-text config), `eval` (per-doc nats), `minimal_pairs`, `stats`, `analysis`, `kaggle_run` (per-GPU queue).
 - `patches/nanochat.patch` — 3 small changes: load `tokenizer.json` if present, `--scaling-batch-size`, `NANOCHAT_SEED`.
-- `kaggle/` — the two notebooks. `tests/` — pytest.
+- `kaggle/` — `notebooks/` (the two Kaggle notebooks), `logs/` (session logs), `outputs/` (downloaded outputs:
+  `vitok-data/` from notebook 01, `results-vN/` per training session). `results/`, `figures/` — analysis output. `tests/` — pytest.
 
 ## Invariants that silently break the science if violated
 
@@ -47,4 +48,4 @@ After editing nanochat, regenerate the patch: `git -C third_party/nanochat diff 
 - Pretokenizer letter classes must include `\p{M}`, or NFD combining marks get split from their letters.
 - BPE trainers must use the full 256-byte initial alphabet, or unseen bytes are dropped and bpc looks better than it is.
 - Eval batches are right-padded; correctness relies on causal attention (tested in `test_padding_does_not_change_nats`).
-- nanochat on T4: `NANOCHAT_DTYPE=float16` (auto-detect would pick fp32), `--window-pattern L` (SDPA has no sliding window).
+- nanochat on T4: `NANOCHAT_DTYPE=float16` (auto-detect would pick fp32), `--window-pattern L` (without FA3, nanochat emulates sliding windows with an explicit SDPA mask: still full $T^2$ work and it loses the fast `is_causal` path).
