@@ -23,6 +23,5 @@ chạy được từ bất kỳ thư mục nào. Không cần GPU; notebook nặ
 **Thứ tự đề nghị**: 01 → 02 → 03 → 04 → 05 (đủ cho báo cáo), rồi 10 khi bắt đầu viết. 06, 07, 08 đọc khi cần
 hiểu mã nguồn; 09 để sau project.
 
-Lộ trình và nguồn đọc ngoài nằm ở [`learn.md`](../../../learn.md); trạng thái project ở
-[`docs/project_state.md`](../../project_state.md); kế hoạch phân tích đã đăng ký ở
-[`docs/analysis_plan.md`](../../analysis_plan.md).
+Nguồn đọc thêm nằm ở cuối mỗi notebook. Kế hoạch phân tích đã đăng ký của project ở
+[`docs/analysis_plan.md`](../../analysis_plan.md) (branch `main`).
