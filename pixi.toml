@@ -3,8 +3,8 @@ name = "vitok"
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
-# Local environment is for code development and CPU unit tests ONLY.
-# All tokenizer training, pretraining and evaluation run on Kaggle (see kaggle/).
+# Default environment: code development and CPU unit tests. Training runs on Kaggle (see kaggle/).
+# The `gpu` environment only evaluates finished checkpoints on the local GPU (vitok.eval_checkpoints).
 
 [dependencies]
 python = "3.12.*"
@@ -27,3 +27,25 @@ underthesea = ">=9.5.0, <10"
 
 [tasks]
 test = "pytest -q tests"
+
+# Local GPU evaluation: CUDA PyTorch from PyPI instead of the CPU build, so it cannot share the default feature.
+[feature.gpu]
+platforms = ["linux-64"]
+
+[feature.gpu.dependencies]
+python = "3.12.*"
+numpy = "*"
+pyarrow = "*"
+tokenizers = "*"
+huggingface_hub = "*"
+filelock = "*"
+psutil = "*"
+
+[feature.gpu.pypi-dependencies]
+torch = ">=2.14.0, <3"
+tiktoken = "*"
+rustbpe = "*"
+vitok = { path = ".", editable = true }
+
+[environments]
+gpu = { features = ["gpu"], no-default-feature = true }

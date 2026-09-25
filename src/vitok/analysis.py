@@ -284,6 +284,28 @@ def sensitivity(runs: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def val_sensitivity(val_runs: dict, test_rows: list[dict]) -> str:
+    """The pre-registered sensitivity check: H1 on the val shard, scored per document like the test set."""
+    lines = ["## Sensitivity of H1 on the val shard (seed 0)", "",
+             "| A − B | depth | val docs | val Δbpc | val relative [95% CI] | test relative | same sign |",
+             "|---|---|---|---|---|---|---|"]
+    test = {(r["depth"], r["a"], r["b"]): r for r in test_rows if r["hyp"] == "H1"}
+    for depth in sorted({d for _, d, _ in val_runs}):
+        at = {k: v for k, v in val_runs.items() if k[1] == depth}
+        idx = common_docs(list(at.values()), "clean")
+        for a, b, variant, hyp in COMPARISONS:
+            ra, rb = at.get((a, depth, 0)), at.get((b, depth, 0))
+            if hyp != "H1" or ra is None or rb is None:
+                continue
+            res = paired_bootstrap_bpc(arr(ra, "clean", idx), arr(rb, "clean", idx), chars_of(ra, "clean", idx))
+            t = test.get((depth, a, b))
+            same = "—" if t is None else ("yes" if (res["diff"] > 0) == (t["diff"] > 0) else "no")
+            lines.append(f"| {a} − {b} | d{depth} | {len(idx)} | {res['diff']:+.4f} | {res['rel_diff']:+.2%} "
+                         f"[{res['rel_ci95'][0]:+.2%}, {res['rel_ci95'][1]:+.2%}] | "
+                         f"{'—' if t is None else format(t['rel_diff'], '+.2%')} | {same} |")
+    return "\n".join(lines) + "\n"
+
+
 def nonembedding_params(user_config: dict) -> int:
     """12 * n_embd^2 * n_layer, the way nanochat sizes a model. Matches the `transformer_matrices`
     line of train.log to within 0.001%; embeddings are excluded because every condition shares them."""
@@ -374,6 +396,7 @@ def main():
     ap.add_argument("--results", type=Path, required=True)
     ap.add_argument("--compression", type=Path, required=True)
     ap.add_argument("--wordhood", type=Path, default=None, help="wordhood JSON from vitok.wordhood (H4)")
+    ap.add_argument("--val-results", type=Path, default=None, help="per-document val results from vitok.eval_checkpoints")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--figures", type=Path, default=None, help="write the H3 figure here (needs matplotlib)")
     args = ap.parse_args()
@@ -385,6 +408,8 @@ def main():
     rows = comparisons(runs)
     text = (summarize(runs, compression, rows) + "\n" + verdicts(rows, reductions, runs, wordhood) + "\n"
             + sensitivity(runs) + "\n" + val_vs_test(runs, nanochat_val_bpb(args.results), compression))
+    if args.val_results:
+        text += "\n" + val_sensitivity(load(args.val_results), rows)
     if len({d for _, d, _ in runs}) > 1:
         text += "\n" + scaling(runs, args.figures)
     args.out.write_text(text, encoding="utf-8")

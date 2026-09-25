@@ -58,6 +58,14 @@ def truncate_chars(text: str, max_chars: int) -> str:
     return text[: cut if cut > 0 else max_chars]
 
 
+def eval_text(text: str, min_chars: int = 300, max_chars: int = 2500) -> str | None:
+    """A document as the held-out sets use it: at least `min_chars` long, cut to `max_chars` at a space.
+
+    Short enough to fit one context for every tokenizer, so no score depends on where a window falls.
+    """
+    return None if len(text) < min_chars else truncate_chars(text, max_chars)
+
+
 class ShardWriter:
     def __init__(self, out_dir: Path, shard_bytes: int, row_group_docs: int = 1024):
         self.out_dir, self.shard_bytes, self.row_group_docs = out_dir, shard_bytes, row_group_docs
@@ -155,12 +163,13 @@ def main():
     # 4) test set from FineWeb-2's own test split, deduplicated against everything above
     test = []
     for text in iter_docs("test", args.cache_dir):
-        if len(text) < args.test_min_chars:
+        doc = eval_text(text, args.test_min_chars, args.test_max_chars)
+        if doc is None:
             continue
         if _digest(text) in seen:
             stats["test_dups_dropped"] += 1
             continue
-        test.append({"id": len(test), "text": truncate_chars(text, args.test_max_chars)})
+        test.append({"id": len(test), "text": doc})
         if len(test) >= args.test_docs:
             break
     with open(args.out / "test.jsonl", "w", encoding="utf-8") as f:

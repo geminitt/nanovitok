@@ -104,3 +104,25 @@ def test_random_model_bpc_near_uniform(tiny_model):
     per_token_bits = bpc(nats, [1]) * 1 / n_tokens  # bits per token
     uniform = math.log2(tok.get_vocab_size())
     assert abs(per_token_bits - uniform) / uniform < 0.15
+
+
+def test_eval_checkpoints_scores_a_run_directory(tiny_model, nanochat_base, tmp_path):
+    """The runner finds a run laid out like a Kaggle output and writes per-document nats for it."""
+    import subprocess
+    import sys
+
+    from conftest import NANOCHAT
+
+    run = tmp_path / "outputs" / "runs" / "super-nfd_d2_s0"
+    shutil.copytree(nanochat_base / "tokenizer", run / "tokenizer")
+    shutil.copytree(nanochat_base / "base_checkpoints" / "dtest", run / "base_checkpoints" / "d2")
+    docs = tmp_path / "docs.jsonl"
+    docs.write_text("".join(json.dumps({"id": i, "text": s[:60]}) + "\n" for i, s in enumerate(SENTENCES)),
+                    encoding="utf-8")
+    out = tmp_path / "val"
+    subprocess.run([sys.executable, "-m", "vitok.eval_checkpoints", "--runs", str(tmp_path / "outputs"),
+                    "--docs", str(docs), "--nanochat", str(NANOCHAT), "--out", str(out), "--dtype", "float32"],
+                   check=True)
+    result = json.loads((out / "super-nfd_d2_s0.json").read_text(encoding="utf-8"))
+    assert list(result["docs"]) == ["clean"] and "pairs" not in result
+    assert all(n is not None for n in result["docs"]["clean"]["nats"])

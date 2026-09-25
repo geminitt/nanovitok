@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from vitok.analysis import comparisons, load, nonembedding_params, scaling, verdicts
+from vitok.analysis import comparisons, load, nonembedding_params, scaling, val_sensitivity, verdicts
 from vitok.flores_ctc import calibrate, ctc
 
 VARIANTS = ("clean", "strip50", "strip100")
@@ -97,3 +97,24 @@ def test_frequency_matched_baseline_uses_the_most_frequent_runs():
     assert frequency_matched_rate(count, hit, 2) == pytest.approx(10 / 18)  # the rare run is left out
     assert frequency_matched_rate(count, hit, 3) == pytest.approx(11 / 19)
 
+
+def test_val_sensitivity_flags_a_sign_change(tmp_path):
+    test_dir, val_dir = tmp_path / "test", tmp_path / "val"
+    test_dir.mkdir(); val_dir.mkdir()
+    for cond, test_bpc, val_bpc in [("bpe-nfc", 1.000, 1.000), ("super-nfc", 1.002, 0.998)]:
+        fake_run(test_dir / f"{cond}_d8_s0.json", cond, 8, 0, test_bpc)
+        fake_run(val_dir / f"{cond}_d8_s0.json", cond, 8, 0, val_bpc)
+    text = val_sensitivity(load(val_dir), comparisons(load(test_dir)))
+    assert "| super-nfc − bpe-nfc | d8 | 20 | -0.0020 |" in text and text.rstrip().endswith("| no |")
+
+
+def test_val_docs_follow_the_test_set_rule(tmp_path):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from vitok.val_docs import val_docs
+
+    shard = tmp_path / "shard.parquet"
+    pq.write_table(pa.table({"text": ["ngắn", "chữ " * 1000]}), shard)
+    docs = val_docs(shard)
+    assert len(docs) == 1 and len(docs[0]["text"]) <= 2500 and not docs[0]["text"].endswith(" ")
