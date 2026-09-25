@@ -31,6 +31,9 @@ def test_paired_bootstrap_detects_difference():
     assert res["diff"] < 0 and res["significant"]
     same = paired_bootstrap_bpc(base, base, chars, n=500)
     assert not same["significant"]
+    # the relative difference is A's bpc over B's, minus one, with an interval around it
+    assert res["rel_diff"] == pytest.approx(-0.03)
+    assert res["rel_ci95"][0] <= res["rel_diff"] <= res["rel_ci95"][1] < 0
 
 
 def test_mcnemar():

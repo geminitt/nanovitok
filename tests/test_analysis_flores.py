@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from vitok.analysis import load, nonembedding_params, scaling
+from vitok.analysis import comparisons, load, nonembedding_params, scaling, verdicts
 from vitok.flores_ctc import calibrate, ctc
 
 VARIANTS = ("clean", "strip50", "strip100")
@@ -39,7 +39,7 @@ def test_scaling_reports_effect_and_seed_bar(tmp_path):
         fake_run(results / f"{cond}_d{depth}_s{seed}.json", cond, depth, seed, value)
 
     text = scaling(load(results), figures)
-    assert "| super-nfc − bpe-nfc | -0.0020 ± 0.0005 | +0.0020 |" in text
+    assert "| super-nfc − bpe-nfc | -0.0020 (s1: -0.0020) | +0.0020 |" in text
     assert "| d6 | 10,616,832 |" in text and "| d8 | 25,165,824 |" in text
     assert (figures / "h3_scaling.png").exists()
 
@@ -75,3 +75,25 @@ def test_syllable_runs_and_superword_spans(tokenizers_dir):
     for start, end in superword_spans(tok, text):
         piece = text[start:end]
         assert piece == piece.strip() and " " in piece  # trimmed, and really more than one syllable
+
+
+@pytest.mark.parametrize("worse,verdict", [(1.005, "supported"), (1.02, "not supported")])
+def test_h1_is_a_non_inferiority_test(tmp_path, worse, verdict):
+    # SuperBPE 0.5% worse passes the pre-registered 1% margin; 2% worse fails it
+    for cond, value in [("bpe-nfc", 1.0), ("super-nfc", worse), ("bpe-nfd", 1.0), ("super-nfd", worse)]:
+        fake_run(tmp_path / f"{cond}_d6_s0.json", cond, 6, 0, value)
+    runs = load(tmp_path)
+    text = verdicts(comparisons(runs), {"nfc": 0.18, "nfd": 0.18}, runs)
+    assert f"- Verdict: **{verdict}**." in text.split("**H2**")[0]
+
+
+def test_frequency_matched_baseline_uses_the_most_frequent_runs():
+    import collections
+
+    from vitok.wordhood import frequency_matched_rate
+
+    count = collections.Counter({"học sinh": 10, "của các": 8, "rất xa": 1})
+    hit = collections.Counter({"học sinh": 10, "của các": 0, "rất xa": 1})
+    assert frequency_matched_rate(count, hit, 2) == pytest.approx(10 / 18)  # the rare run is left out
+    assert frequency_matched_rate(count, hit, 3) == pytest.approx(11 / 19)
+
