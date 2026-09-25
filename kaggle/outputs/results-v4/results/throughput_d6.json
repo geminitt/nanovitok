@@ -1,0 +1,50 @@
+{
+  "bpe-nfc_d6_s0": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 719.3,
+    "tok_per_sec": 89832,
+    "peak_mib": 6398.95,
+    "loss_first": 9.681289,
+    "loss_last": 2.718099,
+    "full_iterations": 3814,
+    "full_run_hours": 0.76
+  },
+  "bpe-nfd_d6_s0": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 718.2,
+    "tok_per_sec": 91407,
+    "peak_mib": 6398.95,
+    "loss_first": 9.681363,
+    "loss_last": 2.748736,
+    "full_iterations": 3814,
+    "full_run_hours": 0.76
+  },
+  "super-nfc_d6_s0": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 587.7,
+    "tok_per_sec": 91060,
+    "peak_mib": 5364.31,
+    "loss_first": 9.681343,
+    "loss_last": 3.388228,
+    "full_iterations": 3814,
+    "full_run_hours": 0.62
+  },
+  "super-nfd_d6_s0": {
+    "dtype": "torch.float16",
+    "grad_scaler": true,
+    "steps_done": 3814,
+    "median_dt_ms": 587.3,
+    "tok_per_sec": 85534,
+    "peak_mib": 5364.31,
+    "loss_first": 9.681237,
+    "loss_last": 3.374138,
+    "full_iterations": 3814,
+    "full_run_hours": 0.62
+  }
+}

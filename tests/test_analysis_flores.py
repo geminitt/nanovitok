@@ -118,3 +118,11 @@ def test_val_docs_follow_the_test_set_rule(tmp_path):
     pq.write_table(pa.table({"text": ["ngắn", "chữ " * 1000]}), shard)
     docs = val_docs(shard)
     assert len(docs) == 1 and len(docs[0]["text"]) <= 2500 and not docs[0]["text"].endswith(" ")
+
+
+def test_load_refuses_two_files_for_one_run(tmp_path):
+    for sub in ("test", "val"):
+        (tmp_path / sub).mkdir()
+        fake_run(tmp_path / sub / "bpe-nfc_d6_s0.json", "bpe-nfc", 6, 0, 1.0)
+    with pytest.raises(AssertionError, match="two result files"):
+        load(tmp_path)

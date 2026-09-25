@@ -36,11 +36,15 @@ VAL_BPB_RE = re.compile(r"Validation bpb: ([\d.]+)")
 
 def load(results_dir: Path) -> dict:
     """Every result file under `results_dir`, so one directory of per-session downloads also works."""
-    runs = {}
+    runs, seen = {}, {}
     for path in sorted(results_dir.rglob("*.json")):
         m = NAME_RE.search(path.name)
         if m:
-            runs[(m["cond"], int(m["depth"]), int(m["seed"]))] = json.loads(path.read_text(encoding="utf-8"))
+            key = (m["cond"], int(m["depth"]), int(m["seed"]))
+            # two files for one run (say, test and val results under one root) must not silently replace each other
+            assert key not in seen, f"two result files for {path.name}: {seen[key]} and {path}"
+            seen[key] = path
+            runs[key] = json.loads(path.read_text(encoding="utf-8"))
     return runs
 
 
