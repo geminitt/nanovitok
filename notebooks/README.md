@@ -23,5 +23,5 @@ chạy được từ bất kỳ thư mục nào. Không cần GPU; notebook nặ
 **Thứ tự đề nghị**: 01 → 02 → 03 → 04 → 05 (đủ cho báo cáo), rồi 10 khi bắt đầu viết. 06, 07, 08 đọc khi cần
 hiểu mã nguồn; 09 để sau project.
 
-Nguồn đọc thêm nằm ở cuối mỗi notebook. Kế hoạch phân tích đã đăng ký của project ở
-[`docs/analysis_plan.md`](../../analysis_plan.md) (branch `main`).
+Nguồn đọc thêm nằm ở cuối mỗi notebook. Kế hoạch phân tích đã đăng ký của project nằm trong lịch sử git của
+branch `main`: [`docs/analysis_plan.md` ở commit `4632328`](https://github.com/geminitt/nanovitok/blob/4632328/docs/analysis_plan.md).
