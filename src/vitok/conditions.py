@@ -14,7 +14,7 @@ from pathlib import Path
 BASE_CONDITION = "bpe-nfc"
 BASE_SEQ = 1024
 SEQS_PER_STEP = 64
-# Text budget expressed in bpe-nfc tokens (see plan section 10).
+# Text budget expressed in bpe-nfc tokens, about 20 per non-embedding parameter.
 BUDGET_TOKENS = {6: 250_000_000, 8: 500_000_000, 10: 1_000_000_000}
 # Per-GPU micro batch (sequences) on a 16GB T4; must divide SEQS_PER_STEP. Halve on OOM.
 DEVICE_BATCH = {6: 32, 8: 32, 10: 16}
@@ -35,6 +35,8 @@ def train_args(cpt: dict, condition: str, depth: int, device_batch: int | None =
         "total-batch-size": SEQS_PER_STEP * t,
         "scaling-batch-size": base_batch,
         "num-iterations": BUDGET_TOKENS[depth] // base_batch,
+        # full attention in every layer: without FlashAttention 3 (not on T4), nanochat emulates sliding
+        # windows with an explicit SDPA mask, which still does the full T^2 work and loses the is_causal path
         "window-pattern": "L",
     }
 

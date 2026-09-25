@@ -1,6 +1,0 @@
-[super-nfc_d6_s0] train: --depth=6 --max-seq-len=840 --device-batch-size=32 --total-batch-size=53760 --scaling-batch-size=65536 --num-iterations=3814 --window-pattern=L --run=dummy --model-tag=d6 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
-[super-nfc_d6_s0] eval
-[super-nfc_d6_s0] done -> /kaggle/working/results/super-nfc_d6_s0.json
-[super-nfd_d6_s0] train: --depth=6 --max-seq-len=840 --device-batch-size=32 --total-batch-size=53760 --scaling-batch-size=65536 --num-iterations=3814 --window-pattern=L --run=dummy --model-tag=d6 --core-metric-every=-1 --sample-every=-1 --eval-every=500 --eval-tokens=2000000
-[super-nfd_d6_s0] eval
-[super-nfd_d6_s0] done -> /kaggle/working/results/super-nfd_d6_s0.json

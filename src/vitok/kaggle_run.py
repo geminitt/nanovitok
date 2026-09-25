@@ -37,7 +37,7 @@ def run_one(args, cond: str, log) -> None:
     env = {**os.environ,
            "CUDA_VISIBLE_DEVICES": str(args.gpu),
            "NANOCHAT_BASE_DIR": str(run_dir),
-           "NANOCHAT_DTYPE": "float16",
+           "NANOCHAT_DTYPE": "float16",  # a T4 has no bf16, and nanochat's auto-detection would pick fp32
            "NANOCHAT_SEED": str(args.seed),
            "PYTHONPATH": os.pathsep.join([str(args.nanochat), os.environ.get("PYTHONPATH", "")])}
     if args.no_compile:

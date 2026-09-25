@@ -1,3 +1,0 @@
-2026-09-16 03:54:36,721 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Building model with config: {'sequence_len': 1024, 'vocab_size': 16009, 'n_layer': 6, 'n_head': 3, 'n_kv_head': 3, 'n_embd': 384, 'window_pattern': 'L'}
-Padding vocab_size from 16009 to 16064 for efficiency
-wrote /kaggle/working/results/bpe-nfd_d6_s0.json | docs skipped (too long): 3/2000 | 34s
