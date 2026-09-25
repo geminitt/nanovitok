@@ -143,6 +143,16 @@ nanochat evaluates a fixed number of tokens of the val shard, so the two tokeniz
 different documents (SuperBPE covers 22% more text), unpaired. Only the paired test bpc is used for
 conclusions; the table shows how far the two disagree. NFD runs are left out: their bpb counts NFD bytes.
 
+## Sensitivity of H1 on the val shard (seed 0)
+
+| A − B | depth | val docs | val Δbpc | val relative [95% CI] | test relative | same sign |
+|---|---|---|---|---|---|---|
+| super-nfc − bpe-nfc | d6 | 4963 | -0.0019 | -0.18% [-0.21%, -0.14%] | -0.16% | yes |
+| super-nfd − bpe-nfd | d6 | 4963 | -0.0025 | -0.23% [-0.27%, -0.20%] | -0.32% | yes |
+| super-nfc − bpe-nfc | d8 | 4963 | +0.0020 | +0.20% [+0.17%, +0.24%] | +0.18% | yes |
+| super-nfd − bpe-nfd | d8 | 4963 | +0.0021 | +0.21% [+0.18%, +0.25%] | +0.13% | yes |
+| super-nfc − bpe-nfc | d10 | 4963 | +0.0026 | +0.28% [+0.25%, +0.32%] | +0.30% | yes |
+
 ## H3: effect vs model size (bpc clean)
 
 | A − B | d6 | d8 | d10 |

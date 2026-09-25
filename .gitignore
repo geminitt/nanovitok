@@ -21,6 +21,8 @@ vitok-code.zip
 # Kaggle outputs: keep logs and JSON results, drop duplicates and binaries
 # (each run's copy of its tokenizer duplicates kaggle/outputs/vitok-data/tokenizers-16k/)
 kaggle/outputs/results-*/runs/*/tokenizer/
+# final checkpoints, downloaded from the notebook outputs for local evaluation
+kaggle/outputs/results-*/runs/*/base_checkpoints/
 # binary tensors (token_bytes.pt, checkpoints)
 *.pt
 *.safetensors

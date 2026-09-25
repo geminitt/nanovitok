@@ -51,7 +51,7 @@ which also gives the confidence intervals and the rules each verdict follows.
 
 | Hypothesis (pre-registered) | Result | Verdict |
 |---|---|---|
-| **H1** SuperBPE cuts tokens by ≥15% and costs at most 1% bpc | 17.8% fewer tokens at a 16k vocabulary; bpc −0.16% (d6), +0.18% (d8), +0.30% (d10), every 95% interval below +1% | supported |
+| **H1** SuperBPE cuts tokens by ≥15% and costs at most 1% bpc | 17.8% fewer tokens at a 16k vocabulary; bpc −0.16% (d6), +0.18% (d8), +0.30% (d10), every 95% interval below +1%. The val shard gives the same signs (−0.18%, +0.20%, +0.28%) | supported |
 | **H2** NFD tokenizers do better on text typed without diacritics, at ≤1% cost on normal text | NFD BPE at d6: −0.52% on half-stripped text but +0.78% on fully stripped text; every other comparison is within seed noise. Cost on normal text ≤0.11% | not supported |
 | **H3** the SuperBPE effect changes with model size | Δbpc −0.0018 (d6) → +0.0018 (d8) → +0.0028 (d10): a small advantage turns into a small cost. The d6 → d8 sign change holds for both seeds; d10 has one seed | trend only (3 sizes) |
 | **H4** superwords are words (exploratory) | 65.6% of superwords spanning 2–4 syllables are one underthesea word, against 57.0% for as many of the most frequent syllable runs (25.2% for all runs) | modestly above frequency |
@@ -60,12 +60,13 @@ which also gives the confidence intervals and the rules each verdict follows.
 
 **Caveats.**
 
-- *Two metrics disagree on the sign at d8 and d10.* nanochat's own validation bpb ranks `super-nfc`
-  ahead of `bpe-nfc` at every size (−0.86%, −0.46%, −0.35%), while the test bpc above puts it behind at
-  d8 and d10. Both show the advantage shrinking with size. nanochat scores a fixed number of tokens,
-  so the two tokenizers are evaluated on different val documents (SuperBPE covers 22% more text) and
-  the comparison is unpaired; the test bpc is paired. The pre-registered check that would settle it,
-  a paired evaluation on the val shard, has not been run yet.
+- *nanochat's own validation bpb disagrees, and is the one that is off.* It ranks `super-nfc` ahead of
+  `bpe-nfc` at every size (−0.86%, −0.46%, −0.35%), while the test bpc puts it behind at d8 and d10.
+  nanochat scores a fixed number of tokens, so the two tokenizers are evaluated on different val
+  documents (SuperBPE covers 22% more text), packed several to a row. Scored like the test set instead
+  (per document from BOS, the same 4,963 val documents for every run), the val shard agrees with the
+  test set at every size and for both normalizations (`results/summary.md`, "Sensitivity of H1 on the
+  val shard"): the disagreement comes from nanochat's evaluation, not from the data split.
 - *Seed noise is a lower bound.* The seed changes weight initialization only; data order is fixed.
   It is 0.0005 bpc on normal text but up to 0.0095 on stripped text, which is why most H2 differences
   that a document bootstrap calls significant are not counted as resolved.
@@ -83,8 +84,10 @@ which also gives the confidence intervals and the rules each verdict follows.
 3. *Deduplication.* The test set is deduplicated against the training text by exact document hash, not
    near-duplicate matching. A probe found 34 of 2,000 test documents sharing a 50-character chunk with the
    5,000-document val shard and none sharing half its text; leakage would affect every condition alike.
-4. *Checks not performed.* Our bpc was not calibrated against nanochat's bpb (they are computed on
-   different documents, see above). The pre-registered rerun of H1 on the val shard is pending.
+4. *Checks done late or not at all.* Our bpc was not calibrated against nanochat's bpb (they are computed
+   on different documents, see above). The pre-registered rerun of H1 on the val shard was run after the
+   audit, on a local GPU (the scores of one checkpoint on the test set matched Kaggle's to 2·10⁻⁴ per
+   document), and agrees with the test set.
 5. *Analysis fixed after an audit (2026-09-26).* One pre-registered comparison (SuperBPE, NFD − NFC, half
    stripped) was missing; the 1% margins were reported as "interval excludes 0" instead of being tested;
    document-bootstrap significance ignored seed noise; H4 was compared with all syllable runs instead of
@@ -118,7 +121,17 @@ pixi run python -m vitok.wordhood --tokenizers kaggle/outputs/vitok-data/tokeniz
     --docs kaggle/outputs/vitok-data/test.jsonl --out results/wordhood_16k.json
 pixi run python -m vitok.analysis --results kaggle/outputs \
     --compression kaggle/outputs/vitok-data/compression-16k.json \
-    --wordhood results/wordhood_16k.json --out results/summary.md --figures figures
+    --wordhood results/wordhood_16k.json --val-results results/val \
+    --out results/summary.md --figures figures
+```
+
+5. **Val-shard check** (local GPU, about 10 minutes): put each run's final `model_*.pt` and
+   `meta_*.json` from the notebook 02 outputs into `kaggle/outputs/results-vN/runs/<run>/base_checkpoints/dN/`,
+   then score them all on the val shard before step 4's analysis:
+
+```bash
+pixi run -e gpu python -m vitok.eval_checkpoints --runs kaggle/outputs \
+    --docs kaggle/outputs/vitok-data/val_docs.jsonl --nanochat third_party/nanochat --out results/val
 ```
 
 ---

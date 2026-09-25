@@ -36,7 +36,7 @@ def main():
     ap.add_argument("--nanochat", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--only", nargs="*", default=None, help="run tags to evaluate (default: all)")
-    ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--batch-size", type=int, default=8, help="16 overflows a 6 GB GPU at 1,024 tokens")
     ap.add_argument("--dtype", default="float16", help="NANOCHAT_DTYPE; float16 matches the Kaggle T4 runs")
     args = ap.parse_args()
 
