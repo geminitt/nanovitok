@@ -36,7 +36,7 @@ package is `vitok`.
 | Budget | 250M / 500M / 1B BPE tokens of text at d6 / d8 / d10 (3,814 / 7,629 / 15,258 steps), about 20 tokens per non-embedding parameter |
 | Runs | Four conditions at d6 and d8; `bpe-nfc` and the better SuperBPE variant at d8 (`super-nfc`) at d10; a second seed for `bpe-nfc` and `super-nfc` at d6 and d8. Kaggle T4, fp16 |
 | Metric | Bits per NFC character (never loss per token, never bytes: NFD text has more bytes), per document, on text normal, half stripped of diacritics, and fully stripped |
-| Statistics | Paired bootstrap over documents (10,000 resamples). A difference is **resolved** only when its 95% interval excludes 0 *and*, where a second seed exists (d6, d8), it exceeds the spread between the two seeds on the same text variant; the 1% margins are non-inferiority tests on the relative interval |
+| Statistics | Paired bootstrap over documents (10,000 resamples). A difference is **resolved** only when its 95% interval excludes 0 *and*, where a second seed exists (d6, d8), it passes a t test against run-to-run noise: \|Δ\| > t(0.975, 2) × RMS of the two seed spreads on the same text variant (4.30 ×). The 1% margins are non-inferiority tests on the relative interval |
 
 The hypotheses, margins and decision rules were committed before the first model was trained
 ([`docs/analysis_plan.md` at commit 4632328](https://github.com/geminitt/nanovitok/blob/4632328/docs/analysis_plan.md)).
@@ -53,7 +53,7 @@ interval and the rule behind each verdict. The few others name their source.
 | Hypothesis (pre-registered) | Result | Verdict |
 |---|---|---|
 | **H1** SuperBPE cuts tokens by ≥15% and costs at most 1% bpc | 17.8% fewer tokens at a 16k vocabulary; bpc −0.16% (d6), +0.18% (d8), +0.30% (d10), every 95% interval below +1%. The val shard gives the same signs (−0.18%, +0.20%, +0.28%) | supported |
-| **H2** NFD tokenizers do better on text typed without diacritics, at ≤1% cost on normal text | NFD BPE at d6: −0.52% on half-stripped text but +0.78% on fully stripped text; every other comparison is within seed noise. Cost on normal text ≤0.11% | not supported |
+| **H2** NFD tokenizers do better on text typed without diacritics, at ≤1% cost on normal text | One of eight stripped-text comparisons clears the noise test: NFD BPE at d6 on half-stripped text (−0.52%), and it does not recur at d8. The largest raw difference, +0.78% for NFD BPE on fully stripped text at d6, stays below the noise threshold there (0.025 bpc). Cost on normal text ≤0.11% | not supported |
 | **H3** the SuperBPE effect changes with model size | Δbpc −0.0018 (d6) → +0.0018 (d8) → +0.0028 (d10): a small advantage turns into a small cost. The d6 → d8 sign change holds for both seeds; d10 has one seed | trend only (3 sizes) |
 | **H4** superwords are words (exploratory) | 65.6% of superwords spanning 2–4 syllables are one underthesea word, against 57.0% for as many of the most frequent syllable runs (25.2% for all runs) | modestly above frequency |
 
@@ -68,9 +68,11 @@ interval and the rule behind each verdict. The few others name their source.
   (per document from BOS, the same 4,963 val documents for every run), the val shard agrees with the
   test set at every size and for both normalizations (`results/summary.md`, "Sensitivity of H1 on the
   val shard"): the disagreement comes from nanochat's evaluation, not from the data split.
-- *Seed noise is a lower bound.* The seed changes weight initialization only; data order is fixed.
-  It is 0.0005 bpc on normal text but up to 0.0095 on stripped text, which is why most H2 differences
-  that a document bootstrap calls significant are not counted as resolved.
+- *Run-to-run noise decides H2, and it is a lower bound.* Retraining the same condition with another seed
+  moves bpc by up to 0.0005 on normal text but up to 0.0095 on stripped text. With only two seed pairs to
+  estimate that noise, a difference must exceed 4.3 times its root mean square (Student's t, 2 degrees of
+  freedom) to count; comparing with a single spread instead would flag a third of pure-noise differences.
+  The seed changes weight initialization only (data order is fixed), so even this threshold is optimistic.
 - *Equal text is approximate.* nanochat's loader packs documents and crops the one that overflows a
   row, so conditions see nearly but not exactly the same text (SuperBPE consumed about 0.4% more
   documents at d10, by the data position in each `train.log`).
@@ -91,8 +93,12 @@ interval and the rule behind each verdict. The few others name their source.
    document), and agrees with the test set.
 5. *Analysis fixed after an audit (2026-09-26).* One pre-registered comparison (SuperBPE, NFD − NFC, half
    stripped) was missing; the 1% margins were reported as "interval excludes 0" instead of being tested;
-   document-bootstrap significance ignored seed noise; H4 was compared with all syllable runs instead of
-   the pre-registered frequency-matched baseline. The verdicts above use the corrected analysis.
+   document-bootstrap significance ignored seed noise (it is now a t test on the seed spreads); H4 was
+   compared with all syllable runs instead of the pre-registered frequency-matched baseline. The verdicts
+   above use the corrected analysis.
+
+**What would settle H2.** More seeds for all four conditions (each d6 run takes about 40 minutes on a T4),
+a seed that also changes the data order, so the noise estimate is not a lower bound, and a second seed at d10.
 
 ---
 

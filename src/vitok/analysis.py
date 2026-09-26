@@ -8,12 +8,13 @@ Result files are named {condition}_d{depth}_s{seed}.json (written by vitok.eval)
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
 
 import numpy as np
 
-from vitok.stats import bpc, mcnemar_exact, paired_bootstrap_bpc
+from vitok.stats import bpc, mcnemar_exact, paired_bootstrap_bpc, t_quantile
 
 NAME_RE = re.compile(r"(?P<cond>(?:bpe|super)-nf[cd])_d(?P<depth>\d+)_s(?P<seed>\d+)\.json$")
 
@@ -64,19 +65,34 @@ def chars_of(run, variant, idx):
     return np.array(run["docs"][variant]["chars"])[idx]
 
 
-def seed_noise(at: dict, variant: str, idx) -> float | None:
-    """Largest |bpc(s1) - bpc(s0)| among the conditions run with two seeds, on `variant`.
-
-    A lower bound on run-to-run noise: the seed only changes weight init, the data order is identical.
-    None when no condition at this depth has a second seed.
-    """
-    spreads = []
-    for (cond, depth, seed), r1 in at.items():
+def seed_spreads(at: dict, variant: str, idx) -> list[float]:
+    """bpc(s1) - bpc(s0) for every condition run with two seeds at this depth, on `variant`."""
+    out = []
+    for (cond, depth, seed), r1 in sorted(at.items()):
         r0 = at.get((cond, depth, 0))
         if seed > 0 and r0 is not None:
             ch = chars_of(r0, variant, idx)
-            spreads.append(abs(bpc(arr(r1, variant, idx), ch) - bpc(arr(r0, variant, idx), ch)))
-    return max(spreads) if spreads else None
+            out.append(bpc(arr(r1, variant, idx), ch) - bpc(arr(r0, variant, idx), ch))
+    return out
+
+
+def noise_threshold(spreads: list[float], level: float = 0.95) -> float | None:
+    """How large a difference between two single runs must be before run-to-run noise cannot explain it.
+
+    With run noise of standard deviation s per run, a seed spread s1 - s0 and a difference between two
+    conditions A - B both carry noise of standard deviation sqrt(2) s. The spreads therefore estimate the
+    noise of a difference directly, sigma_hat = sqrt(mean(spread^2)), with one degree of freedom per spread.
+    Estimated from so few, the noise calls for Student's t instead of the normal 1.96: the threshold is
+    t_(1 - alpha/2, k) * sigma_hat, 4.30 * sigma_hat for k = 2. Comparing |Delta| with a single spread
+    instead would flag a third of pure-noise differences.
+
+    The seed only changes weight init (the data order is identical), so this is still a lower bound on the
+    noise. None when no condition has a second seed.
+    """
+    if not spreads:
+        return None
+    sigma = math.sqrt(sum(d * d for d in spreads) / len(spreads))
+    return t_quantile(1 - (1 - level) / 2, len(spreads)) * sigma
 
 
 def comparisons(runs: dict) -> list[dict]:
@@ -91,15 +107,16 @@ def comparisons(runs: dict) -> list[dict]:
                 continue
             i = idx[variant]
             res = paired_bootstrap_bpc(arr(ra, variant, i), arr(rb, variant, i), chars_of(ra, variant, i))
+            spreads = seed_spreads(at, variant, i)
             rows.append({"depth": depth, "a": a, "b": b, "variant": variant, "hyp": hyp, **res,
-                         "seed_noise": seed_noise(at, variant, i)})
+                         "seed_spreads": spreads, "noise_threshold": noise_threshold(spreads)})
     return rows
 
 
 def beyond_noise(row) -> str:
-    if row["seed_noise"] is None:
+    if row["noise_threshold"] is None:
         return "no second seed"
-    return "yes" if abs(row["diff"]) > row["seed_noise"] else "no"
+    return "yes" if abs(row["diff"]) > row["noise_threshold"] else "no"
 
 
 def summarize(runs: dict, compression: dict, rows: list[dict]) -> str:
@@ -120,11 +137,16 @@ def summarize(runs: dict, compression: dict, rows: list[dict]) -> str:
                          f"{c.get('chars_per_token', float('nan')):.3f} | {c.get('tokens_per_syllable', float('nan')):.3f} | "
                          f"{c.get('superword_token_share', float('nan')):.1%} |")
         lines += ["", f"Documents scored by every run: " + ", ".join(f"{v} {len(idx[v])}" for v in VARIANTS), ""]
-        noise = {v: seed_noise(at, v, idx[v]) for v in VARIANTS}
-        if any(n is not None for n in noise.values()):
-            lines += ["Seed noise (largest |s1 − s0| among conditions with two seeds; a lower bound): " +
-                      ", ".join(f"{v} {n:.4f}" for v, n in noise.items() if n is not None), ""]
-        lines += ["| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > seed noise |",
+        spreads = {v: seed_spreads(at, v, idx[v]) for v in VARIANTS}
+        if any(spreads.values()):
+            k = len(next(iter(spreads.values())))
+            lines += [f"Seed noise, from {k} conditions with two seeds (s1 − s0 each; a lower bound, the seed only "
+                      f"changes init). Threshold for a difference = t(0.975, {k}) = {t_quantile(0.975, k):.2f} × "
+                      "the root mean square of the spreads:", ""]
+            lines += [f"- {v}: spreads " + ", ".join(f"{d:+.4f}" for d in spreads[v]) +
+                      f" → threshold {noise_threshold(spreads[v]):.4f}" for v in VARIANTS]
+            lines.append("")
+        lines += ["| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > noise threshold |",
                   "|---|---|---|---|---|---|---|---|"]
         for row in (r for r in rows if r["depth"] == depth):
             lines.append(f"| {row['hyp']} | {row['a']} − {row['b']} | {row['variant']} | {row['diff']:+.4f} | "
@@ -154,8 +176,8 @@ def direction(row) -> str:
 def verdicts(rows: list[dict], reductions: dict, runs: dict, wordhood: dict | None = None) -> str:
     """The pre-registered hypotheses, decided by the rules committed before training (README, Design)."""
     lines = ["## Pre-registered verdicts", "",
-             "A comparison counts as resolved only when its 95% CI excludes 0 **and** |Δ| exceeds the seed noise "
-             "(where a second seed exists).", ""]
+             "A comparison counts as resolved only when its 95% CI excludes 0 **and**, where a second seed exists, "
+             "|Δ| exceeds the seed-noise threshold (a t test on the seed spreads, see the tables above).", ""]
     # H1: compression, then non-inferiority at every depth
     met = all(reductions.get(n, 0) >= MIN_TOKEN_REDUCTION for n in ("nfc", "nfd"))
     lines.append(f"**H1** — token reduction on the val shard: NFC {reductions.get('nfc', float('nan')):.1%}, "
@@ -183,15 +205,7 @@ def verdicts(rows: list[dict], reductions: dict, runs: dict, wordhood: dict | No
         lines.append(f"- d{r['depth']} {r['a']} − {r['b']}, clean (cost): {r['rel_diff']:+.2%} "
                      f"[{r['rel_ci95'][0]:+.2%}, {r['rel_ci95'][1]:+.2%}] → within {MARGIN:.0%}: "
                      f"{'yes' if r['rel_ci95'][1] < MARGIN else 'no'}")
-    resolved = [d for d in dirs if d != "not resolved"]
-    if not resolved:
-        h2_verdict = "not supported (no comparison resolved)"
-    elif all(d == "A lower" for d in resolved):
-        h2_verdict = "supported" if all(r["rel_ci95"][1] < MARGIN for r in cost) else "supported on stripped text, cost above the margin"
-    elif all(d == "A higher" for d in resolved):
-        h2_verdict = "contradicted (NFD worse wherever resolved)"
-    else:
-        h2_verdict = "not supported (resolved comparisons point in opposite directions)"
+    h2_verdict = h2_decision(h2, dirs, cost)
     lines += [f"- Verdict: **{h2_verdict}**.", ""]
 
     # H3: sign of the SuperBPE effect by size, for each seed that exists
@@ -216,6 +230,28 @@ def verdicts(rows: list[dict], reductions: dict, runs: dict, wordhood: dict | No
                              f"{w['share_outside_2_4']:.1%} of superword occurrences span another number of syllables")
         lines.append("")
     return "\n".join(lines) + "\n"
+
+
+def h2_decision(h2: list[dict], dirs: list[str], cost: list[dict]) -> str:
+    """H2 claims a general effect, so it must hold at every size measured, not in one comparison.
+
+    Supported: at every depth at least one stripped-text comparison is resolved with NFD lower, none with NFD
+    higher, and the clean-text cost stays within the margin. Contradicted: the mirror image. Otherwise the
+    data do not support it, and the verdict says how many comparisons were resolved and where.
+    """
+    by_depth = {}
+    for r, d in zip(h2, dirs):
+        by_depth.setdefault(r["depth"], []).append(d)
+    found = [f"d{r['depth']} {r['a'].split('-')[0]} {r['variant']} ({'NFD better' if d == 'A lower' else 'NFD worse'})"
+             for r, d in zip(h2, dirs) if d != "not resolved"]
+    lower = all("A lower" in ds and "A higher" not in ds for ds in by_depth.values())
+    higher = all("A higher" in ds and "A lower" not in ds for ds in by_depth.values())
+    if by_depth and lower and all(r["rel_ci95"][1] < MARGIN for r in cost):
+        return "supported"
+    if by_depth and higher:
+        return "contradicted (NFD worse at every size)"
+    return (f"not supported ({len(found)} of {len(dirs)} stripped-text comparisons resolved"
+            + (": " + "; ".join(found) if found else "") + ", not at every size)")
 
 
 def delta(runs, a, b, depth, seed) -> float | None:

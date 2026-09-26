@@ -41,3 +41,41 @@ def mcnemar_exact(correct_a, correct_b) -> dict:
     k = min(n01, n10)
     p = 1.0 if n == 0 else min(1.0, 2 * sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n)
     return {"a_only": n01, "b_only": n10, "p_value": p}
+
+
+def _betainc(a: float, b: float, x: float) -> float:
+    """Regularized incomplete beta I_x(a, b), by the continued fraction of Numerical Recipes (6.4)."""
+    if x <= 0 or x >= 1:
+        return float(x >= 1)
+    front = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log1p(-x))
+    if x > (a + 1) / (a + b + 2):  # the fraction converges fast only on this side; use the symmetry otherwise
+        return 1 - _betainc(b, a, 1 - x)
+    tiny, c, d = 1e-300, 1.0, 1 - (a + b) * x / (a + 1)
+    d = 1 / (d if abs(d) > tiny else tiny)
+    f = d
+    for m in range(1, 300):
+        for num in (m * (b - m) * x / ((a + 2 * m - 1) * (a + 2 * m)),
+                    -(a + m) * (a + b + m) * x / ((a + 2 * m) * (a + 2 * m + 1))):
+            d = 1 + num * d
+            d = 1 / (d if abs(d) > tiny else tiny)
+            c = 1 + num / c
+            c = c if abs(c) > tiny else tiny
+            f *= c * d
+        if abs(c * d - 1) < 1e-15:
+            break
+    return front * f / a
+
+
+def t_cdf(x: float, df: int) -> float:
+    """CDF of Student's t with `df` degrees of freedom."""
+    tail = 0.5 * _betainc(df / 2, 0.5, df / (df + x * x))
+    return 1 - tail if x >= 0 else tail
+
+
+def t_quantile(p: float, df: int) -> float:
+    """Inverse of t_cdf, by bisection (t_quantile(0.975, 2) = 4.303)."""
+    lo, hi = -1e6, 1e6
+    for _ in range(200):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if t_cdf(mid, df) < p else (lo, mid)
+    return (lo + hi) / 2

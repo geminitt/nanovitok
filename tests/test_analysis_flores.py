@@ -3,7 +3,8 @@ import math
 
 import pytest
 
-from vitok.analysis import comparisons, load, nonembedding_params, scaling, val_sensitivity, verdicts
+from vitok.analysis import (comparisons, h2_decision, load, noise_threshold, nonembedding_params, scaling,
+                            val_sensitivity, verdicts)
 from vitok.flores_ctc import calibrate, ctc
 
 VARIANTS = ("clean", "strip50", "strip100")
@@ -126,3 +127,17 @@ def test_load_refuses_two_files_for_one_run(tmp_path):
         fake_run(tmp_path / sub / "bpe-nfc_d6_s0.json", "bpe-nfc", 6, 0, 1.0)
     with pytest.raises(AssertionError, match="two result files"):
         load(tmp_path)
+
+
+def test_noise_threshold_is_a_t_test_on_the_seed_spreads():
+    # RMS of the spreads estimates the noise of a difference; two spreads -> t with 2 degrees of freedom
+    assert noise_threshold([0.003, -0.004]) == pytest.approx(4.303 * math.sqrt((0.003 ** 2 + 0.004 ** 2) / 2), rel=1e-3)
+    assert noise_threshold([]) is None
+
+
+def test_h2_needs_the_effect_at_every_size():
+    row = lambda depth: {"depth": depth, "a": "bpe-nfd", "variant": "strip50", "rel_ci95": [0.0, 0.001]}
+    cost = [row(6), row(8)]
+    one_size = h2_decision([row(6), row(8)], ["A lower", "not resolved"], cost)
+    assert one_size.startswith("not supported (1 of 2")
+    assert h2_decision([row(6), row(8)], ["A lower", "A lower"], cost) == "supported"

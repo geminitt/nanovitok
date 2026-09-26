@@ -4,7 +4,7 @@ import pytest
 from conftest import SENTENCES
 from vitok.conditions import BASE_SEQ, SEQS_PER_STEP, train_args
 from vitok.minimal_pairs import build_pairs
-from vitok.stats import mcnemar_exact, paired_bootstrap_bpc
+from vitok.stats import mcnemar_exact, paired_bootstrap_bpc, t_cdf, t_quantile
 from vitok.text import strip_diacritics
 
 CPT = {"bpe-nfc": 4.0, "bpe-nfd": 3.6, "super-nfc": 5.0, "super-nfd": 4.5}
@@ -57,3 +57,9 @@ def test_minimal_pairs():
         assert p["good"] != p["bad"]
         assert strip_diacritics(p["good"]) == strip_diacritics(p["bad"])  # only the tone changed
         assert p["to"].lower() in counts
+
+
+@pytest.mark.parametrize("df,expected", [(1, 12.706), (2, 4.303), (10, 2.228), (1000, 1.962)])
+def test_t_quantile_matches_the_table(df, expected):
+    assert t_quantile(0.975, df) == pytest.approx(expected, abs=1e-3)
+    assert t_cdf(t_quantile(0.975, df), df) == pytest.approx(0.975, abs=1e-9)

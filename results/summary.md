@@ -13,18 +13,22 @@
 
 Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
-Seed noise (largest |s1 − s0| among conditions with two seeds; a lower bound): clean 0.0005, strip50 0.0023, strip100 0.0068
+Seed noise, from 2 conditions with two seeds (s1 − s0 each; a lower bound, the seed only changes init). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
 
-| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > seed noise |
+- clean: spreads -0.0001, +0.0005 → threshold 0.0014
+- strip50: spreads -0.0023, -0.0004 → threshold 0.0072
+- strip100: spreads -0.0046, -0.0068 → threshold 0.0250
+
+| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > noise threshold |
 |---|---|---|---|---|---|---|---|
 | H1 | super-nfc − bpe-nfc | clean | -0.0018 | [-0.0024, -0.0012] | -0.16% [-0.22%, -0.11%] | yes | yes |
 | H1 | super-nfd − bpe-nfd | clean | -0.0035 | [-0.0041, -0.0028] | -0.32% [-0.38%, -0.25%] | yes | yes |
-| H2 | bpe-nfd − bpe-nfc | strip100 | +0.0171 | [+0.0160, +0.0181] | +0.78% [+0.73%, +0.82%] | yes | yes |
+| H2 | bpe-nfd − bpe-nfc | strip100 | +0.0171 | [+0.0160, +0.0181] | +0.78% [+0.73%, +0.82%] | yes | no |
 | H2 | bpe-nfd − bpe-nfc | strip50 | -0.0115 | [-0.0125, -0.0106] | -0.52% [-0.56%, -0.47%] | yes | yes |
-| H2 cost | bpe-nfd − bpe-nfc | clean | +0.0012 | [+0.0007, +0.0018] | +0.11% [+0.06%, +0.16%] | yes | yes |
+| H2 cost | bpe-nfd − bpe-nfc | clean | +0.0012 | [+0.0007, +0.0018] | +0.11% [+0.06%, +0.16%] | yes | no |
 | H2 | super-nfd − super-nfc | strip100 | +0.0011 | [-0.0000, +0.0022] | +0.05% [-0.00%, +0.10%] | no | no |
 | H2 | super-nfd − super-nfc | strip50 | +0.0013 | [+0.0004, +0.0023] | +0.06% [+0.02%, +0.10%] | yes | no |
-| H2 cost | super-nfd − super-nfc | clean | -0.0005 | [-0.0010, +0.0001] | -0.04% [-0.10%, +0.01%] | no | yes |
+| H2 cost | super-nfd − super-nfc | clean | -0.0005 | [-0.0010, +0.0001] | -0.04% [-0.10%, +0.01%] | no | no |
 
 | pairs | A − B | A only right | B only right | p |
 |---|---|---|---|---|
@@ -46,15 +50,19 @@ Seed noise (largest |s1 − s0| among conditions with two seeds; a lower bound):
 
 Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
-Seed noise (largest |s1 − s0| among conditions with two seeds; a lower bound): clean 0.0005, strip50 0.0095, strip100 0.0072
+Seed noise, from 2 conditions with two seeds (s1 − s0 each; a lower bound, the seed only changes init). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
 
-| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > seed noise |
+- clean: spreads +0.0005, -0.0000 → threshold 0.0014
+- strip50: spreads -0.0095, +0.0014 → threshold 0.0292
+- strip100: spreads -0.0072, -0.0040 → threshold 0.0249
+
+| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > noise threshold |
 |---|---|---|---|---|---|---|---|
 | H1 | super-nfc − bpe-nfc | clean | +0.0018 | [+0.0012, +0.0024] | +0.18% [+0.12%, +0.24%] | yes | yes |
-| H1 | super-nfd − bpe-nfd | clean | +0.0013 | [+0.0007, +0.0019] | +0.13% [+0.07%, +0.19%] | yes | yes |
+| H1 | super-nfd − bpe-nfd | clean | +0.0013 | [+0.0007, +0.0019] | +0.13% [+0.07%, +0.19%] | yes | no |
 | H2 | bpe-nfd − bpe-nfc | strip100 | +0.0007 | [-0.0002, +0.0016] | +0.03% [-0.01%, +0.08%] | no | no |
 | H2 | bpe-nfd − bpe-nfc | strip50 | -0.0051 | [-0.0060, -0.0042] | -0.24% [-0.28%, -0.20%] | yes | no |
-| H2 cost | bpe-nfd − bpe-nfc | clean | +0.0008 | [+0.0002, +0.0013] | +0.08% [+0.02%, +0.13%] | yes | yes |
+| H2 cost | bpe-nfd − bpe-nfc | clean | +0.0008 | [+0.0002, +0.0013] | +0.08% [+0.02%, +0.13%] | yes | no |
 | H2 | super-nfd − super-nfc | strip100 | -0.0047 | [-0.0056, -0.0038] | -0.23% [-0.27%, -0.19%] | yes | no |
 | H2 | super-nfd − super-nfc | strip50 | +0.0001 | [-0.0008, +0.0010] | +0.01% [-0.04%, +0.05%] | no | no |
 | H2 cost | super-nfd − super-nfc | clean | +0.0003 | [-0.0002, +0.0008] | +0.03% [-0.02%, +0.08%] | no | no |
@@ -75,7 +83,7 @@ Seed noise (largest |s1 − s0| among conditions with two seeds; a lower bound):
 
 Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
-| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > seed noise |
+| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > noise threshold |
 |---|---|---|---|---|---|---|---|
 | H1 | super-nfc − bpe-nfc | clean | +0.0028 | [+0.0023, +0.0034] | +0.30% [+0.24%, +0.36%] | yes | no second seed |
 
@@ -85,7 +93,7 @@ Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
 ## Pre-registered verdicts
 
-A comparison counts as resolved only when its 95% CI excludes 0 **and** |Δ| exceeds the seed noise (where a second seed exists).
+A comparison counts as resolved only when its 95% CI excludes 0 **and**, where a second seed exists, |Δ| exceeds the seed-noise threshold (a t test on the seed spreads, see the tables above).
 
 **H1** — token reduction on the val shard: NFC 17.8%, NFD 17.7% (threshold 15%): met.
 - d6 super-nfc − bpe-nfc: -0.16% [-0.22%, -0.11%] → not worse by more than 1%: yes
@@ -96,7 +104,7 @@ A comparison counts as resolved only when its 95% CI excludes 0 **and** |Δ| exc
 - Verdict: **supported**.
 
 **H2** — NFD tokenizers give lower bpc on diacritic-stripped text, at a clean-text cost within 1%:
-- d6 bpe-nfd − bpe-nfc, strip100: +0.0171 → NFD worse
+- d6 bpe-nfd − bpe-nfc, strip100: +0.0171 → not resolved
 - d6 bpe-nfd − bpe-nfc, strip50: -0.0115 → NFD better
 - d6 super-nfd − super-nfc, strip100: +0.0011 → not resolved
 - d6 super-nfd − super-nfc, strip50: +0.0013 → not resolved
@@ -108,7 +116,7 @@ A comparison counts as resolved only when its 95% CI excludes 0 **and** |Δ| exc
 - d6 super-nfd − super-nfc, clean (cost): -0.04% [-0.10%, +0.01%] → within 1%: yes
 - d8 bpe-nfd − bpe-nfc, clean (cost): +0.08% [+0.02%, +0.13%] → within 1%: yes
 - d8 super-nfd − super-nfc, clean (cost): +0.03% [-0.02%, +0.08%] → within 1%: yes
-- Verdict: **not supported (resolved comparisons point in opposite directions)**.
+- Verdict: **not supported (1 of 8 stripped-text comparisons resolved: d6 bpe strip50 (NFD better), not at every size)**.
 
 **H3** — Δbpc clean, super-nfc − bpe-nfc, by depth and seed:
 - d6: s0 -0.0018, s1 -0.0012
