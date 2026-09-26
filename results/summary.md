@@ -133,11 +133,11 @@ A comparison counts as resolved only when its 95% CI excludes 0 **and**, where a
 
 | A − B | depth | all docs | without the 5% longest | short half | long half | docs favouring A |
 |---|---|---|---|---|---|---|
-| super-nfc − bpe-nfc | d6 | -0.0018 | -0.0018 | -0.0025 | -0.0013 | 1105/1996 |
-| super-nfd − bpe-nfd | d6 | -0.0035 | -0.0036 | -0.0040 | -0.0031 | 1189/1996 |
+| super-nfc − bpe-nfc | d6 | -0.0018 | -0.0019 | -0.0025 | -0.0013 | 1105/1996 |
+| super-nfd − bpe-nfd | d6 | -0.0035 | -0.0036 | -0.0039 | -0.0031 | 1189/1996 |
 | super-nfc − bpe-nfc | d8 | +0.0018 | +0.0018 | +0.0015 | +0.0020 | 882/1996 |
-| super-nfd − bpe-nfd | d8 | +0.0013 | +0.0013 | +0.0004 | +0.0019 | 917/1996 |
-| super-nfc − bpe-nfc | d10 | +0.0028 | +0.0027 | +0.0017 | +0.0036 | 806/1996 |
+| super-nfd − bpe-nfd | d8 | +0.0013 | +0.0012 | +0.0004 | +0.0019 | 917/1996 |
+| super-nfc − bpe-nfc | d10 | +0.0028 | +0.0028 | +0.0017 | +0.0036 | 806/1996 |
 
 ## nanochat validation bpb vs test bpc (super-nfc − bpe-nfc, seed 0)
 

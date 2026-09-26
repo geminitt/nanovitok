@@ -314,7 +314,7 @@ def sensitivity(runs: dict) -> str:
             ra, rb = at[(a, depth, 0)], at[(b, depth, 0)]
             chars = np.array(ra["docs"]["clean"]["chars"])[idx]
             na, nb = arr(ra, "clean", idx), arr(rb, "clean", idx)
-            order = np.argsort(chars)
+            order = np.argsort(chars, kind="stable")  # ties broken by document order, identical on every machine
             subsets = {"all": np.arange(len(idx)), "no_top5pct": order[: int(len(idx) * 0.95)],
                        "short": order[: len(idx) // 2], "long": order[len(idx) // 2:]}
             cells = [f"{bpc(na[s], chars[s]) - bpc(nb[s], chars[s]):+.4f}" for s in subsets.values()]
