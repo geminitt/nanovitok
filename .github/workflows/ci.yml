@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Only the default environment (CPU PyTorch). The gpu environment is for scoring
+      # checkpoints on a local GPU and is not needed to test or to redo the analysis.
+      - name: Install pixi and the default environment
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.79.0
+          environments: default
+          cache: true
+
+      # nanochat at the pinned commit with the project's patch; the integration tests import it.
+      - name: Recreate third_party/nanochat
+        run: |
+          git clone --quiet https://github.com/karpathy/nanochat third_party/nanochat
+          git -C third_party/nanochat checkout --quiet "$(cat patches/NANOCHAT_COMMIT)"
+          git -C third_party/nanochat apply ../../patches/nanochat.patch
+
+      - name: Run tests
+        run: pixi run test
+
+      # results/summary.md is generated from the committed result files, and the analysis is
+      # deterministic (seeded bootstrap): regenerating it must reproduce the committed file.
+      - name: Check results/summary.md matches the recorded results
+        run: |
+          pixi run python -m vitok.analysis --results kaggle/outputs \
+            --compression kaggle/outputs/vitok-data/compression-16k.json \
+            --wordhood results/wordhood_16k.json --val-results results/val \
+            --out /tmp/summary.md --figures /tmp/figures > /dev/null
+          diff <(grep -v '^Figure' /tmp/summary.md) <(grep -v '^Figure' results/summary.md)
