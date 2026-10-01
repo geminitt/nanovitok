@@ -2,9 +2,10 @@
 
 # nanovitok
 
+[![CI](https://img.shields.io/github/actions/workflow/status/geminitt/nanovitok/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/geminitt/nanovitok/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/PYTHON-3.12-498AF2?style=for-the-badge)](./pixi.toml)
-[![pixi](https://img.shields.io/badge/ENV-pixi-A19654?style=for-the-badge)](https://pixi.sh)
-[![Kaggle](https://img.shields.io/badge/GPU-Kaggle_T4×2-6B7F4E?style=for-the-badge)](https://www.kaggle.com/code)
+[![Kaggle](https://img.shields.io/badge/GPU-Kaggle_T4×2-A19654?style=for-the-badge)](https://www.kaggle.com/code)
+[![License](https://img.shields.io/badge/LICENSE-MIT-6B7F4E?style=for-the-badge)](./LICENSE)
 
 **SuperBPE and NFD Tokenization for Small Vietnamese LMs**
 
@@ -14,16 +15,39 @@
 
 ## Overview
 
-This project measures whether **merging tokens across whitespace** (SuperBPE [1]) and **decomposing diacritics**
-(NFD) help small Vietnamese language models, and whether the effect changes with model size. Four tokenizers are
-compared under an equal-text design (every condition trains on the same text) using
-[nanochat](https://github.com/karpathy/nanochat) [3] models at three sizes: d6 / d8 / d10. The Python
-package is `vitok`.
+A language model reads tokens, and the tokenizer decides how text is cut into them. Vietnamese raises two
+questions that English does not:
+
+| Property of Vietnamese | What standard BPE does | Alternative tested |
+|---|---|---|
+| Spaces separate **syllables**, and most words have several (`học sinh`, `Việt Nam`) | Never merges across a space, so every syllable costs at least one token | **SuperBPE** [1] merges across spaces, so the same text needs fewer tokens |
+| Tones and vowel qualities are **diacritics**, and much text is typed without them | NFC encodes `ệ` as one character, so `học` and `hoc` share nothing | **NFD** writes `ệ` as `e` plus two combining marks, so `học` and `hoc` share their base letters |
+
+Fewer tokens make training and inference cheaper and fit more text into a context.
+
+**Question.** For small Vietnamese language models, are these two choices worth it: do they bring their gain
+(fewer tokens; better handling of text without diacritics) without making the model predict text worse?
+
+Four tokenizers are compared under an equal-text design (every condition trains on the same text) using
+[nanochat](https://github.com/karpathy/nanochat) [3] models at three sizes: d6 / d8 / d10. "Predicting worse"
+is measured in bits per NFC character (bpc): the model's cross-entropy on a document, in bits, divided by its
+number of characters, which every tokenizer shares. The Python package is `vitok`.
 
 | | NFC | NFD |
 |---|---|---|
 | **BPE** | `bpe-nfc` (baseline) | `bpe-nfd` |
 | **SuperBPE** | `super-nfc` | `super-nfd` |
+
+| Hypothesis | Part of the question it answers |
+|---|---|
+| **H1** (main) | Does SuperBPE save tokens without costing bpc? |
+| **H2** | Does NFD help on text without diacritics without costing bpc on normal text? |
+| **H3** | Does the answer to H1 change with model size? (the scope of H1) |
+| **H4** (exploratory) | Are SuperBPE's merged tokens Vietnamese words? (a mechanism, not a claim) |
+
+**Answer.** At 10–50M non-embedding parameters, SuperBPE cuts tokens by 17.8% at a negligible cost in bpc (at
+most +0.30%); NFD shows no measurable benefit on text without diacritics; and SuperBPE's small cost grows with
+model size, so the result is not known to hold for larger models.
 
 ---
 
@@ -32,11 +56,11 @@ package is `vitok`.
 | | |
 |---|---|
 | Tokenizers | 16k vocabulary, all trained on the same 500 MB of FineWeb-2 Vietnamese; full 256-byte alphabet; SuperBPE switches to cross-whitespace merges at 90% of the vocabulary. On FLORES-200, `bpe-nfc` needs 0.7% more tokens than the published MonTok BPE tokenizer with a 16,384 vocabulary [2] (`results/flores_ctc_16k.json`) |
-| Equal text | Every condition trains for the same number of steps on 64 sequences per step; the context length in tokens is scaled by characters per token (1,024 for BPE, 840 for SuperBPE), so each step covers about the same text. Learning rate and weight decay are pinned to BPE's batch |
+| Equal text | Every condition trains for the same number of steps on 64 sequences per step; the context length in tokens is scaled by characters per token (1,024 for BPE, 840 for SuperBPE), so each step covers about the same text. Learning rate and weight decay are pinned to BPE's batch. The SuperBPE paper matches training FLOPs instead; with equal text, SuperBPE trains on fewer tokens and so with 21% less compute (3.45·10¹⁷ against 4.35·10¹⁷ FLOPs at d10, from `train.log`) |
 | Budget | 250M / 500M / 1B BPE tokens of text at d6 / d8 / d10 (3,814 / 7,629 / 15,258 steps), about 20 tokens per non-embedding parameter |
 | Runs | Four conditions at d6 and d8; `bpe-nfc` and the better SuperBPE variant at d8 (`super-nfc`) at d10; a second seed for `bpe-nfc` and `super-nfc` at d6 and d8. Kaggle T4, fp16 |
 | Metric | Bits per NFC character (never loss per token, never bytes: NFD text has more bytes), per document, on text normal, half stripped of diacritics, and fully stripped |
-| Statistics | Paired bootstrap over documents (10,000 resamples). A difference is **resolved** only when its 95% interval excludes 0 *and*, where a second seed exists (d6, d8), it passes a t test against run-to-run noise: \|Δ\| > t(0.975, 2) × RMS of the two seed spreads on the same text variant (4.30 ×). The 1% margins are non-inferiority tests on the relative interval |
+| Statistics | Paired bootstrap over documents (10,000 resamples). A difference is **resolved** only when its 95% interval excludes 0 *and*, where a second seed exists (d6, d8), it passes a t test against run-to-run noise: \|Δ\| > t(0.975, 2) × RMS of the two seed spreads on the same text variant (4.30 ×), an approximate noise estimate (see the caveats). The 1% margins are non-inferiority tests on the relative interval |
 
 The hypotheses, margins and decision rules were committed before the first model was trained
 ([`docs/analysis_plan.md` at commit 4632328](https://github.com/geminitt/nanovitok/blob/4632328/docs/analysis_plan.md)).
@@ -69,11 +93,21 @@ changes. The few other numbers name their source.
   (per document from BOS, the same 4,963 val documents for every run), the val shard agrees with the
   test set at every size and for both normalizations (`results/summary.md`, "Sensitivity of H1 on the
   val shard"): the disagreement comes from nanochat's evaluation, not from the data split.
-- *Run-to-run noise decides H2, and it is a lower bound.* Retraining the same condition with another seed
-  moves bpc by up to 0.0005 on normal text but up to 0.0095 on stripped text. With only two seed pairs to
-  estimate that noise, a difference must exceed 4.3 times its root mean square (Student's t, 2 degrees of
-  freedom) to count; comparing with a single spread instead would flag a third of pure-noise differences.
-  The seed changes weight initialization only (data order is fixed), so even this threshold is optimistic.
+- *Run-to-run noise decides H2, and its estimate can be off in either direction.* Retraining the same
+  condition with another seed moves bpc by up to 0.0005 on normal text but up to 0.0095 on stripped text.
+  With only two seed pairs to estimate that noise, a difference must exceed 4.3 times its root mean square
+  (Student's t, 2 degrees of freedom) to count; comparing with a single spread instead would flag a third of
+  pure-noise differences. Two things bias the estimate, in opposite directions. The seed changes the weight
+  initialization but not the data order, so data-order noise is left out (the threshold is too low). And
+  with the same seed every condition starts from identical weights (all share the same parameter shapes;
+  checked on CPU with nanochat's initialization code), so that shared part cancels in a difference between
+  two conditions, which a spread between two seeds of one condition does not reflect (the threshold is too
+  high). The spreads also come from the two NFC conditions only and are applied to the NFD comparisons.
+  Under a tighter estimate, the largest H2 difference could resolve the other way: NFD BPE is +0.78% worse
+  on fully stripped text at d6 (0.0171 bpc against a threshold of 0.025).
+- *H1's intervals cover the choice of documents, not seed noise.* Adding the normal-text noise threshold of
+  d6 and d8 (0.0014 bpc, about 0.15% of d10's bpc) to the largest upper bound (+0.36% at d10) still gives
+  about +0.5%, well inside the 1% margin.
 - *Equal text is approximate.* nanochat's loader packs documents and crops the one that overflows a
   row, so conditions see nearly but not exactly the same text (SuperBPE consumed about 0.4% more
   documents at d10, by the data position in each `train.log`).
@@ -99,7 +133,8 @@ changes. The few other numbers name their source.
    above use the corrected analysis.
 
 **What would settle H2.** More seeds for all four conditions (each d6 run takes about 40 minutes on a T4),
-a seed that also changes the data order, so the noise estimate is not a lower bound, and a second seed at d10.
+seeds that also change the data order, and a second seed at d10. With several seeds per condition, the noise
+of a difference is measured directly, as the spread of that difference across seeds, instead of assumed.
 
 ---
 
