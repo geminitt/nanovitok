@@ -118,9 +118,12 @@ tests and the analysis on CPU, and the `gpu` environment scores finished checkpo
    attached): set `DEPTH`, `SEED`, `QUEUES`, `SMOKE_ITERS` in the first cell for each stage (smoke test
    with `SMOKE_ITERS=200`, then full runs with `None`: d6, d8, the second seeds, d10), then Save & Run All. Download each
    session's output into `kaggle/outputs/results-vN/`.
-4. **Setup and val-shard check** (local). Put each run's final `model_*.pt` and `meta_*.json` from the
-   notebook 02 outputs into `kaggle/outputs/results-vN/runs/<run>/base_checkpoints/dN/`, then score them all
-   on the val shard (local GPU, about 10 minutes):
+4. **Setup and val-shard check** (local). `vitok.fetch_checkpoints` downloads each run's final checkpoint
+   from the notebook 02 version that saved it (14 runs, 3.75 GB; needs a Kaggle API token) and gives each
+   run the tokenizer it was trained with. For your own runs, edit `NOTEBOOK` and `RUNS` in that module.
+   Then score every run on the val shard (local GPU; the scoring took 27 minutes on an RTX 1000 Ada 6 GB,
+   the sum of `eval_seconds` in `results/val/`). `val_docs.jsonl` is committed; `vitok.val_docs` rebuilds it
+   from notebook 01's val shard.
 
 ```bash
 pixi install
@@ -128,6 +131,10 @@ git clone https://github.com/karpathy/nanochat third_party/nanochat
 git -C third_party/nanochat checkout $(cat patches/NANOCHAT_COMMIT)
 git -C third_party/nanochat apply ../../patches/nanochat.patch
 pixi run test
+pixi run python -m vitok.fetch_checkpoints --out kaggle/outputs
+# only if val_docs.jsonl is missing (shards/ is in notebook 01's output, not in the repo)
+pixi run python -m vitok.val_docs --shard kaggle/outputs/vitok-data/shards/shard_99999.parquet \
+    --out kaggle/outputs/vitok-data/val_docs.jsonl
 pixi run -e gpu python -m vitok.eval_checkpoints --runs kaggle/outputs \
     --docs kaggle/outputs/vitok-data/val_docs.jsonl --nanochat third_party/nanochat --out results/val
 ```

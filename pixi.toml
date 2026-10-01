@@ -18,6 +18,7 @@ psutil = "*"
 pytest = "*"
 ipykernel = ">=7.3.0,<8"
 matplotlib = ">=3.11.1,<4"
+kagglehub = ">=1.0.2,<2"
 
 [pypi-dependencies]
 tiktoken = "*"
