@@ -13,7 +13,7 @@
 
 Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
-Seed noise, from 2 conditions with two seeds (s1 − s0 each; a lower bound, the seed only changes init). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
+Seed noise, from 2 conditions with two seeds (s1 − s0 each, NFC conditions only; the seed changes the init, not the data order, see README). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
 
 - clean: spreads -0.0001, +0.0005 → threshold 0.0014
 - strip50: spreads -0.0023, -0.0004 → threshold 0.0072
@@ -50,7 +50,7 @@ Seed noise, from 2 conditions with two seeds (s1 − s0 each; a lower bound, the
 
 Documents scored by every run: clean 1996, strip50 1993, strip100 1987
 
-Seed noise, from 2 conditions with two seeds (s1 − s0 each; a lower bound, the seed only changes init). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
+Seed noise, from 2 conditions with two seeds (s1 − s0 each, NFC conditions only; the seed changes the init, not the data order, see README). Threshold for a difference = t(0.975, 2) = 4.30 × the root mean square of the spreads:
 
 - clean: spreads +0.0005, -0.0000 → threshold 0.0014
 - strip50: spreads -0.0095, +0.0014 → threshold 0.0292

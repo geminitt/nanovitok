@@ -86,8 +86,12 @@ def noise_threshold(spreads: list[float], level: float = 0.95) -> float | None:
     t_(1 - alpha/2, k) * sigma_hat, 4.30 * sigma_hat for k = 2. Comparing |Delta| with a single spread
     instead would flag a third of pure-noise differences.
 
-    The seed only changes weight init (the data order is identical), so this is still a lower bound on the
-    noise. None when no condition has a second seed.
+    Two assumptions make this an approximation of unknown direction. The data order is identical in every
+    run, so data-order noise is left out (the threshold is too low by that much). And every condition is
+    initialized from the same seed with the same parameter shapes, so A and B start from identical weights:
+    that shared part cancels in A - B, which the spreads (two seeds of one condition) do not reflect (the
+    threshold is too high by that much). The spreads also come from the NFC conditions only. None when no
+    condition has a second seed.
     """
     if not spreads:
         return None
@@ -140,8 +144,8 @@ def summarize(runs: dict, compression: dict, rows: list[dict]) -> str:
         spreads = {v: seed_spreads(at, v, idx[v]) for v in VARIANTS}
         if any(spreads.values()):
             k = len(next(iter(spreads.values())))
-            lines += [f"Seed noise, from {k} conditions with two seeds (s1 − s0 each; a lower bound, the seed only "
-                      f"changes init). Threshold for a difference = t(0.975, {k}) = {t_quantile(0.975, k):.2f} × "
+            lines += [f"Seed noise, from {k} conditions with two seeds (s1 − s0 each, NFC conditions only; the seed "
+                      f"changes the init, not the data order, see README). Threshold for a difference = t(0.975, {k}) = {t_quantile(0.975, k):.2f} × "
                       "the root mean square of the spreads:", ""]
             lines += [f"- {v}: spreads " + ", ".join(f"{d:+.4f}" for d in spreads[v]) +
                       f" → threshold {noise_threshold(spreads[v]):.4f}" for v in VARIANTS]
