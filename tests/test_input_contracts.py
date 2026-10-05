@@ -91,3 +91,76 @@ def test_condition_names_parse_exactly(condition, parsed):
             parse(condition)
     else:
         assert parse(condition) == parsed
+
+
+def _retrofit_base(tmp_path, tokenizers_dir):
+    import json
+    return json.loads((tokenizers_dir / "bpe-nfc" / "tokenizer.json").read_text(encoding="utf-8"))
+
+
+def _retrofit_not_bpe(tmp_path, tokenizers_dir):
+    from vitok.retrofit import base_parts
+    base = _retrofit_base(tmp_path, tokenizers_dir)
+    base["model"]["type"] = "WordPiece"
+    base_parts(base)
+
+
+def _retrofit_no_split(tmp_path, tokenizers_dir):
+    from vitok.retrofit import base_parts
+    base = _retrofit_base(tmp_path, tokenizers_dir)
+    base["pre_tokenizer"] = {"type": "ByteLevel", "add_prefix_space": False}
+    base_parts(base)
+
+
+def _retrofit_split_without_byte_level(tmp_path, tokenizers_dir):
+    from vitok.retrofit import base_parts
+    base = _retrofit_base(tmp_path, tokenizers_dir)
+    base["pre_tokenizer"]["pretokenizers"] = [p for p in base["pre_tokenizer"]["pretokenizers"] if p["type"] == "Split"]
+    base_parts(base)
+
+
+def _retrofit_byte_level_without_split(tmp_path, tokenizers_dir):
+    from vitok.retrofit import base_parts
+    base = _retrofit_base(tmp_path, tokenizers_dir)
+    base["pre_tokenizer"]["pretokenizers"] = [p for p in base["pre_tokenizer"]["pretokenizers"] if p["type"] != "Split"]
+    base_parts(base)
+
+
+def _retrofit_merge_with_one_unknown_token(tmp_path, tokenizers_dir):
+    from vitok.retrofit import retrofit
+    retrofit(_retrofit_base(tmp_path, tokenizers_dir), [("a", "token này")], "multi")
+
+
+def _retrofit_unknown_kind(tmp_path, tokenizers_dir):
+    from vitok.retrofit import retrofit
+    retrofit(_retrofit_base(tmp_path, tokenizers_dir), [], "triple")
+
+
+def _retrofit_merge_of_unknown_tokens(tmp_path, tokenizers_dir):
+    from vitok.retrofit import retrofit
+    retrofit(_retrofit_base(tmp_path, tokenizers_dir), [("không có", "token này")], "multi")
+
+
+def _retrofit_special_id_taken(tmp_path, tokenizers_dir):
+    from vitok.retrofit import retrofit
+    base = _retrofit_base(tmp_path, tokenizers_dir)
+    base["added_tokens"][0]["id"] = 5  # an id the vocabulary already gives to a byte
+    retrofit(base, [], "single")
+
+
+RETROFIT_CASES = [
+    (_retrofit_not_bpe, ValueError, "expected a BPE model"),
+    (_retrofit_no_split, ValueError, "one regex Split followed by ByteLevel"),
+    (_retrofit_split_without_byte_level, ValueError, "one regex Split followed by ByteLevel"),
+    (_retrofit_byte_level_without_split, ValueError, "one regex Split followed by ByteLevel"),
+    (_retrofit_merge_with_one_unknown_token, ValueError, "neither in the base"),
+    (_retrofit_unknown_kind, ValueError, "unknown kind"),
+    (_retrofit_merge_of_unknown_tokens, ValueError, "neither in the base"),
+    (_retrofit_special_id_taken, ValueError, "which the vocabulary gives to"),
+]
+
+
+@pytest.mark.parametrize("case,error,message", RETROFIT_CASES, ids=[c.__name__.strip("_") for c, _, _ in RETROFIT_CASES])
+def test_retrofit_refuses_unusable_tokenizers_and_merges(tmp_path, tokenizers_dir, case, error, message):
+    with pytest.raises(error, match=message):
+        case(tmp_path, tokenizers_dir)
