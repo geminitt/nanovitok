@@ -95,6 +95,8 @@ def train_all(corpus: Path, out: Path, vocab_size: int, transition: float, workr
         vocab = json.loads((bpe_dir / "vocab.json").read_text(encoding="utf-8"))
         n_alphabet = len(vocab) - len(merges)
         n_inherit = round(transition * vocab_size) - n_alphabet
+        if n_inherit <= 0:
+            raise ValueError(f"transition {transition} x vocab {vocab_size} leaves no merges above the {n_alphabet}-symbol alphabet")
         meta[norm] = {"n_alphabet": n_alphabet, "n_inherited_merges": n_inherit}
         if stage2 == "fork":
             super_dir = workroot / f"super-{norm}"

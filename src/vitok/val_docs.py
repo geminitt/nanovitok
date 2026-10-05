@@ -19,7 +19,9 @@ from vitok.data import eval_text
 def val_docs(shard: Path, min_chars: int = 300, max_chars: int = 2500) -> list[dict]:
     texts = pq.read_table(shard, columns=["text"]).column("text").to_pylist()
     docs = (eval_text(t, min_chars, max_chars) for t in texts)
-    return [{"id": i, "text": d} for i, d in enumerate(d for d in docs if d is not None)]
+    out = [{"id": i, "text": d} for i, d in enumerate(d for d in docs if d is not None)]
+    assert all(len(d["text"]) <= max_chars for d in out)  # cutting at a space can leave fewer than min_chars
+    return out
 
 
 def main():

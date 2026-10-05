@@ -95,13 +95,11 @@ def test_too_long_documents_are_skipped(tiny_model):
 def test_random_model_bpc_near_uniform(tiny_model):
     import math
     from vitok.eval import sequence_nats
-    from vitok.stats import bpc
-
     model, tok, _ = tiny_model
     texts = [s[:60] for s in SENTENCES]
     nats = sequence_nats(model, tok, texts, max_len=64)
     n_tokens = sum(len(tok.encode(t)) for t in texts)
-    per_token_bits = bpc(nats, [1]) * 1 / n_tokens  # bits per token
+    per_token_bits = sum(nats) / math.log(2) / n_tokens  # bits per token (bpc needs one char count per text)
     uniform = math.log2(tok.get_vocab_size())
     assert abs(per_token_bits - uniform) / uniform < 0.15
 

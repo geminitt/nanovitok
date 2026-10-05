@@ -27,7 +27,8 @@ class HFTokenizer:
 
     def encode_special(self, text):
         token_id = self.tok.token_to_id(text)
-        assert token_id is not None, f"unknown special token {text}"
+        if token_id is None:
+            raise ValueError(f"the tokenizer has no special token {text!r}")
         return token_id
 
     def get_bos_token_id(self):
@@ -70,5 +71,7 @@ def write_token_bytes(tokenizer_dir):
     # Counting chars avoids decoding partial UTF-8 sequences into replacement characters.
     counts = [0] * hf.get_vocab_size()
     for token, token_id in hf.tok.get_vocab(with_added_tokens=True).items():
+        assert 0 <= token_id < len(counts), (token, token_id, len(counts))
         counts[token_id] = 0 if token in special else len(token)
+    assert counts[hf.get_bos_token_id()] == 0
     torch.save(torch.tensor(counts, dtype=torch.int32), os.path.join(tokenizer_dir, "token_bytes.pt"))

@@ -3,6 +3,7 @@ from vitok.text import nfc, nfd, strip_diacritics, strip_diacritics_partial, ton
 
 def test_strip_diacritics():
     assert strip_diacritics("Đường phố Hà Nội") == "Duong pho Ha Noi"
+    assert strip_diacritics("đã đến Đà Nẵng") == "da den Da Nang"
     assert strip_diacritics("Nghiêng ngả ưu tư") == "Nghieng nga uu tu"
 
 
@@ -22,6 +23,12 @@ def test_partial_strip_is_deterministic():
     assert strip_diacritics_partial(s, 0.5, seed=1) == strip_diacritics_partial(s, 0.5, seed=1)
     assert strip_diacritics_partial(s, 0.0) == s
     assert strip_diacritics_partial(s, 1.0) == strip_diacritics(s)
+    # only syllables change: spacing, line breaks and length are kept byte for byte
+    spaced = "học  sinh\ngiỏi   nhất"
+    for frac in (0.0, 0.5, 1.0):
+        out = strip_diacritics_partial(spaced, frac, seed=2)
+        assert len(out) == len(spaced) and [i for i, c in enumerate(out) if c in " \n"] == [i for i, c in enumerate(spaced) if c in " \n"]
+    assert strip_diacritics_partial(spaced, 1.0) == strip_diacritics(spaced)
 
 
 def test_tone_change():

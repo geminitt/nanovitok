@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from tokenizers import Tokenizer
 
 from conftest import SENTENCES
@@ -25,6 +27,22 @@ def test_unseen_bytes_are_not_dropped(tokenizers_dir):
         assert hf.decode(hf.encode("🎉")) == "🎉"
 
 
+def test_token_bytes_are_utf8_lengths(tokenizers_dir, tmp_path):
+    import shutil, torch
+    from vitok.hf_tokenizer import write_token_bytes
+    d = tmp_path / "tok"
+    shutil.copytree(tokenizers_dir / "bpe-nfd", d)
+    write_token_bytes(d)
+    tb = torch.load(d / "token_bytes.pt")
+    hf = HFTokenizer.from_directory(d)
+    assert tb.dtype == torch.int32 and tb.shape[0] == hf.get_vocab_size()
+    for token, i in hf.tok.get_vocab(with_added_tokens=True).items():
+        if token in hf.get_special_tokens():
+            assert tb[i] == 0
+        else:  # byte-level tokens spell each byte as one character
+            assert tb[i] == len(token)
+
+
 def test_special_tokens_and_bos(tokenizers_dir):
     hf = HFTokenizer.from_directory(tokenizers_dir / "bpe-nfc")
     ids = hf.encode("xin chào", prepend="<|bos|>")
@@ -32,6 +50,18 @@ def test_special_tokens_and_bos(tokenizers_dir):
     assert hf.get_special_tokens() == set(SPECIAL_TOKENS)
     batch = hf.encode(["a", "b"], prepend=hf.get_bos_token_id())
     assert all(row[0] == hf.get_bos_token_id() for row in batch)
+    # prepend/append accept an id or a special-token string, for one text or a batch, and add nothing else
+    plain = hf.encode("xin chào")
+    end = hf.encode_special("<|assistant_end|>")
+    for app in (end, "<|assistant_end|>"):
+        assert hf.encode("xin chào", append=app) == plain + [end]
+        assert hf.encode(["xin chào"], prepend="<|bos|>", append=app) == [[hf.get_bos_token_id()] + plain + [end]]
+    assert hf.encode(["a", "b"]) == [hf.encode("a"), hf.encode("b")]
+    with pytest.raises(ValueError, match="Invalid input type"):
+        hf.encode(42)
+    # decoding keeps special tokens (nanochat reads them back) and returns NFC
+    ids = hf.encode("xin chào", prepend="<|bos|>", append="<|assistant_end|>")
+    assert hf.decode(ids) == "<|bos|>xin chào<|assistant_end|>"
 
 
 def test_nfd_tokenizers_see_combining_marks(tokenizers_dir):
@@ -65,8 +95,22 @@ def test_superbpe_inherits_merges(tokenizers_dir):
         assert meta[norm]["n_inherited_merges"] == round(0.9 * 600) - 256
 
 
-def test_compression_stats(tokenizers_dir):
-    tok = Tokenizer.from_file(str(tokenizers_dir / "super-nfc" / "tokenizer.json"))
-    s = stats_for(tok, SENTENCES)
-    assert s["chars_per_token"] > 1
-    assert 0 <= s["superword_token_share"] <= 1
+@pytest.mark.parametrize("cond", ["bpe-nfc", "super-nfc"])
+def test_compression_stats_are_the_counts(tokenizers_dir, cond):
+    import collections, re
+    tok = Tokenizer.from_file(str(tokenizers_dir / cond / "tokenizer.json"))
+    got = stats_for(tok, SENTENCES, top_k=5)
+    ids = [i for d in SENTENCES for i in tok.encode(d, add_special_tokens=False).ids]
+    vocab = tok.get_vocab(with_added_tokens=False)
+    superwords = {i for t, i in vocab.items() if "Ġ" in t.strip("Ġ")}  # a space inside the token, not at its ends
+    used = collections.Counter(ids)
+    syllables = sum(len(re.findall(r"[^\W\d_]+", d)) for d in SENTENCES)
+    chars = sum(map(len, SENTENCES))
+    assert got["tokens"] == len(ids) and got["chars_nfc"] == chars and got["vocab_size"] == len(vocab)
+    assert got["chars_per_token"] == pytest.approx(chars / len(ids))
+    assert got["tokens_per_syllable"] == pytest.approx(len(ids) / syllables)
+    assert got["superword_vocab"] == len(superwords)
+    assert got["superword_token_share"] == pytest.approx(sum(used[i] for i in superwords) / len(ids))
+    want_top = [(tok.decode([i]), c) for i, c in used.most_common() if i in superwords][:5]
+    assert got["top_superwords"] == want_top
+    assert (len(superwords) > 0) == (cond == "super-nfc") and (got["superword_token_share"] > 0) == (cond == "super-nfc")

@@ -10,7 +10,7 @@ import random
 import re
 from pathlib import Path
 
-from vitok.text import TONE_MARKS, tone_of, with_tone
+from vitok.text import TONE_MARKS, strip_diacritics, tone_of, with_tone
 
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 WORD_RE = re.compile(r"[^\W\d_]+")
@@ -33,6 +33,7 @@ def build_pairs(docs: list[str], syllables: dict[str, int], n: int, min_count: i
                        if (w := with_tone(word, t)) and w.lower() in valid and w.lower() != word.lower()]
             if options:
                 swapped = rng.choice(options)
+                assert swapped != word and strip_diacritics(swapped) == strip_diacritics(word), (word, swapped)
                 pairs.append({"id": len(pairs), "good": sent,
                               "bad": sent[:m.start()] + swapped + sent[m.end():],
                               "from": word, "to": swapped})

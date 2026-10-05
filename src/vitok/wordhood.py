@@ -112,6 +112,7 @@ def measure(tok: Tokenizer, docs: list[str]) -> dict:
                 run_count[k][key] += 1
                 run_hit[k][key] += is_word
 
+    assert all(hit[k] <= seen[k] for k in seen) and all(base_hit[k] <= base_seen[k] for k in base_seen)
     matched = lambda k: frequency_matched_rate(run_count[k], run_hit[k], len(superword_types[k]))
 
     total = sum(seen.values())

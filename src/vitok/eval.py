@@ -8,6 +8,7 @@ over the documents every condition could score.
 
 import argparse
 import json
+import math
 import os
 import time
 from pathlib import Path
@@ -32,6 +33,7 @@ def sequence_nats(model, tokenizer, texts: list[str], max_len: int, batch_size: 
     device = model.get_device()
     bos = tokenizer.get_bos_token_id()
     ids = tokenizer.encode(texts, prepend=bos)
+    assert len(ids) == len(texts) and all(seq and seq[0] == bos for seq in ids)
     out: list[float | None] = [None] * len(texts)
     order = sorted((i for i in range(len(texts)) if 2 <= len(ids[i]) <= max_len + 1), key=lambda i: len(ids[i]))
     for start in range(0, len(order), batch_size):
@@ -47,8 +49,12 @@ def sequence_nats(model, tokenizer, texts: list[str], max_len: int, batch_size: 
             x = torch.cat([x, x[:, :1]], dim=1)
             y = torch.cat([y, torch.full_like(y[:, :1], -1)], dim=1)
         loss = model(x.to(device), y.to(device), loss_reduction="none").view(len(chunk), -1)
+        assert loss.shape == x.shape, (tuple(loss.shape), tuple(x.shape))
         for r, i in enumerate(chunk):
-            out[i] = loss[r].double().sum().item()
+            nats = loss[r].double().sum().item()
+            if not (math.isfinite(nats) and nats >= 0):  # fp16 overflow is a numerical failure, not a score
+                raise FloatingPointError(f"text {i}: loss {nats}")
+            out[i] = nats
     return out
 
 
@@ -87,6 +93,7 @@ def main():
         good = sequence_nats(model, tokenizer, [p["good"] for p in pairs], max_len, args.batch_size)
         bad = sequence_nats(model, tokenizer, [p["bad"] for p in pairs], max_len, args.batch_size)
         result["pairs"] = {"ids": [p["id"] for p in pairs], "good_nats": good, "bad_nats": bad}
+    assert all(len(v["nats"]) == len(v["chars"]) == len(docs) for v in result["docs"].values())
     result["eval_seconds"] = time.time() - t0
 
     args.out.parent.mkdir(parents=True, exist_ok=True)

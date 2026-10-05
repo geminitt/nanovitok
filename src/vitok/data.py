@@ -55,7 +55,9 @@ def truncate_chars(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     cut = text.rfind(" ", 0, max_chars)
-    return text[: cut if cut > 0 else max_chars]
+    out = text[: cut if cut > 0 else max_chars]
+    assert len(out) <= max_chars and text.startswith(out)
+    return out
 
 
 def eval_text(text: str, min_chars: int = 300, max_chars: int = 2500) -> str | None:

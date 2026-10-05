@@ -23,7 +23,8 @@ def find_runs(root: Path) -> dict[str, Path]:
     for ckpt in sorted(root.rglob("base_checkpoints/d*/model_*.pt")):
         run_dir = ckpt.parents[2]
         if RUN_RE.fullmatch(run_dir.name):
-            assert runs.get(run_dir.name, run_dir) == run_dir, f"two copies of {run_dir.name}"
+            if runs.get(run_dir.name, run_dir) != run_dir:
+                raise ValueError(f"two copies of {run_dir.name}: {runs[run_dir.name]} and {run_dir}")
             runs[run_dir.name] = run_dir
     return runs
 
@@ -43,14 +44,16 @@ def main():
     runs = find_runs(args.runs)
     if args.only:
         runs = {t: d for t, d in runs.items() if t in args.only}
-    assert runs, f"no checkpoints under {args.runs}"
+    if not runs:
+        raise SystemExit(f"no checkpoints under {args.runs}")
     args.out.mkdir(parents=True, exist_ok=True)
     for tag, run_dir in sorted(runs.items()):
         out = args.out / f"{tag}.json"
         if out.exists():
             print(f"[{tag}] done already", flush=True)
             continue
-        assert (run_dir / "tokenizer" / "tokenizer.json").exists(), f"{run_dir}/tokenizer is missing"
+        if not (run_dir / "tokenizer" / "tokenizer.json").exists():
+            raise SystemExit(f"{run_dir}/tokenizer is missing (vitok.fetch_checkpoints restores it)")
         env = {**os.environ, "NANOCHAT_BASE_DIR": str(run_dir.resolve()), "NANOCHAT_DTYPE": args.dtype,
                "PYTHONPATH": os.pathsep.join([str(args.nanochat.resolve()), os.environ.get("PYTHONPATH", "")])}
         cmd = [sys.executable, "-m", "vitok.eval", "--test", str(args.docs.resolve()),

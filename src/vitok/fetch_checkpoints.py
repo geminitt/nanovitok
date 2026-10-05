@@ -41,8 +41,11 @@ def kaggle_download(version: int, rel: str, stage: Path, attempts: int = 3) -> P
 
     for attempt in range(1, attempts + 1):
         try:
-            return Path(kagglehub.notebook_output_download(f"{NOTEBOOK}/versions/{version}", path=rel,
+            path = Path(kagglehub.notebook_output_download(f"{NOTEBOOK}/versions/{version}", path=rel,
                                                            output_dir=str(stage)))
+            if not path.is_file():
+                raise FileNotFoundError(f"kagglehub returned {path}, which is not a file")
+            return path
         except Exception as e:
             if attempt == attempts:
                 raise
@@ -75,6 +78,7 @@ def fetch(out: Path, tokenizers: Path, only: list[str] | None = None, download=k
                     continue
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(src, dst)
+                assert dst.is_file() and not Path(src).exists()
                 print(f"v{version} {rel}: {dst.stat().st_size / 1e6:.0f} MB", flush=True)
             tok_dir = run_dir / "tokenizer"
             if not (tok_dir / "token_bytes.pt").exists():

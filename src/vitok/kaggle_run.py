@@ -52,6 +52,8 @@ def run_one(args, cond: str, log) -> None:
         log(f"[{tag}] train: {' '.join(cmd[3:])}")
         with open(run_dir / "train.log", "w") as f:
             subprocess.run(cmd, cwd=args.nanochat, env=env, stdout=f, stderr=subprocess.STDOUT, check=True)
+        if not final.exists():
+            raise RuntimeError(f"[{tag}] training finished without writing {final}")
     for p in ckpt_dir.glob("optim_*.pt"):  # optimizer state is only needed for resuming
         p.unlink()
 

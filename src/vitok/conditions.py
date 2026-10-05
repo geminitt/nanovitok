@@ -21,6 +21,9 @@ DEVICE_BATCH = {6: 32, 8: 32, 10: 16}
 
 
 def seq_len(cpt: dict, condition: str) -> int:
+    for c in (BASE_CONDITION, condition):
+        if not cpt.get(c, 0) > 0:
+            raise ValueError(f"no positive chars-per-token for {c!r} in the compression file")
     raw = BASE_SEQ * cpt[BASE_CONDITION] / cpt[condition]
     return max(8, round(raw / 8) * 8)
 
@@ -28,10 +31,13 @@ def seq_len(cpt: dict, condition: str) -> int:
 def train_args(cpt: dict, condition: str, depth: int, device_batch: int | None = None) -> dict:
     t = seq_len(cpt, condition)
     base_batch = SEQS_PER_STEP * BASE_SEQ
-    return {
+    db = device_batch or DEVICE_BATCH[depth]
+    if SEQS_PER_STEP % db:
+        raise ValueError(f"device batch {db} must divide the {SEQS_PER_STEP} sequences per step")
+    cfg = {
         "depth": depth,
         "max-seq-len": t,
-        "device-batch-size": device_batch or DEVICE_BATCH[depth],
+        "device-batch-size": db,
         "total-batch-size": SEQS_PER_STEP * t,
         "scaling-batch-size": base_batch,
         "num-iterations": BUDGET_TOKENS[depth] // base_batch,
@@ -39,6 +45,10 @@ def train_args(cpt: dict, condition: str, depth: int, device_batch: int | None =
         # windows with an explicit SDPA mask, which still does the full T^2 work and loses the is_causal path
         "window-pattern": "L",
     }
+    # equal text: every condition of a depth gets the same steps and sequences, so each step covers about the same text
+    assert cfg["num-iterations"] > 0 and cfg["total-batch-size"] == SEQS_PER_STEP * t
+    assert cfg["total-batch-size"] % (cfg["device-batch-size"] * t) == 0
+    return cfg
 
 
 def load_cpt(compression_json: Path) -> dict:

@@ -28,6 +28,7 @@ from tokenizers import Tokenizer, models
 SEP = np.uint32(0xFFFFFFFF)  # between pretokens: pairs never cross it
 HOLE = np.uint32(0xFFFFFFFE)  # right half of a merged pair
 BANNED = np.int64(-(1 << 62))  # count of a pair whose token breaks the superword rules
+EXTRA_CAPACITY = 1024  # initial room for pairs that appear during training; doubles when full
 
 
 def _key(left: np.ndarray, right: np.ndarray) -> np.ndarray:
@@ -64,7 +65,9 @@ def encode_corpus(files: list[str], vocab: dict[str, int], merges: list[tuple[st
                     batch = []
             if batch:
                 flush(batch)
-    return np.concatenate(parts) if parts else np.array([SEP], dtype=np.uint32)
+    ids = np.concatenate(parts) if parts else np.array([SEP], dtype=np.uint32)
+    assert np.all((ids < HOLE) | (ids == SEP)), "a vocabulary id collides with the SEP/HOLE markers"
+    return ids
 
 
 class _PairCounts:
@@ -75,8 +78,8 @@ class _PairCounts:
         ok = (left < HOLE) & (right < HOLE)
         self.keys, counts = np.unique(_key(left[ok], right[ok]), return_counts=True)
         self.counts = counts.astype(np.int64)
-        self.extra_keys = np.zeros(1024, dtype=np.uint64)
-        self.extra_counts = np.zeros(1024, dtype=np.int64)
+        self.extra_keys = np.zeros(EXTRA_CAPACITY, dtype=np.uint64)
+        self.extra_counts = np.zeros(EXTRA_CAPACITY, dtype=np.int64)
         self.n_extra = 0
         self.slot = {}
 
@@ -94,6 +97,10 @@ class _PairCounts:
                 best_key, best_count = k, int(m)
         return best_key, best_count
 
+    def count(self, key: int) -> int:
+        counts, i = self._locate(key)
+        return int(counts[i])
+
     def _locate(self, key: int) -> tuple[np.ndarray, int]:
         i = int(np.searchsorted(self.keys, key))
         if i < len(self.keys) and self.keys[i] == key:
@@ -108,6 +115,8 @@ class _PairCounts:
         pos = np.minimum(np.searchsorted(self.keys, keys), max(len(self.keys) - 1, 0))
         found = self.keys[pos] == keys if len(self.keys) else np.zeros(len(keys), dtype=bool)
         self.counts[pos[found]] += deltas[found]
+        touched = self.counts[pos[found]]
+        assert np.all((touched >= 0) | (touched < BANNED // 2)), "a pair count went negative"
         for k, d in zip(keys[~found].tolist(), deltas[~found].tolist()):
             s = self.slot.get(k)
             if s is None:
@@ -204,7 +213,9 @@ def train_stage2(ids: np.ndarray, vocab: dict[str, int], vocab_size: int, max_wo
         id_to_token[new] = token
         merges.append((id_to_token[a], id_to_token[b]))
         counts.update(*_merge(tok, nxt, prv, a, b, new))
+        assert counts.count(key) == 0, f"pair {token!r} still occurs after merging it"
         if log_every and len(merges) % log_every == 0:
             print(f"stage 2: {len(merges)} merges, vocab {len(vocab)}/{vocab_size}, last {token!r} x{count}, "
                   f"{time.time() - start:.0f}s", flush=True)
+    assert len(set(vocab.values())) == len(vocab), "two tokens share an id"
     return vocab, merges

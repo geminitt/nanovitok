@@ -43,18 +43,30 @@ def load(results_dir: Path) -> dict:
         if m:
             key = (m["cond"], int(m["depth"]), int(m["seed"]))
             # two files for one run (say, test and val results under one root) must not silently replace each other
-            assert key not in seen, f"two result files for {path.name}: {seen[key]} and {path}"
+            if key in seen:
+                raise ValueError(f"two result files for {path.name}: {seen[key]} and {path}")
             seen[key] = path
             runs[key] = json.loads(path.read_text(encoding="utf-8"))
     return runs
 
 
 def common_docs(runs: list[dict], variant: str) -> np.ndarray:
-    """Indices of documents every run could score (none exceeded its context)."""
-    ok = np.ones(len(runs[0]["docs"][variant]["nats"]), bool)
+    """Indices of documents every run could score (none exceeded its context).
+
+    Paired comparisons index every run with these positions, so all runs must hold the same documents in the same
+    order with the same character counts; result files that disagree are refused.
+    """
+    first = runs[0]
+    for r in runs[1:]:
+        if r.get("doc_ids") != first.get("doc_ids") or r["docs"][variant]["chars"] != first["docs"][variant]["chars"]:
+            raise ValueError(f"result files disagree on the documents or their lengths ({variant}); they cannot be paired")
+    ok = np.ones(len(first["docs"][variant]["nats"]), bool)
     for r in runs:
         ok &= np.array([n is not None for n in r["docs"][variant]["nats"]])
-    return np.flatnonzero(ok)
+    idx = np.flatnonzero(ok)
+    if len(idx) == 0:
+        raise ValueError(f"no document was scored by every run ({variant})")
+    return idx
 
 
 def arr(run, variant, idx):
@@ -96,7 +108,9 @@ def noise_threshold(spreads: list[float], level: float = 0.95) -> float | None:
     if not spreads:
         return None
     sigma = math.sqrt(sum(d * d for d in spreads) / len(spreads))
-    return t_quantile(1 - (1 - level) / 2, len(spreads)) * sigma
+    threshold = t_quantile(1 - (1 - level) / 2, len(spreads)) * sigma
+    assert threshold >= 0
+    return threshold
 
 
 def comparisons(runs: dict) -> list[dict]:
@@ -356,6 +370,7 @@ def nonembedding_params(user_config: dict) -> int:
     base = user_config["depth"] * user_config["aspect_ratio"]
     head = user_config["head_dim"]
     n_embd = -(-base // head) * head
+    assert n_embd >= base and n_embd % head == 0
     return 12 * n_embd * n_embd * user_config["depth"]
 
 

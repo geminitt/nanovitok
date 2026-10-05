@@ -33,6 +33,7 @@ STAGE2_REGEX = r"\p{N}{1,3}| ?[^\s\p{L}\p{M}\p{N}]{2,}[\r\n/]*| +(?!\S)"
 
 def parse(condition: str) -> tuple[str, str]:
     """'super-nfd' -> ('super', 'nfd')."""
-    algo, norm = condition.split("-")
-    assert algo in ("bpe", "super") and norm in ("nfc", "nfd"), condition
+    algo, _, norm = condition.partition("-")
+    if algo not in ("bpe", "super") or norm not in ("nfc", "nfd"):
+        raise ValueError(f"unknown condition {condition!r}: expected one of {CONDITIONS}")
     return algo, norm

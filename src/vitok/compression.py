@@ -20,6 +20,8 @@ SPACE = "Ġ"
 
 
 def stats_for(tok: Tokenizer, docs: list[str], top_k: int = 30) -> dict:
+    if not any(docs):
+        raise ValueError("no text to measure compression on")
     enc = tok.encode_batch(docs, add_special_tokens=False)
     n_tokens = sum(len(e.ids) for e in enc)
     n_chars = sum(len(d) for d in docs)
@@ -30,6 +32,7 @@ def stats_for(tok: Tokenizer, docs: list[str], top_k: int = 30) -> dict:
     used = collections.Counter(i for e in enc for i in e.ids)
     super_uses = sum(c for i, c in used.items() if i in superword_ids)
     top = [(tok.decode([i]), c) for i, c in used.most_common() if i in superword_ids][:top_k]
+    assert 0 <= super_uses <= n_tokens
     return {
         "tokens": n_tokens,
         "chars_nfc": n_chars,
