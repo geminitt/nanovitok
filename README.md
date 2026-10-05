@@ -21,7 +21,7 @@ questions that English does not:
 | Property of Vietnamese | What standard BPE does | Alternative tested |
 |---|---|---|
 | Spaces separate **syllables**, and most words have several (`học sinh`, `Việt Nam`) | Never merges across a space, so every syllable costs at least one token | **SuperBPE** [1] merges across spaces, so the same text needs fewer tokens |
-| Tones and vowel qualities are **diacritics**, and much text is typed without them | NFC encodes `ệ` as one character, so `học` and `hoc` share nothing | **NFD** writes `ệ` as `e` plus two combining marks, so `học` and `hoc` share their base letters |
+| Tones and vowel qualities are **diacritics**, and much text is typed without them | NFC encodes `ệ` as one character, so `học` and `hoc` share nothing | **NFD** writes `ệ` as `e` plus two combining marks, meant to let `học` and `hoc` share their base letters (but see the note under H2: a 16k BPE merges the marks back) |
 
 Fewer tokens make training and inference cheaper and fit more text into a context.
 
@@ -131,6 +131,8 @@ changes. The few other numbers name their source.
    document-bootstrap significance ignored seed noise (it is now a t test on the seed spreads); H4 was
    compared with all syllable runs instead of the pre-registered frequency-matched baseline. The verdicts
    above use the corrected analysis.
+
+> **Note:** H2 never tested shared base letters. Measured after the study, on 190,126 diacritized syllable occurrences of 500 test documents: a syllable and its stripped form share at least one token in 0.5% of cases with `bpe-nfd`, exactly as with `bpe-nfc` (0.5%), because the 16k BPE merges letters and marks back into whole syllables (`học` is one token, `hoc` another). A tokenizer that keeps the diacritic pattern as a separate token shares the base in 100% of cases, at 1.96 instead of 1.20 tokens per syllable. H2's null result is therefore no evidence about diacritic decomposition itself.
 
 **What would settle H2.** More seeds for all four conditions (each d6 run takes about 40 minutes on a T4),
 seeds that also change the data order, and a second seed at d10. With several seeds per condition, the noise
