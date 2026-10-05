@@ -117,11 +117,13 @@ def test_t_quantile_matches_the_table(df, expected):
 
 
 @settings(max_examples=300, deadline=None)
-@given(st.floats(min_value=-60, max_value=60, allow_nan=False).filter(lambda x: x == 0 or abs(x) >= 1e-5))
+@given(st.one_of(st.floats(min_value=-60, max_value=60, allow_nan=False),
+                 st.floats(min_value=-1e-5, max_value=1e-5, allow_nan=False)))
 def test_t_cdf_is_the_student_t_cdf(x):
-    # closed forms exist for 1 and 2 degrees of freedom (Cauchy, and x / (2 sqrt(2 + x^2)))
-    assert t_cdf(x, 1) == pytest.approx(0.5 + math.atan(x) / math.pi, abs=1e-10)
-    assert t_cdf(x, 2) == pytest.approx(0.5 + x / (2 * math.sqrt(2 + x * x)), abs=1e-10)
+    # closed forms exist for 1 and 2 degrees of freedom (Cauchy, and x / (2 sqrt(2 + x^2))); tiny |x| included,
+    # where df / (df + x^2) rounds next to 1 (the 2026-10-05 precision bug: 3.2e-9 error at x = 1e-8)
+    assert t_cdf(x, 1) == pytest.approx(0.5 + math.atan(x) / math.pi, abs=1e-12)
+    assert t_cdf(x, 2) == pytest.approx(0.5 + x / (2 * math.sqrt(2 + x * x)), abs=1e-12)
     for df in (3, 10, 1000):
         assert t_cdf(-x, df) == pytest.approx(1 - t_cdf(x, df), abs=1e-10)
         assert t_cdf(x, df) <= t_cdf(x + 0.5, df) + 1e-12

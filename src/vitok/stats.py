@@ -73,7 +73,14 @@ def _betainc(a: float, b: float, x: float) -> float:
 
 def t_cdf(x: float, df: int) -> float:
     """CDF of Student's t with `df` degrees of freedom."""
-    tail = 0.5 * _betainc(df / 2, 0.5, df / (df + x * x))
+    x2 = x * x
+    if x2 < df:
+        # df / (df + x^2) would round next to 1 and lose the digits that matter; use the symmetry
+        # I_y(a, b) = 1 - I_(1-y)(b, a) with 1 - y = x^2 / (df + x^2) computed directly
+        tail = 0.5 * (1 - _betainc(0.5, df / 2, x2 / (df + x2)))
+    else:
+        tail = 0.5 * _betainc(df / 2, 0.5, df / (df + x2))
+    assert 0 <= tail <= 0.5 + 1e-12, (x, df, tail)
     return 1 - tail if x >= 0 else tail
 
 
