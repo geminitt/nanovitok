@@ -4,6 +4,10 @@ third_party/
 __pycache__/
 *.egg-info/
 .pytest_cache/
+.hypothesis/
+.coverage
+# mutation testing copies (mutmut), deleted after each run
+mutants/
 .ipynb_checkpoints/
 .vscode/
 
