@@ -19,6 +19,7 @@ pytest = "*"
 ipykernel = ">=7.3.0,<8"
 matplotlib = ">=3.11.1,<4"
 kagglehub = ">=1.0.2,<2"
+hypothesis = ">=6.168.3,<7"
 
 [pypi-dependencies]
 tiktoken = "*"
@@ -48,5 +49,10 @@ tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
 
+[feature.dev.dependencies]
+pytest-cov = ">=7.1.0,<8"
+mutmut = ">=3.8.0,<4"
+
 [environments]
 gpu = { features = ["gpu"], no-default-feature = true }
+dev = ["dev"]
