@@ -86,6 +86,7 @@ def test_every_cell_runs_on_a_tiny_model(kaggle_input, tmp_path, monkeypatch, st
     exec(cells[0], ns)  # parameters
     assert (ns["STAGE"], ns["DTYPE"], ns["SEQ_LEN"], ns["DEV_SHARD"], ns["DEV_DOCS"]) == \
         ("probe", "fp16", 512, "shard_00019.parquet", 500)
+    assert (ns["SESSION_MINUTES"], ns["BATCH"], ns["MICRO_BATCH"]) == (120, 32, 4)
     ns.update(STAGE=stage, MODEL=str(root / "qwen"), DTYPE="fp32", STEPS=4, SEQ_LEN=32, BATCH=4, MICRO_BATCH=2,
               SNAPSHOT_STEPS=[] if stage == "probe" else [2], SPEED_PROMPTS=0 if stage == "probe" else 1,
               QUEUES={0: ["multisyllable-1000"], 1: ["multisyllable"]} if stage == "probe" else
