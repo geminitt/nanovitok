@@ -142,6 +142,7 @@ def report(work: Path, conditions: list[str]) -> dict[str, dict]:
 
 RETROFIT_CONDITIONS = ("base", "syllable", "multisyllable", "syllable-1000", "multisyllable-1000")
 HELDOUT_FILES = ("belebele_vie_Latn.jsonl", "en_docs.jsonl", "heldout_manifest.json")
+VAL_DOCS = Path("kaggle/outputs/vitok-data/val_docs.jsonl")  # the merge-learning text, not in the Kaggle vitok-data
 
 
 def check_texts(repo: Path, test_docs: list[str], n_docs: int = 5) -> list[str]:
@@ -180,6 +181,7 @@ def build_bundle(repo: Path, out: Path, retrofit_dir: Path, heldout_dir: Path, t
             shutil.copy(retrofit_dir / name / "report.json", r / name / "report.json")
     for name in HELDOUT_FILES:
         shutil.copy(heldout_dir / name, r / name)
+    shutil.copy(repo / VAL_DOCS, r / "val_docs.jsonl")
     docs = [json.loads(line)["text"] for line in test_docs.read_text(encoding="utf-8").splitlines() if line.strip()]
     (r / "check_texts.jsonl").write_text(
         "".join(json.dumps({"text": t}, ensure_ascii=False) + "\n" for t in check_texts(repo, docs)), encoding="utf-8")

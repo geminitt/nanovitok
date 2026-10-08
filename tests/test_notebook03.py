@@ -34,7 +34,7 @@ def kaggle_input(tmp_path_factory):
     pq.write_table(pa.table({"text": docs[:5]}), data / "shards" / "shard_99999.parquet")  # the val shard, unused
     test = [" ".join(SENTENCES[i:] + SENTENCES[:i]) for i in range(6)]
     write_jsonl(data / "test.jsonl", test)
-    write_jsonl(data / "val_docs.jsonl", docs[:10])
+    # like the real vitok-data on Kaggle: no val_docs.jsonl there (the bundle ships it, in retrofit/)
     base = qwen_like_base()
     corpus = root / "vi.txt"
     corpus.write_text("\n".join(SENTENCES * 40) + "\n", encoding="utf-8")
@@ -60,6 +60,7 @@ def kaggle_input(tmp_path_factory):
               "mc_answer3": "không", "mc_answer4": SENTENCES[i][:10], "correct_answer_num": str(1 + i % 4)}
              for i in range(3)]
     (r / "belebele_vie_Latn.jsonl").write_text("".join(json.dumps(i, ensure_ascii=False) + "\n" for i in items))
+    write_jsonl(r / "val_docs.jsonl", docs[:10])
     (r / "bundle_manifest.json").write_text(json.dumps({"commit": "test"}))
     rows = base_tok.get_vocab_size(with_added_tokens=True)
     tiny_qwen3(rows, layers=4).save_pretrained(root / "qwen")
@@ -86,7 +87,7 @@ def test_every_cell_runs_on_a_tiny_model(kaggle_input, tmp_path, monkeypatch, st
     ns.update(STAGE=stage, MODEL=str(root / "qwen"), DTYPE="fp32", STEPS=4, SEQ_LEN=32, BATCH=4, MICRO_BATCH=2,
               SNAPSHOT_STEPS=[] if stage == "probe" else [2], SPEED_PROMPTS=0 if stage == "probe" else 1,
               QUEUES={0: ["base"], 1: ["multisyllable-1000"]},
-              PROBE_DOCS=root / "input" / "vitok-data" / "val_docs.jsonl" if stage == "probe" else None)
+              PROBE_DOCS=root / "input" / "vitok-code" / "retrofit" / "val_docs.jsonl" if stage == "probe" else None)
     for cell in cells[1:]:
         exec(cell, ns)
     assert ns["codes"] == {0: 0, 1: 0}, [p.read_text()[-3000:] for p in work.rglob("*.log")]

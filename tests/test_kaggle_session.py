@@ -119,6 +119,8 @@ def test_the_bundle_is_head_plus_the_retrofit_and_evaluation_files(tmp_path):
     (repo / "LICENSE").write_text("MIT License\n\nCopyright (c) 2026\n\nPermission is granted.\n")
     (repo / "src" / "vitok" / "stats.py").write_text('"""Stats."""\n\nimport math\n')
     (repo / "pyproject.toml").write_text("")
+    (repo / ks.VAL_DOCS).parent.mkdir(parents=True)
+    (repo / ks.VAL_DOCS).write_text('{"text": "merge text"}\n')
     git = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True)
     git("init", "-q")
     git("add", ".")
@@ -144,6 +146,7 @@ def test_the_bundle_is_head_plus_the_retrofit_and_evaluation_files(tmp_path):
     assert (out / "retrofit" / "multisyllable" / "tokenizer.json").read_text() == "multisyllable"
     assert not (out / "retrofit" / "base" / "report.json").exists()
     assert all((out / "retrofit" / n).read_text() == n for n in ks.HELDOUT_FILES)
+    assert (out / "retrofit" / "val_docs.jsonl").read_text() == '{"text": "merge text"}\n'
     texts = [json.loads(line)["text"] for line in (out / "retrofit" / "check_texts.jsonl").read_text().splitlines()]
     assert texts == ["MIT License", "Copyright (c) 2026", "Permission is granted.\n", '"""Stats."""', "import math\n",
                      *[f"Tài liệu {i}." for i in range(5)]]
