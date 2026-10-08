@@ -44,12 +44,22 @@ tokenizers = "*"
 huggingface_hub = "*"
 filelock = "*"
 psutil = "*"
+pytest = ">=9.1.1,<10"
+hypothesis = ">=6.168.5,<7"
+matplotlib = ">=3.11.2,<4"
+kagglehub = ">=1.0.2,<2"
 
 [feature.gpu.pypi-dependencies]
 torch = ">=2.14.0, <3"
 tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
+transformers = ">=4.56"
+underthesea = ">=9.5.0, <10"
+
+[feature.gpu.tasks]
+# the CPU suite against the gpu environment's libraries (CUDA hidden, so results match the default environment)
+test-cpu = { cmd = "pytest -q tests", env = { CUDA_VISIBLE_DEVICES = "" } }
 
 [feature.dev.dependencies]
 pytest-cov = ">=7.1.0,<8"
