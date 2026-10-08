@@ -27,6 +27,8 @@ include = [
     "src/vitok/hf_tokenizer.py", "src/vitok/tokenizer_spec.py", "src/vitok/compression.py", "src/vitok/analysis.py",
     "tests/conftest.py", "tests/test_retrofit.py", "tests/test_superbpe.py", "tests/test_conditions_stats_pairs.py",
     "tests/test_analysis_flores.py", "tests/test_tokenizers.py", "tests/test_text.py", "tests/test_input_contracts.py",
+    "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
+    "tests/test_extend.py", "tests/test_cpt_data.py", "tests/test_adapt.py", "tests/test_score.py",
 ]
 
 [tool.ruff.lint]
@@ -40,6 +42,7 @@ mypy_path = "src:tests"
 files = [
     "src/vitok/retrofit.py", "src/vitok/superbpe.py", "src/vitok/stats.py", "src/vitok/text.py",
     "src/vitok/hf_tokenizer.py", "src/vitok/tokenizer_spec.py", "src/vitok/compression.py", "src/vitok/analysis.py",
+    "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
 ]
 check_untyped_defs = true
 ignore_missing_imports = true
