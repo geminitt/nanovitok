@@ -1,12 +1,12 @@
+import itertools
 import json
 import unicodedata
 
 import numpy as np
 import pytest
-
+from conftest import SENTENCES
 from tokenizers import pre_tokenizers
 
-from conftest import SENTENCES
 from vitok import superbpe
 from vitok.tokenizer_spec import STAGE1_REGEX, STAGE2_REGEX
 from vitok.train_tokenizers import _pre_tokenizer, _train
@@ -42,7 +42,7 @@ def reference_stage2(lines, vocab, inherited, vocab_size, max_words=4):
     while len(vocab) < vocab_size:
         counts = {}
         for w in words:
-            for p in zip(w, w[1:]):
+            for p in itertools.pairwise(w):
                 counts[p] = counts.get(p, 0) + 1
         counts = {p: c for p, c in counts.items() if p not in banned}
         if not counts:
@@ -126,7 +126,7 @@ def _literal_merge(seq, a, b, new):
 def _pairs(seq):
     import collections
     sep = int(superbpe.SEP)
-    return collections.Counter((x, y) for x, y in zip(seq, seq[1:]) if sep not in (x, y))
+    return collections.Counter((x, y) for x, y in itertools.pairwise(seq) if sep not in (x, y))
 
 
 S = int(superbpe.SEP)
@@ -155,7 +155,7 @@ def test_merge_matches_a_literal_left_to_right_merge(seq, a, b):
         walk.append(int(tok[pos]))
         pos = int(nxt[pos])
     assert walk == want
-    change = {(int(k) >> 32, int(k) & 0xFFFFFFFF): int(d) for k, d in zip(keys, deltas)}
+    change = {(int(k) >> 32, int(k) & 0xFFFFFFFF): int(d) for k, d in zip(keys, deltas, strict=True)}
     expected = _pairs(want)
     expected.subtract(_pairs(seq))
     assert change == {k: v for k, v in expected.items() if v}

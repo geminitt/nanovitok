@@ -81,12 +81,13 @@ class _PairCounts:
         self.extra_keys = np.zeros(EXTRA_CAPACITY, dtype=np.uint64)
         self.extra_counts = np.zeros(EXTRA_CAPACITY, dtype=np.int64)
         self.n_extra = 0
-        self.slot = {}
+        self.slot: dict[int, int] = {}
 
     def best(self) -> tuple[int, int]:
         """(key, count) of the most frequent pair; ties go to the smallest key."""
         best_key, best_count = 0, 0
-        for keys, counts in ((self.keys, self.counts), (self.extra_keys[:self.n_extra], self.extra_counts[:self.n_extra])):
+        extra = (self.extra_keys[:self.n_extra], self.extra_counts[:self.n_extra])
+        for keys, counts in ((self.keys, self.counts), extra):
             if len(counts) == 0:
                 continue
             m = counts.max()
@@ -117,7 +118,7 @@ class _PairCounts:
         self.counts[pos[found]] += deltas[found]
         touched = self.counts[pos[found]]
         assert np.all((touched >= 0) | (touched < BANNED // 2)), "a pair count went negative"
-        for k, d in zip(keys[~found].tolist(), deltas[~found].tolist()):
+        for k, d in zip(keys[~found].tolist(), deltas[~found].tolist(), strict=True):
             s = self.slot.get(k)
             if s is None:
                 assert d > 0, "a pair can only appear by being created"

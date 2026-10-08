@@ -58,7 +58,7 @@ def main():
     args = ap.parse_args()
 
     docs = load_docs(args.docs, args.n_docs)
-    result = {}
+    result: dict = {}
     for cond in CONDITIONS:
         tok = Tokenizer.from_file(str(args.tokenizers / cond / "tokenizer.json"))
         result[cond] = stats_for(tok, docs)

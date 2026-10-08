@@ -2,10 +2,10 @@ import math
 
 import numpy as np
 import pytest
+from conftest import SENTENCES
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from conftest import SENTENCES
 from vitok.conditions import BASE_SEQ, SEQS_PER_STEP, train_args
 from vitok.minimal_pairs import build_pairs
 from vitok.stats import bpc, mcnemar_exact, paired_bootstrap_bpc, t_cdf, t_quantile

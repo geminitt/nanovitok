@@ -3,8 +3,16 @@ import math
 
 import pytest
 
-from vitok.analysis import (comparisons, h2_decision, load, noise_threshold, nonembedding_params, scaling,
-                            val_sensitivity, verdicts)
+from vitok.analysis import (
+    comparisons,
+    h2_decision,
+    load,
+    noise_threshold,
+    nonembedding_params,
+    scaling,
+    val_sensitivity,
+    verdicts,
+)
 from vitok.flores_ctc import calibrate, ctc
 
 VARIANTS = ("clean", "strip50", "strip100")
@@ -50,7 +58,7 @@ def test_flores_ctc_counts_lines(tokenizers_dir):
 
     tok = Tokenizer.from_file(str(tokenizers_dir / "bpe-nfc" / "tokenizer.json"))
     lines = ["Hà Nội là thủ đô.", "Học sinh đi học."]
-    assert ctc(tok, lines) == sum(len(tok.encode(l, add_special_tokens=False).ids) for l in lines)
+    assert ctc(tok, lines) == sum(len(tok.encode(t, add_special_tokens=False).ids) for t in lines)
 
 
 def test_flores_calibrate_picks_closest_split(tokenizers_dir):
@@ -101,7 +109,8 @@ def test_frequency_matched_baseline_uses_the_most_frequent_runs():
 
 def test_val_sensitivity_flags_a_sign_change(tmp_path):
     test_dir, val_dir = tmp_path / "test", tmp_path / "val"
-    test_dir.mkdir(); val_dir.mkdir()
+    test_dir.mkdir()
+    val_dir.mkdir()
     for cond, test_bpc, val_bpc in [("bpe-nfc", 1.000, 1.000), ("super-nfc", 1.002, 0.998)]:
         fake_run(test_dir / f"{cond}_d8_s0.json", cond, 8, 0, test_bpc)
         fake_run(val_dir / f"{cond}_d8_s0.json", cond, 8, 0, val_bpc)
@@ -146,7 +155,8 @@ def test_paired_comparison_refuses_runs_that_cannot_be_paired(tmp_path, kind):
         fake_run(tmp_path / f"{cond}_d6_s0.json", cond, 6, 0, 1.0)
     runs = load(tmp_path)
     _break(kind, runs[("bpe-nfc", 6, 0)], runs[("super-nfc", 6, 0)])
-    with pytest.raises(ValueError, match="no document was scored" if kind == "nothing scored by both" else "cannot be paired"):
+    message = "no document was scored" if kind == "nothing scored by both" else "cannot be paired"
+    with pytest.raises(ValueError, match=message):
         comparisons(runs)
 
 
@@ -170,6 +180,7 @@ def test_published_summary_regenerates_from_the_committed_results(tmp_path, monk
     import sys
 
     from conftest import REPO
+
     from vitok import analysis
 
     out = tmp_path / "summary.md"
@@ -181,7 +192,8 @@ def test_published_summary_regenerates_from_the_committed_results(tmp_path, monk
     analysis.main()
     capsys.readouterr()
     lines = lambda text: [line for line in text.splitlines() if not line.startswith("Figure")]
-    assert lines(out.read_text(encoding="utf-8")) == lines((REPO / "results" / "summary.md").read_text(encoding="utf-8"))
+    committed = (REPO / "results" / "summary.md").read_text(encoding="utf-8")
+    assert lines(out.read_text(encoding="utf-8")) == lines(committed)
     assert (tmp_path / "figures" / "h3_scaling.png").stat().st_size > 0
 
 
@@ -194,23 +206,31 @@ def _row(depth, a, b, variant, hyp, diff, rel_hi, significant=True, threshold=0.
 @pytest.mark.parametrize("rows,reductions,expect", [
     # H1 needs the token reduction on both normalizations AND every relative upper bound under the 1% margin
     ([_row(6, "super-nfc", "bpe-nfc", "clean", "H1", 0.001, 0.005)], {"nfc": 0.18, "nfd": 0.18}, ["H1 supported"]),
-    ([_row(6, "super-nfc", "bpe-nfc", "clean", "H1", 0.001, 0.005)], {"nfc": 0.18, "nfd": 0.10}, ["H1 not supported", "(threshold 15%): not met."]),
+    ([_row(6, "super-nfc", "bpe-nfc", "clean", "H1", 0.001, 0.005)], {"nfc": 0.18, "nfd": 0.10},
+     ["H1 not supported", "(threshold 15%): not met."]),
     ([_row(6, "super-nfc", "bpe-nfc", "clean", "H1", 0.008, 0.012)], {"nfc": 0.18, "nfd": 0.18},
      ["H1 not supported", "not worse by more than 1%: no "]),
     ([_row(6, "super-nfc", "bpe-nfc", "clean", "H1", 0.001, 0.005)], {}, ["H1 not supported", "NFC nan%"]),
     # H2: NFD lower at every depth with the cost inside the margin -> supported; higher everywhere -> contradicted
-    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005), _row(6, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.001, 0.002),
-      _row(8, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005), _row(8, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.001, 0.002)],
+    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005),
+      _row(6, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.001, 0.002),
+      _row(8, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005),
+      _row(8, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.001, 0.002)],
      {"nfc": 0.18, "nfd": 0.18}, ["H2 supported", "NFD better"]),
-    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005), _row(6, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.01, 0.02)],
+    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005),
+      _row(6, "bpe-nfd", "bpe-nfc", "clean", "H2 cost", 0.01, 0.02)],
      {"nfc": 0.18, "nfd": 0.18}, ["H2 not supported (1 of 1", "within 1%: no"]),
-    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", 0.01, 0.02), _row(8, "bpe-nfd", "bpe-nfc", "strip50", "H2", 0.01, 0.02)],
+    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", 0.01, 0.02),
+      _row(8, "bpe-nfd", "bpe-nfc", "strip50", "H2", 0.01, 0.02)],
      {"nfc": 0.18, "nfd": 0.18}, ["H2 contradicted (NFD worse at every size)", "strip50: +0.0100 → NFD worse"]),
     # one depth with NFD both better and worse is neither "lower everywhere" nor "higher everywhere"
-    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005), _row(6, "bpe-nfd", "bpe-nfc", "strip100", "H2", 0.01, 0.02)],
+    ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005),
+      _row(6, "bpe-nfd", "bpe-nfc", "strip100", "H2", 0.01, 0.02)],
      {"nfc": 0.18, "nfd": 0.18},
-     ["H2 not supported (2 of 2 stripped-text comparisons resolved: d6 bpe strip50 (NFD better); d6 bpe strip100 (NFD worse), not at every size)"]),
-    ([_row(6, "bpe-nfd", "bpe-nfc", "strip100", "H2", 0.01, 0.02), _row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005)],
+     ["H2 not supported (2 of 2 stripped-text comparisons resolved: d6 bpe strip50 (NFD better); "
+      "d6 bpe strip100 (NFD worse), not at every size)"]),
+    ([_row(6, "bpe-nfd", "bpe-nfc", "strip100", "H2", 0.01, 0.02),
+      _row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", -0.01, -0.005)],
      {"nfc": 0.18, "nfd": 0.18}, ["H2 not supported (2 of 2"]),
     ([_row(6, "bpe-nfd", "bpe-nfc", "strip50", "H2", 0.0001, 0.02, significant=True, threshold=0.01)],
      {"nfc": 0.18, "nfd": 0.18}, ["H2 not supported (0 of 1 stripped-text comparisons resolved, not at every size)"]),
@@ -221,7 +241,10 @@ def test_verdict_rules(rows, reductions, expect):
     for needle in expect:
         hyp, _, rest = needle.partition(" ")
         if hyp in ("H1", "H2") and rest.split(" ")[0] in ("supported", "not", "contradicted"):
-            section = flat.split(f"{hyp} —")[1].split("H2 —")[0] if hyp == "H1" else flat.split("H2 —")[1].split("H3 —")[0]
+            if hyp == "H1":
+                section = flat.split(f"{hyp} —")[1].split("H2 —")[0]
+            else:
+                section = flat.split("H2 —")[1].split("H3 —")[0]
             assert f"Verdict: {rest}" in section, (needle, section)
         else:
             assert needle in flat, (needle, flat)
@@ -240,7 +263,8 @@ def test_direction_needs_both_the_interval_and_the_noise_test(diff, threshold, s
 def test_comparisons_and_val_sensitivity_skip_missing_runs_and_flag_sign_changes(tmp_path):
     from vitok.analysis import delta
     test_dir, val_dir = tmp_path / "test", tmp_path / "val"
-    test_dir.mkdir(); val_dir.mkdir()
+    test_dir.mkdir()
+    val_dir.mkdir()
     # d6 has only BPE runs (every comparison skipped), d8 has the H1 pair; the val shard agrees at d8
     for cond, depth, t, v in [("bpe-nfc", 6, 1.0, 1.0), ("bpe-nfd", 6, 1.0, 1.0),
                               ("bpe-nfc", 8, 1.0, 1.0), ("super-nfc", 8, 1.002, 1.003)]:

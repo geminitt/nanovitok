@@ -37,7 +37,8 @@ VAL_BPB_RE = re.compile(r"Validation bpb: ([\d.]+)")
 
 def load(results_dir: Path) -> dict:
     """Every result file under `results_dir`, so one directory of per-session downloads also works."""
-    runs, seen = {}, {}
+    runs: dict[tuple[str, int, int], dict] = {}
+    seen: dict[tuple[str, int, int], Path] = {}
     for path in sorted(results_dir.rglob("*.json")):
         m = NAME_RE.search(path.name)
         if m:
@@ -59,7 +60,8 @@ def common_docs(runs: list[dict], variant: str) -> np.ndarray:
     first = runs[0]
     for r in runs[1:]:
         if r.get("doc_ids") != first.get("doc_ids") or r["docs"][variant]["chars"] != first["docs"][variant]["chars"]:
-            raise ValueError(f"result files disagree on the documents or their lengths ({variant}); they cannot be paired")
+            raise ValueError(f"result files disagree on the documents or their lengths ({variant}); "
+                             "they cannot be paired")
     ok = np.ones(len(first["docs"][variant]["nats"]), bool)
     for r in runs:
         ok &= np.array([n is not None for n in r["docs"][variant]["nats"]])
@@ -143,28 +145,33 @@ def summarize(runs: dict, compression: dict, rows: list[dict]) -> str:
     for depth in depths:
         at = {k: v for k, v in runs.items() if k[1] == depth}
         lines += [f"## d{depth}", "",
-                  "| run | bpc clean | bpc strip50 | bpc strip100 | pair acc | chars/token | tokens/syllable | superword share |",
+                  "| run | bpc clean | bpc strip50 | bpc strip100 | pair acc | chars/token | tokens/syllable "
+                  "| superword share |",
                   "|---|---|---|---|---|---|---|---|"]
         idx = {v: common_docs(list(at.values()), v) for v in VARIANTS}
         for (cond, _, seed), r in sorted(at.items()):
             vals = [bpc(arr(r, v, idx[v]), chars_of(r, v, idx[v])) for v in VARIANTS]
             p = r["pairs"]
-            acc = np.mean([g is not None and b is not None and g < b for g, b in zip(p["good_nats"], p["bad_nats"])])
+            acc = np.mean([g is not None and b is not None and g < b
+                           for g, b in zip(p["good_nats"], p["bad_nats"], strict=True)])
             c = compression.get(cond, {})
             lines.append(f"| {cond} s{seed} | {vals[0]:.4f} | {vals[1]:.4f} | {vals[2]:.4f} | {acc:.3f} | "
-                         f"{c.get('chars_per_token', float('nan')):.3f} | {c.get('tokens_per_syllable', float('nan')):.3f} | "
+                         f"{c.get('chars_per_token', float('nan')):.3f} | "
+                         f"{c.get('tokens_per_syllable', float('nan')):.3f} | "
                          f"{c.get('superword_token_share', float('nan')):.1%} |")
-        lines += ["", f"Documents scored by every run: " + ", ".join(f"{v} {len(idx[v])}" for v in VARIANTS), ""]
+        lines += ["", "Documents scored by every run: " + ", ".join(f"{v} {len(idx[v])}" for v in VARIANTS), ""]
         spreads = {v: seed_spreads(at, v, idx[v]) for v in VARIANTS}
         if any(spreads.values()):
             k = len(next(iter(spreads.values())))
             lines += [f"Seed noise, from {k} conditions with two seeds (s1 − s0 each, NFC conditions only; the seed "
-                      f"changes the init, not the data order, see README). Threshold for a difference = t(0.975, {k}) = {t_quantile(0.975, k):.2f} × "
+                      f"changes the init, not the data order, see README). Threshold for a difference = "
+                      f"t(0.975, {k}) = {t_quantile(0.975, k):.2f} × "
                       "the root mean square of the spreads:", ""]
             lines += [f"- {v}: spreads " + ", ".join(f"{d:+.4f}" for d in spreads[v]) +
                       f" → threshold {noise_threshold(spreads[v]):.4f}" for v in VARIANTS]
             lines.append("")
-        lines += ["| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 | |Δ| > noise threshold |",
+        lines += ["| hypothesis | A − B | variant | Δbpc | 95% CI | Δ relative [95% CI] | CI excludes 0 "
+                  "| |Δ| > noise threshold |",
                   "|---|---|---|---|---|---|---|---|"]
         for row in (r for r in rows if r["depth"] == depth):
             lines.append(f"| {row['hyp']} | {row['a']} − {row['b']} | {row['variant']} | {row['diff']:+.4f} | "
@@ -177,7 +184,8 @@ def summarize(runs: dict, compression: dict, rows: list[dict]) -> str:
             ra, rb = at.get((a, depth, 0)), at.get((b, depth, 0))
             if variant != "clean" or ra is None or rb is None:
                 continue
-            ok = lambda r: [g is not None and x is not None and g < x for g, x in zip(r["pairs"]["good_nats"], r["pairs"]["bad_nats"])]
+            ok = lambda r: [g is not None and x is not None and g < x
+                            for g, x in zip(r["pairs"]["good_nats"], r["pairs"]["bad_nats"], strict=True)]
             t = mcnemar_exact(ok(ra), ok(rb))
             lines.append(f"| {hyp} | {a} − {b} | {t['a_only']} | {t['b_only']} | {t['p_value']:.3g} |")
         lines.append("")
@@ -215,7 +223,7 @@ def verdicts(rows: list[dict], reductions: dict, runs: dict, wordhood: dict | No
                  f"{MARGIN:.0%}:")
     h2 = [r for r in rows if r["hyp"] == "H2"]
     dirs = [direction(r) for r in h2]
-    for r, d in zip(h2, dirs):
+    for r, d in zip(h2, dirs, strict=True):
         label = {"A lower": "NFD better", "A higher": "NFD worse"}.get(d, d)
         lines.append(f"- d{r['depth']} {r['a']} − {r['b']}, {r['variant']}: {r['diff']:+.4f} → {label}")
     cost = [r for r in rows if r["hyp"] == "H2 cost"]
@@ -239,7 +247,8 @@ def verdicts(rows: list[dict], reductions: dict, runs: dict, wordhood: dict | No
 
     # H4: exploratory
     if wordhood:
-        lines.append("**H4** (exploratory, no test) — superwords of 2–4 syllables that are exactly one underthesea word:")
+        lines.append("**H4** (exploratory, no test) — superwords of 2–4 syllables that are exactly one "
+                     "underthesea word:")
         for cond in ("super-nfc", "super-nfd"):
             w = wordhood.get(cond)
             if w and "frequency_matched_baseline" in w:
@@ -257,11 +266,11 @@ def h2_decision(h2: list[dict], dirs: list[str], cost: list[dict]) -> str:
     higher, and the clean-text cost stays within the margin. Contradicted: the mirror image. Otherwise the
     data do not support it, and the verdict says how many comparisons were resolved and where.
     """
-    by_depth = {}
-    for r, d in zip(h2, dirs):
+    by_depth: dict[int, list[str]] = {}
+    for r, d in zip(h2, dirs, strict=True):
         by_depth.setdefault(r["depth"], []).append(d)
     found = [f"d{r['depth']} {r['a'].split('-')[0]} {r['variant']} ({'NFD better' if d == 'A lower' else 'NFD worse'})"
-             for r, d in zip(h2, dirs) if d != "not resolved"]
+             for r, d in zip(h2, dirs, strict=True) if d != "not resolved"]
     lower = all("A lower" in ds and "A higher" not in ds for ds in by_depth.values())
     higher = all("A higher" in ds and "A lower" not in ds for ds in by_depth.values())
     if by_depth and lower and all(r["rel_ci95"][1] < MARGIN for r in cost):
@@ -296,7 +305,8 @@ def nanochat_val_bpb(results_dir: Path) -> dict:
 def val_vs_test(runs: dict, val_bpb: dict, compression: dict) -> str:
     """nanochat's validation bpb next to our test bpc, for the NFC pair (bytes per char are equal there)."""
     lines = ["## nanochat validation bpb vs test bpc (super-nfc − bpe-nfc, seed 0)", "",
-             "| depth | val bpb bpe-nfc | val bpb super-nfc | val relative | test bpc relative |", "|---|---|---|---|---|"]
+             "| depth | val bpb bpe-nfc | val bpb super-nfc | val relative | test bpc relative |",
+             "|---|---|---|---|---|"]
     for depth in sorted({d for _, d, _ in runs}):
         vb, vs = val_bpb.get(("bpe-nfc", depth, 0)), val_bpb.get(("super-nfc", depth, 0))
         dl = delta(runs, "super-nfc", "bpe-nfc", depth, 0)
@@ -309,8 +319,10 @@ def val_vs_test(runs: dict, val_bpb: dict, compression: dict) -> str:
     cpt = {c: compression.get(c, {}).get("chars_per_token") for c in ("bpe-nfc", "super-nfc")}
     extra = f"{cpt['super-nfc'] / cpt['bpe-nfc'] - 1:.0%}" if all(cpt.values()) else "more"
     lines += ["", "nanochat evaluates a fixed number of tokens of the val shard, so the two tokenizers are scored on",
-              f"different documents (SuperBPE covers {extra} more text), unpaired. Only the paired test bpc is used for",
-              "conclusions; the table shows how far the two disagree. NFD runs are left out: their bpb counts NFD bytes.", ""]
+              f"different documents (SuperBPE covers {extra} more text), unpaired. Only the paired test bpc is "
+              "used for",
+              "conclusions; the table shows how far the two disagree. NFD runs are left out: their bpb counts "
+              "NFD bytes.", ""]
     return "\n".join(lines)
 
 
@@ -351,7 +363,7 @@ def val_sensitivity(val_runs: dict, test_rows: list[dict]) -> str:
     for depth in sorted({d for _, d, _ in val_runs}):
         at = {k: v for k, v in val_runs.items() if k[1] == depth}
         idx = common_docs(list(at.values()), "clean")
-        for a, b, variant, hyp in COMPARISONS:
+        for a, b, _variant, hyp in COMPARISONS:
             ra, rb = at.get((a, depth, 0)), at.get((b, depth, 0))
             if hyp != "H1" or ra is None or rb is None:
                 continue
@@ -385,7 +397,9 @@ def scaling(runs: dict, figures: Path | None = None) -> str:
         bpc_of[(cond, depth, seed)] = bpc(arr(r, "clean", i), chars_of(r, "clean", i))
 
     def effect(a, b, d, seed):
-        return bpc_of[(a, d, seed)] - bpc_of[(b, d, seed)] if (a, d, seed) in bpc_of and (b, d, seed) in bpc_of else None
+        if (a, d, seed) not in bpc_of or (b, d, seed) not in bpc_of:
+            return None
+        return bpc_of[(a, d, seed)] - bpc_of[(b, d, seed)]
 
     lines = ["## H3: effect vs model size (bpc clean)", "",
              "| A − B | " + " | ".join(f"d{d}" for d in depths) + " |",
@@ -455,7 +469,8 @@ def main():
     ap.add_argument("--results", type=Path, required=True)
     ap.add_argument("--compression", type=Path, required=True)
     ap.add_argument("--wordhood", type=Path, default=None, help="wordhood JSON from vitok.wordhood (H4)")
-    ap.add_argument("--val-results", type=Path, default=None, help="per-document val results from vitok.eval_checkpoints")
+    ap.add_argument("--val-results", type=Path, default=None,
+                    help="per-document val results from vitok.eval_checkpoints")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--figures", type=Path, default=None, help="write the H3 figure here (needs matplotlib)")
     args = ap.parse_args()

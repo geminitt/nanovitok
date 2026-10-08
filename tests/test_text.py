@@ -27,7 +27,8 @@ def test_partial_strip_is_deterministic():
     spaced = "học  sinh\ngiỏi   nhất"
     for frac in (0.0, 0.5, 1.0):
         out = strip_diacritics_partial(spaced, frac, seed=2)
-        assert len(out) == len(spaced) and [i for i, c in enumerate(out) if c in " \n"] == [i for i, c in enumerate(spaced) if c in " \n"]
+        gaps = lambda s: [i for i, c in enumerate(s) if c in " \n"]
+        assert len(out) == len(spaced) and gaps(out) == gaps(spaced)
     assert strip_diacritics_partial(spaced, 1.0) == strip_diacritics(spaced)
 
 

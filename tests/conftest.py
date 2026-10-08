@@ -105,3 +105,30 @@ def tokenizers_dir(tmp_path_factory, corpus_file) -> Path:
 
 
 requires_nanochat = pytest.mark.skipif(not NANOCHAT.exists(), reason="third_party/nanochat not cloned")
+
+
+# Qwen2.5/Qwen3's pre-tokenizer regex, so a tiny base splits text the way the real base does
+QWEN_RE = (r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+"
+           r"|\s+(?!\S)|\s+")
+SPECIALS = ["<|endoftext|>", "<|im_start|>", "<|im_end|>"]
+
+
+def qwen_like_base(vocab_size: int = 420) -> dict:
+    """A small Qwen-like byte-level BPE tokenizer.json (NFC, regex Split + ByteLevel, specials after the vocabulary)."""
+    import json
+
+    from tokenizers import Regex, Tokenizer, decoders, normalizers, pre_tokenizers
+    from tokenizers.models import BPE
+    from tokenizers.trainers import BpeTrainer
+
+    tok = Tokenizer(BPE())
+    tok.normalizer = normalizers.NFC()
+    tok.pre_tokenizer = pre_tokenizers.Sequence([
+        pre_tokenizers.Split(pattern=Regex(QWEN_RE), behavior="isolated", invert=False),
+        pre_tokenizers.ByteLevel(add_prefix_space=False, use_regex=False)])
+    tok.decoder = decoders.ByteLevel()
+    tok.train_from_iterator(["The quick brown fox, don't stop!"] * 5 + SENTENCES * 3,
+                            BpeTrainer(vocab_size=vocab_size, show_progress=False,
+                                       initial_alphabet=pre_tokenizers.ByteLevel.alphabet()))
+    tok.add_special_tokens(SPECIALS)
+    return json.loads(tok.to_str())
