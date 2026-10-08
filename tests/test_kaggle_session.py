@@ -206,3 +206,28 @@ def test_an_empty_queue_does_not_stop_the_others(tmp_path):
 
     assert ks.launch({0: [], 1: ["base"]}, tmp_path / "c.json", tmp_path, 1, popen=popen) == {1: 0}
     assert started == ["1"]
+
+
+def test_dev_documents_are_the_last_usable_ones_of_the_shard_cut_like_the_test_set(tmp_path):
+    import unicodedata
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from vitok.data import eval_text
+    texts = [unicodedata.normalize("NFD", f"Tài liệu {i} " + "chữ " * (100 + i)) if i % 2 else "ngắn"
+             for i in range(40)]
+    pq.write_table(pa.table({"text": texts}), tmp_path / "s.parquet", row_group_size=7)
+    usable = [eval_text(unicodedata.normalize("NFC", t)) for t in texts if len(t) >= 300]
+    assert ks.dev_docs(tmp_path / "s.parquet", 5) == usable[-5:]
+    assert all(d == unicodedata.normalize("NFC", d) and 300 <= len(d) <= 2500 for d in usable)
+    assert len(ks.dev_docs(tmp_path / "s.parquet", 20)) == 20  # exactly enough is enough
+    with pytest.raises(RuntimeError, match="20 usable documents, 21 needed"):
+        ks.dev_docs(tmp_path / "s.parquet", 21)
+
+
+@pytest.mark.parametrize("ci,choice", [([-0.03, -0.01], "multisyllable-1000"), ([-0.01, 0.0], "multisyllable"),
+                                       ([-0.01, 0.02], "multisyllable"), ([0.01, 0.03], "multisyllable"),
+                                       ([0.0, 0.0], "multisyllable")])
+def test_the_probe_rule_prefers_the_larger_vocabulary_on_a_tie(ci, choice):
+    assert ks.probe_choice({"vi": {"ci95": ci}}) == choice

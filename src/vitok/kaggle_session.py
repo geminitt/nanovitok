@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import time
+import unicodedata
 from collections.abc import Callable
 from pathlib import Path
 
@@ -202,3 +203,24 @@ def expected_compression(retrofit: Path) -> dict[str, float]:
         if base != rep["chars_per_token_base"]:
             raise RuntimeError(f"reports disagree on the base tokenizer: {base} vs {rep['chars_per_token_base']}")
     return out
+
+
+def dev_docs(shard: Path, n: int = 500) -> list[str]:
+    """The probe's dev documents: the last n documents of a training shard that pass the test-set cut, NFC and cut
+    like test.jsonl, in shard order. They go on the held-out list, so no condition trains on them."""
+    from vitok import cpt_data
+    from vitok.data import eval_text
+
+    kept = [d for d in (eval_text(unicodedata.normalize("NFC", t)) for t in cpt_data.parquet_texts([shard])) if d]
+    if len(kept) < n:
+        raise RuntimeError(f"{shard} has {len(kept)} usable documents, {n} needed")
+    return kept[-n:]
+
+
+def probe_choice(cmp: dict, small: str = "multisyllable-1000", large: str = "multisyllable") -> str:
+    """The probe rule (PLAN.md, Protocol): `cmp` compares the small run against the large one on the dev documents
+    (vitok.compare, run = small, reference = large); the lower bpc wins, a tie (the interval contains 0) goes to the
+    large one."""
+    lo, hi = cmp["vi"]["ci95"]
+    assert lo <= hi
+    return small if hi < 0 else large

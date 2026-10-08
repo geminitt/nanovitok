@@ -30,6 +30,7 @@ def kaggle_input(tmp_path_factory):
     (data / "shards").mkdir(parents=True)
     rng = random.Random(0)
     docs = [" ".join(rng.choices(SENTENCES, k=rng.randint(1, 4))) for _ in range(300)]
+    docs += [" ".join(SENTENCES[i:] + SENTENCES[:i]) + f" Số {i}." for i in range(6)]  # long enough for the dev set
     pq.write_table(pa.table({"text": docs}), data / "shards" / "shard_00000.parquet")
     pq.write_table(pa.table({"text": docs[:5]}), data / "shards" / "shard_99999.parquet")  # the val shard, unused
     test = [" ".join(SENTENCES[i:] + SENTENCES[:i]) for i in range(6)]
@@ -83,28 +84,35 @@ def test_every_cell_runs_on_a_tiny_model(kaggle_input, tmp_path, monkeypatch, st
     cells = code_cells()
     ns: dict = {}
     exec(cells[0], ns)  # parameters
-    assert (ns["STAGE"], ns["DTYPE"], ns["SEQ_LEN"], ns["PROBE_DOCS"]) == ("probe", "fp16", 512, None)
+    assert (ns["STAGE"], ns["DTYPE"], ns["SEQ_LEN"], ns["DEV_SHARD"], ns["DEV_DOCS"]) == \
+        ("probe", "fp16", 512, "shard_00019.parquet", 500)
     ns.update(STAGE=stage, MODEL=str(root / "qwen"), DTYPE="fp32", STEPS=4, SEQ_LEN=32, BATCH=4, MICRO_BATCH=2,
               SNAPSHOT_STEPS=[] if stage == "probe" else [2], SPEED_PROMPTS=0 if stage == "probe" else 1,
-              QUEUES={0: ["base"], 1: ["multisyllable-1000"]},
-              PROBE_DOCS=root / "input" / "vitok-code" / "retrofit" / "val_docs.jsonl" if stage == "probe" else None)
+              QUEUES={0: ["multisyllable-1000"], 1: ["multisyllable"]} if stage == "probe" else
+              {0: ["base"], 1: ["multisyllable-1000"]}, DEV_SHARD="shard_00000.parquet", DEV_DOCS=4)
     for cell in cells[1:]:
         exec(cell, ns)
     assert ns["codes"] == {0: 0, 1: 0}, [p.read_text()[-3000:] for p in work.rglob("*.log")]
-    report = kaggle_session.report(work, ["base", "multisyllable-1000"])
+    names = ["multisyllable-1000", "multisyllable"] if stage == "probe" else ["base", "multisyllable-1000"]
+    report = kaggle_session.report(work, names)
     assert all(report[n]["train"]["steps"] == 4 and report[n]["train"]["non_finite_steps"] == 0 for n in report)
     cfg = json.loads((work / f"config-{stage}.json").read_text())
     assert [p.split("/")[-1] for p in cfg["shards"]] == ["shard_00000.parquet"]
     if stage == "probe":
-        assert set(report["base"]) == {"train", "score-final"} and cfg["score"]["speed_prompts"] == 0
-        assert cfg["score"]["vi_docs"].endswith("val_docs.jsonl") and not cfg["score"]["before_training"]
+        assert set(report["multisyllable"]) == {"train", "score-final"} and cfg["score"]["speed_prompts"] == 0
+        assert cfg["score"]["vi_docs"] == str(work / "dev_docs.jsonl") and not cfg["score"]["before_training"]
+        cmp = json.loads((work / "probe-comparison.json").read_text())
+        assert kaggle_session.probe_choice(cmp) in ("multisyllable-1000", "multisyllable")
+        assert cmp["vi"]["chars_per_token"] < cmp["vi"]["chars_per_token_reference"]  # +1,000 compresses less
     else:
         assert {"score-before", "score-step_000002", "score-final"} <= set(report["multisyllable-1000"])
         assert "en" in report["base"]["score-final"] and "decode_chars_per_second" in report["base"]["score-final"]
         assert cfg["score"]["vi_docs"].endswith("test.jsonl")
+    dev = [json.loads(line)["text"] for line in (work / "dev_docs.jsonl").read_text().splitlines()]
+    assert len(dev) == 4 and cfg["held_out"][-1] == str(work / "dev_docs.jsonl")
 
 
-def test_the_configuration_cell_refuses_a_run_without_its_owner_decisions(kaggle_input, tmp_path, monkeypatch):
+def test_the_configuration_cell_refuses_a_full_run_without_its_step_count(kaggle_input, tmp_path, monkeypatch):
     monkeypatch.setenv("VITOK_KAGGLE_INPUT", str(kaggle_input / "input"))
     monkeypatch.setenv("VITOK_KAGGLE_WORK", str(tmp_path))
     monkeypatch.setattr(kaggle_session, "preflight", lambda need_gpus: [])
@@ -114,8 +122,6 @@ def test_the_configuration_cell_refuses_a_run_without_its_owner_decisions(kaggle
     exec(cells[0], ns)
     for cell in cells[1:3]:
         exec(cell, ns)
-    with pytest.raises(AssertionError, match="PROBE_DOCS"):
-        exec(cells[3], ns)
     ns.update(STAGE="full", STEPS=None)
     with pytest.raises(AssertionError, match="set STEPS"):
         exec(cells[3], ns)
