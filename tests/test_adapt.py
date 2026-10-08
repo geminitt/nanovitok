@@ -464,3 +464,13 @@ def test_numeric_options_are_parsed_as_numbers():
                           "--grad-clip", "0.5", "--weight-decay", "0.01", "--embed-lr", "1e-3", "--seed", "7"])
     assert (a.min_lr_ratio, a.grad_clip, a.weight_decay, a.embed_lr, a.seed) == (0.2, 0.5, 0.01, 1e-3, 7)
     assert isinstance(a.held_out[0], Path) and isinstance(a.base_tokenizer, Path)
+
+
+def test_without_git_the_manifest_takes_the_bundle_commit(setup, tmp_path, monkeypatch):
+    def no_git(*a, **k):
+        raise OSError("no git")
+
+    monkeypatch.setattr(subprocess, "run", no_git)
+    monkeypatch.setenv("VITOK_GIT_COMMIT", "b756b73")
+    run(setup, "base", tmp_path, steps=1)
+    assert json.loads((tmp_path / "manifest.json").read_text())["git_commit"] == "b756b73"

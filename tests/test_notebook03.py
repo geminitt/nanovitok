@@ -81,12 +81,13 @@ def test_every_cell_runs_on_a_tiny_model(kaggle_input, tmp_path, monkeypatch, st
     monkeypatch.setenv("VITOK_KAGGLE_WORK", str(work))
     monkeypatch.setattr(kaggle_session, "preflight", lambda need_gpus: [{"name": "cpu"}] * need_gpus)
     monkeypatch.setattr(kaggle_session, "prefetch", lambda model, revision: str(model))
+    monkeypatch.setenv("VITOK_GIT_COMMIT", "restored-after-the-test")  # the setup cell sets it
     cells = code_cells()
     ns: dict = {}
     exec(cells[0], ns)  # parameters
-    assert (ns["STAGE"], ns["DTYPE"], ns["SEQ_LEN"], ns["DEV_SHARD"], ns["DEV_DOCS"]) == \
-        ("probe", "fp16", 512, "shard_00019.parquet", 500)
-    assert (ns["SESSION_MINUTES"], ns["BATCH"], ns["MICRO_BATCH"]) == (120, 32, 4)
+    assert (ns["STAGE"], ns["DTYPE"], ns["SEQ_LEN"], ns["DEV_SHARD"], ns["DEV_DOCS"], ns["STEPS"]) == \
+        ("full", "fp16", 512, "shard_00019.parquet", 500, 1200)
+    assert (ns["SESSION_MINUTES"], ns["BATCH"], ns["MICRO_BATCH"], ns["SNAPSHOT_STEPS"]) == (690, 32, 4, [300, 600])
     ns.update(STAGE=stage, MODEL=str(root / "qwen"), DTYPE="fp32", STEPS=4, SEQ_LEN=32, BATCH=4, MICRO_BATCH=2,
               SNAPSHOT_STEPS=[] if stage == "probe" else [2], SPEED_PROMPTS=0 if stage == "probe" else 1,
               QUEUES={0: ["multisyllable-1000"], 1: ["multisyllable"]} if stage == "probe" else
@@ -118,6 +119,7 @@ def test_the_configuration_cell_refuses_a_full_run_without_its_step_count(kaggle
     monkeypatch.setenv("VITOK_KAGGLE_WORK", str(tmp_path))
     monkeypatch.setattr(kaggle_session, "preflight", lambda need_gpus: [])
     monkeypatch.setattr(kaggle_session, "prefetch", lambda model, revision: str(model))
+    monkeypatch.setenv("VITOK_GIT_COMMIT", "restored-after-the-test")  # the setup cell sets it
     cells = code_cells()
     ns: dict = {}
     exec(cells[0], ns)
@@ -126,3 +128,35 @@ def test_the_configuration_cell_refuses_a_full_run_without_its_step_count(kaggle
     ns.update(STAGE="full", STEPS=None)
     with pytest.raises(AssertionError, match="set STEPS"):
         exec(cells[3], ns)
+
+
+def test_a_session_resumes_from_the_attached_output_of_the_previous_one(kaggle_input, tmp_path, monkeypatch):
+    import shutil
+    root = kaggle_input
+    monkeypatch.setattr(kaggle_session, "preflight", lambda need_gpus: [])
+    monkeypatch.setattr(kaggle_session, "prefetch", lambda model, revision: str(model))
+    monkeypatch.setenv("VITOK_GIT_COMMIT", "restored-after-the-test")  # the setup cell sets it
+    cells = code_cells()
+
+    def session(work, extra_input=None):
+        monkeypatch.setenv("VITOK_KAGGLE_INPUT", str(root / "input"))
+        monkeypatch.setenv("VITOK_KAGGLE_WORK", str(work))
+        ns: dict = {}
+        exec(cells[0], ns)
+        ns.update(MODEL=str(root / "qwen"), DTYPE="fp32", STEPS=3, SEQ_LEN=32, BATCH=4, MICRO_BATCH=2,
+                  SNAPSHOT_STEPS=[], SPEED_PROMPTS=0, QUEUES={0: ["base"]}, DEV_SHARD="shard_00000.parquet", DEV_DOCS=4)
+        for cell in cells[1:]:
+            exec(cell, ns)
+        return json.loads((work / "queue-base.json").read_text())
+
+    first = session(tmp_path / "first")
+    assert first["base"]["status"] == "done" and first["base"]["ran"]
+    prev = root / "input" / "nanovitok-03-adaptation" / "runs"
+    shutil.copytree(tmp_path / "first", prev)
+    try:
+        again = session(tmp_path / "second")
+    finally:
+        shutil.rmtree(prev.parent)
+    assert again == {"base": {"status": "done", "ran": []}}  # every step found done in the copied outputs
+    man = json.loads((tmp_path / "second" / "base" / "train" / "manifest.json").read_text())
+    assert man["git_commit"] != "unknown"  # git here; on Kaggle the bundle's commit (VITOK_GIT_COMMIT)

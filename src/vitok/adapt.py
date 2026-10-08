@@ -390,8 +390,8 @@ def manifest(args, sig, new_ids, step, tokens, chars) -> dict:
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True,
                                 cwd=Path(__file__).parent).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = "unknown"
+    except (OSError, subprocess.CalledProcessError):  # no .git (a Kaggle bundle): the bundle's commit, if given
+        commit = os.environ.get("VITOK_GIT_COMMIT", "unknown")
     return {"signature": sig, "new_tokens": len(new_ids), "steps": step, "tokens": tokens, "chars": chars,
             "git_commit": commit, "packages": {p: version(p) for p in ("torch", "transformers", "tokenizers")},
             "device": torch.cuda.get_device_name() if args.device.startswith("cuda") else "cpu",
