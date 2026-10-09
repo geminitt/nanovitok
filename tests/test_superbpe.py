@@ -169,7 +169,7 @@ def test_overlapping_pairs_merge_left_to_right():
 
 
 def test_super_tokenizer_starts_with_bpe_merges(tokenizers_dir):
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         n = json.loads((tokenizers_dir / "train_meta.json").read_text())[norm]["n_inherited_merges"]
         bpe = json.loads((tokenizers_dir / f"bpe-{norm}" / "tokenizer.json").read_text())["model"]
         sup = json.loads((tokenizers_dir / f"super-{norm}" / "tokenizer.json").read_text())["model"]

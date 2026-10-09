@@ -1,0 +1,21 @@
+{
+  "docs": 2000,
+  "chars": 4192698,
+  "new_tokens": 1000,
+  "chars_per_token_base": 3.419824502160689,
+  "chars_per_token_new": 3.6972286864942228,
+  "token_change": -0.0750303018438856,
+  "round_trip": 2000,
+  "new_tokens_whole_chars": 1000,
+  "new_tokens_reachable": 1000,
+  "new_tokens_partial_chars": 0,
+  "new_tokens_used_on_docs": 999,
+  "identical_ids": {
+    "LICENSE": 1,
+    "stats.py": 1
+  },
+  "identical_ids_of": {
+    "LICENSE": 1,
+    "stats.py": 1
+  }
+}

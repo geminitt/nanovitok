@@ -42,6 +42,22 @@ jobs:
         run: |
           pixi run -e dev python -m vitok.analysis --results kaggle/outputs \
             --compression kaggle/outputs/vitok-data/compression-16k.json \
-            --wordhood results/wordhood_16k.json --val-results results/val \
+            --val-results results/val \
             --out /tmp/summary.md --figures /tmp/figures > /dev/null
           diff <(grep -v '^Figure' /tmp/summary.md) <(grep -v '^Figure' results/summary.md)
+          pixi run -e dev python -c "import numpy as np; from matplotlib.image import imread; assert np.array_equal(imread('/tmp/figures/h3_scaling.png'), imread('figures/h3_scaling.png'))"
+
+      - name: Check the retrofit report matches item-level measurements
+        run: |
+          pixi run -e dev python -m vitok.report --data results/adaptation --out /tmp/adaptation.md --readme /tmp/README.md --figures /tmp/adaptation-figures
+          diff /tmp/adaptation.md results/adaptation.md
+          diff /tmp/README.md README.md
+          for figure in recovery quality_cost generation; do
+            cmp "/tmp/adaptation-figures/$figure.png" "figures/$figure.png"
+          done
+
+      - name: Remeasure the retained survey from pinned tokenizer files
+        run: |
+          pixi run -e dev python -m vitok.survey --recorded results/adaptation/tokenizers/survey.json \
+            --docs-root kaggle/outputs/vitok-data --out /tmp/tokenizer-survey.json
+          cmp /tmp/tokenizer-survey.json results/adaptation/tokenizers/survey.json

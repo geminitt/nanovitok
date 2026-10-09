@@ -1,0 +1,16 @@
+{
+  "model": "/kaggle/working/runs/syllable-1000/extended",
+  "revision": null,
+  "tokenizer_sha256": "1a3b31a04793f8527205cd3e5e100cea4a454dda8bc924221e343cf11858b134",
+  "snapshot_sha256": null,
+  "vi_docs_sha256": "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+  "en_docs_sha256": "c0396658aa80566784e12635b4df457332f1fbb36b62f54378bf00484cce29f8",
+  "belebele_sha256": "ff64989e00cd69857a9046f8d48640460085311c37e3dc430115eeaac182504a",
+  "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+  "speed_prompts": 20,
+  "speed_prompt_chars": 500,
+  "new_tokens": 256,
+  "batch_size": 8,
+  "dtype": "fp16",
+  "device": "cuda"
+}

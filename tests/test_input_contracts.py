@@ -82,8 +82,8 @@ def test_outside_input_is_refused_with_a_clear_error(tmp_path, tokenizers_dir, c
         case(tmp_path, tokenizers_dir)
 
 
-@pytest.mark.parametrize("condition,parsed", [("bpe-nfc", ("bpe", "nfc")), ("bpe-nfd", ("bpe", "nfd")),
-                                              ("super-nfc", ("super", "nfc")), ("super-nfd", ("super", "nfd")),
+@pytest.mark.parametrize("condition,parsed", [("bpe-nfc", ("bpe", "nfc")), ("bpe-nfd", None),
+                                              ("super-nfc", ("super", "nfc")), ("super-nfd", None),
                                               ("bpe-nfkc", None), ("super", None), ("gpt-nfc", None),
                                               ("BPE-NFC", None)])
 def test_condition_names_parse_exactly(condition, parsed):

@@ -26,7 +26,6 @@ datasets = ">=5.0.1,<6"
 tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
-underthesea = ">=9.5.0, <10"
 transformers = ">=4.56"
 
 [tasks]
@@ -55,7 +54,6 @@ tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
 transformers = ">=4.56"
-underthesea = ">=9.5.0, <10"
 
 [feature.gpu.tasks]
 # the CPU suite against the gpu environment's libraries (CUDA hidden, so results match the default environment)

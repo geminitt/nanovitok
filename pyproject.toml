@@ -1,7 +1,7 @@
 [project]
 name = "vitok"
 version = "0.1.0"
-description = "SuperBPE and NFD tokenizers for small Vietnamese language models"
+description = "Adapting an LLM with Vietnamese multi-syllable tokens"
 requires-python = ">=3.12"
 
 [build-system]
@@ -25,12 +25,14 @@ target-version = "py312"
 include = [
     "src/vitok/retrofit.py", "src/vitok/superbpe.py", "src/vitok/stats.py", "src/vitok/text.py",
     "src/vitok/hf_tokenizer.py", "src/vitok/tokenizer_spec.py", "src/vitok/compression.py", "src/vitok/analysis.py",
-    "tests/conftest.py", "tests/test_retrofit.py", "tests/test_superbpe.py", "tests/test_conditions_stats_pairs.py",
-    "tests/test_analysis_flores.py", "tests/test_tokenizers.py", "tests/test_text.py", "tests/test_input_contracts.py",
+    "tests/conftest.py", "tests/test_retrofit.py", "tests/test_superbpe.py", "tests/test_conditions_stats.py",
+    "tests/test_analysis.py", "tests/test_tokenizers.py", "tests/test_text.py", "tests/test_input_contracts.py",
     "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
     "src/vitok/heldout.py", "src/vitok/pipeline.py", "src/vitok/kaggle_session.py",
     "tests/test_extend.py", "tests/test_cpt_data.py", "tests/test_adapt.py", "tests/test_score.py", "tests/test_heldout.py",
     "tests/test_pipeline.py", "tests/test_kaggle_session.py", "tests/test_notebook03.py", "tests/test_notebook04.py",
+    "src/vitok/report.py", "tests/test_report.py", "src/vitok/survey.py", "tests/test_survey.py",
+    "tests/test_pilot_cleanup.py",
 ]
 
 [tool.ruff.lint]
@@ -46,6 +48,8 @@ files = [
     "src/vitok/hf_tokenizer.py", "src/vitok/tokenizer_spec.py", "src/vitok/compression.py", "src/vitok/analysis.py",
     "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
     "src/vitok/heldout.py", "src/vitok/pipeline.py", "src/vitok/kaggle_session.py",
+    "src/vitok/report.py",
+    "src/vitok/survey.py",
 ]
 check_untyped_defs = true
 ignore_missing_imports = true

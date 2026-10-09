@@ -33,7 +33,7 @@ def test_token_bytes_are_utf8_lengths(tokenizers_dir, tmp_path):
 
     from vitok.hf_tokenizer import write_token_bytes
     d = tmp_path / "tok"
-    shutil.copytree(tokenizers_dir / "bpe-nfd", d)
+    shutil.copytree(tokenizers_dir / "bpe-nfc", d)
     write_token_bytes(d)
     tb = torch.load(d / "token_bytes.pt")
     hf = HFTokenizer.from_directory(d)
@@ -66,15 +66,6 @@ def test_special_tokens_and_bos(tokenizers_dir):
     assert hf.decode(ids) == "<|bos|>xin chào<|assistant_end|>"
 
 
-def test_nfd_tokenizers_see_combining_marks(tokenizers_dir):
-    nfd_tok = Tokenizer.from_file(str(tokenizers_dir / "bpe-nfd" / "tokenizer.json"))
-    nfc_tok = Tokenizer.from_file(str(tokenizers_dir / "bpe-nfc" / "tokenizer.json"))
-    word = "Việt"
-    # same text, NFD tokenizer works on decomposed bytes (dot below U+0323 = 0xCC 0xA3)
-    assert nfd_tok.normalizer is not None
-    assert len(nfd_tok.encode(word).ids) >= 1 and len(nfc_tok.encode(word).ids) >= 1
-    nfd_bytes = "".join(nfd_tok.encode(word).tokens)
-    assert "Ì£" in nfd_bytes  # byte-level rendering of U+0323
 
 
 def test_pretokenizers_keep_nfd_marks_on_letters():
@@ -94,7 +85,7 @@ def test_pretokenizers_keep_nfd_marks_on_letters():
 
 def test_superbpe_inherits_merges(tokenizers_dir):
     meta = json.loads((tokenizers_dir / "train_meta.json").read_text())
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         assert meta[norm]["n_alphabet"] == 256
         assert meta[norm]["n_inherited_merges"] == round(0.9 * 600) - 256
 

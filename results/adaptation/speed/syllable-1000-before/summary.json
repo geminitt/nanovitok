@@ -1,0 +1,37 @@
+{
+  "signature": {
+    "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/syllable-1000/extended",
+    "revision": null,
+    "tokenizer_sha256": "1a3b31a04793f8527205cd3e5e100cea4a454dda8bc924221e343cf11858b134",
+    "snapshot_sha256": null,
+    "vi_docs_sha256": "dd356f435a99d63ffd3fc29970d5b8697a786a57fc8032442529eaaa034c0a3a",
+    "en_docs_sha256": null,
+    "belebele_sha256": null,
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 20,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda"
+  },
+  "snapshot": null,
+  "vi": {
+    "docs": 20,
+    "chars": 38722,
+    "tokens": 10439,
+    "bpc": 1.5153468503442065,
+    "chars_per_token": 3.709359134016668
+  },
+  "generation": {
+    "prompts": 20,
+    "new_tokens": 256,
+    "decode_chars_per_second": 78.0882876540855,
+    "decode_tokens_per_second": 20.609100964388123,
+    "prefill_chars_per_second": 7887.778399695898,
+    "generated_chars_per_token": 3.77421875,
+    "repetition_4_mean": 0.6868148756795861,
+    "max_memory_gib": 3.4503159523010254
+  },
+  "device_name": "Tesla T4"
+}

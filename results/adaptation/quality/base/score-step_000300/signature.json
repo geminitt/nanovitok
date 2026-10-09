@@ -1,0 +1,16 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+  "snapshot_sha256": "cc2b4d1be68b132ae33db4fa498682a8a0abdfccbf944b82243e46da1df1a01a",
+  "vi_docs_sha256": "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+  "en_docs_sha256": "c0396658aa80566784e12635b4df457332f1fbb36b62f54378bf00484cce29f8",
+  "belebele_sha256": "ff64989e00cd69857a9046f8d48640460085311c37e3dc430115eeaac182504a",
+  "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+  "speed_prompts": 0,
+  "speed_prompt_chars": 500,
+  "new_tokens": 256,
+  "batch_size": 8,
+  "dtype": "fp16",
+  "device": "cuda"
+}

@@ -21,7 +21,7 @@ def nanochat_base(tokenizers_dir):
 
     tok_dir = BASE_DIR / "tokenizer"
     shutil.rmtree(tok_dir, ignore_errors=True)
-    shutil.copytree(tokenizers_dir / "super-nfd", tok_dir)
+    shutil.copytree(tokenizers_dir / "super-nfc", tok_dir)
     write_token_bytes(tok_dir)
     data_dir = BASE_DIR / "base_data_climbmix"
     data_dir.mkdir(exist_ok=True)
@@ -111,7 +111,7 @@ def test_eval_checkpoints_scores_a_run_directory(tiny_model, nanochat_base, tmp_
 
     from conftest import NANOCHAT
 
-    run = tmp_path / "outputs" / "runs" / "super-nfd_d2_s0"
+    run = tmp_path / "outputs" / "runs" / "super-nfc_d2_s0"
     shutil.copytree(nanochat_base / "tokenizer", run / "tokenizer")
     shutil.copytree(nanochat_base / "base_checkpoints" / "dtest", run / "base_checkpoints" / "d2")
     docs = tmp_path / "docs.jsonl"
@@ -121,6 +121,29 @@ def test_eval_checkpoints_scores_a_run_directory(tiny_model, nanochat_base, tmp_
     subprocess.run([sys.executable, "-m", "vitok.eval_checkpoints", "--runs", str(tmp_path / "outputs"),
                     "--docs", str(docs), "--nanochat", str(NANOCHAT), "--out", str(out), "--dtype", "float32"],
                    check=True)
-    result = json.loads((out / "super-nfd_d2_s0.json").read_text(encoding="utf-8"))
+    result = json.loads((out / "super-nfc_d2_s0.json").read_text(encoding="utf-8"))
     assert list(result["docs"]) == ["clean"] and "pairs" not in result
     assert all(n is not None for n in result["docs"]["clean"]["nats"])
+
+
+@pytest.mark.parametrize("step", [None, 0])
+def test_pilot_eval_main_preserves_nfc_document_scores(tiny_model, tmp_path, monkeypatch, step):
+    import sys
+
+    from vitok import eval
+
+    model, tokenizer, _ = tiny_model
+    texts = [SENTENCES[0][:30], " ".join(SENTENCES * 5)]
+    docs, out = tmp_path / "docs.jsonl", tmp_path / "nested/results.json"
+    docs.write_text("".join(json.dumps({"id": i, "text": text}) + "\n" for i, text in enumerate(texts)))
+    argv = ["eval", "--test", str(docs), "--model-tag", "dtest", "--out", str(out), "--batch-size", "2"]
+    if step is not None:
+        argv += ["--step", str(step)]
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    eval.main()
+    result = json.loads(out.read_text())
+    assert result["step"] == 0 and result["max_seq_len"] == 64 and result["doc_ids"] == [0, 1]
+    assert list(result["docs"]) == ["clean"] and "pairs" not in result
+    assert result["docs"]["clean"]["chars"] == list(map(len, texts))
+    assert result["docs"]["clean"]["nats"] == eval.sequence_nats(model, tokenizer, texts, max_len=64, batch_size=2)

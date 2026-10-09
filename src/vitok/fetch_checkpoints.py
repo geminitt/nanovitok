@@ -20,9 +20,9 @@ from vitok.conditions import BASE_SEQ, BUDGET_TOKENS, SEQS_PER_STEP
 
 NOTEBOOK = "spritker/tokenizer-vietnamese-train-eval"
 RUNS = {  # notebook version -> runs saved in its output
-    4: ["bpe-nfc_d6_s0", "bpe-nfd_d6_s0", "super-nfc_d6_s0", "super-nfd_d6_s0"],
+    4: ["bpe-nfc_d6_s0", "super-nfc_d6_s0"],
     5: ["bpe-nfc_d6_s1", "super-nfc_d6_s1"],
-    6: ["bpe-nfc_d8_s0", "bpe-nfd_d8_s0", "super-nfc_d8_s0", "super-nfd_d8_s0"],
+    6: ["bpe-nfc_d8_s0", "super-nfc_d8_s0"],
     8: ["bpe-nfc_d8_s1", "super-nfc_d8_s1"],
     9: ["bpe-nfc_d10_s0", "super-nfc_d10_s0"],
 }

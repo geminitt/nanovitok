@@ -1,6 +1,6 @@
 """Train + evaluate a queue of conditions on one GPU (used by kaggle/notebooks/02_train_eval.ipynb).
 
-    python -m vitok.kaggle_run --gpu 0 --conditions bpe-nfc bpe-nfd --depth 6 --seed 0 \
+    python -m vitok.kaggle_run --gpu 0 --conditions bpe-nfc super-nfc --depth 6 --seed 0 \
         --data /kaggle/input/vitok-data --nanochat /kaggle/working/nanochat --work /kaggle/working
 
 Each run gets its own NANOCHAT_BASE_DIR, so two queues can share the data without clashing.
@@ -59,7 +59,7 @@ def run_one(args, cond: str, log) -> None:
 
     if not result.exists():
         cmd = [sys.executable, "-m", "vitok.eval", "--test", str(args.data / "test.jsonl"),
-               "--pairs", str(args.data / "minimal_pairs.jsonl"), f"--model-tag=d{args.depth}",
+               f"--model-tag=d{args.depth}",
                "--out", str(result)]
         log(f"[{tag}] eval")
         with open(run_dir / "eval.log", "w") as f:

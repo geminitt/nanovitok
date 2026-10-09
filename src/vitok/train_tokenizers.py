@@ -1,4 +1,4 @@
-"""Train the four tokenizers (BPE / SuperBPE x NFC / NFD) on the same corpus.
+"""Train the NFC BPE and SuperBPE tokenizers on the same corpus.
 
     python -m vitok.train_tokenizers --corpus tok_train.txt --out tokenizers --vocab-size 16000
 
@@ -48,7 +48,7 @@ def _train(workdir: Path, files: list[str], vocab_size: int, regex: str) -> Toke
 
 
 def _finalize(tok: Tokenizer, norm: str, out_dir: Path) -> None:
-    tok.normalizer = normalizers.NFD() if norm == "nfd" else normalizers.NFC()
+    tok.normalizer = normalizers.NFC()
     tok.decoder = decoders.ByteLevel()
     tok.add_special_tokens(SPECIAL_TOKENS)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -77,7 +77,7 @@ def _stage2_fast(files: list[str], vocab: dict[str, int], merges: list[tuple[str
 
 def train_all(corpus: Path, out: Path, vocab_size: int, transition: float, workroot: Path, stage2: str = "fast") -> dict:
     meta = {"vocab_size": vocab_size, "transition": transition, "corpus_bytes": corpus.stat().st_size}
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         corpus_norm = workroot / f"corpus_{norm}.txt"
         _write_corpus(corpus, corpus_norm, norm)
         files = [str(corpus_norm.resolve())]

@@ -1,0 +1,121 @@
+{
+  "signature": {
+    "model": "/kaggle/working/runs/multisyllable-1000-s1/extended",
+    "revision": null,
+    "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3",
+    "shards": [
+      [
+        "shard_00000.parquet",
+        183670666
+      ],
+      [
+        "shard_00001.parquet",
+        179029671
+      ],
+      [
+        "shard_00002.parquet",
+        187465086
+      ],
+      [
+        "shard_00003.parquet",
+        182354298
+      ],
+      [
+        "shard_00004.parquet",
+        182415172
+      ],
+      [
+        "shard_00005.parquet",
+        185115302
+      ],
+      [
+        "shard_00006.parquet",
+        179455140
+      ],
+      [
+        "shard_00007.parquet",
+        186361459
+      ],
+      [
+        "shard_00008.parquet",
+        182292636
+      ],
+      [
+        "shard_00009.parquet",
+        183824485
+      ],
+      [
+        "shard_00010.parquet",
+        183270158
+      ],
+      [
+        "shard_00011.parquet",
+        182200325
+      ],
+      [
+        "shard_00012.parquet",
+        184360934
+      ],
+      [
+        "shard_00013.parquet",
+        181672493
+      ],
+      [
+        "shard_00014.parquet",
+        184701396
+      ],
+      [
+        "shard_00015.parquet",
+        181422717
+      ],
+      [
+        "shard_00016.parquet",
+        184644208
+      ],
+      [
+        "shard_00017.parquet",
+        181982894
+      ],
+      [
+        "shard_00018.parquet",
+        183800897
+      ],
+      [
+        "shard_00019.parquet",
+        182735109
+      ]
+    ],
+    "held_out_sha256": [
+      "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+      "d3eee4aabe101e14a49bc43b3540ae011b1d6925b55cd25a77908fb6f7351b58",
+      "fdaca0d9d871c2d04eafa11782d1d602080db82b8b12d49a9f89d3bc99a95c44"
+    ],
+    "steps": 1200,
+    "batch": 32,
+    "micro_batch": 4,
+    "seq_len": 512,
+    "lr": 0.0001,
+    "embed_lr": 0.0001,
+    "warmup": 60,
+    "min_lr_ratio": 0.1,
+    "weight_decay": 0.0,
+    "layers": "0,1,-2,-1",
+    "seed": 1,
+    "dtype": "fp16",
+    "grad_clip": 1.0,
+    "grad_checkpointing": true
+  },
+  "new_tokens": 1000,
+  "steps": 1200,
+  "tokens": 19660800,
+  "chars": 79230093,
+  "git_commit": "c99d8c9216deb2b8dee143cbca6b48f006697402",
+  "packages": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "tokenizers": "0.23.1"
+  },
+  "device": "Tesla T4",
+  "python": "3.13.15",
+  "created": "2026-10-08T16:26:03+0000"
+}

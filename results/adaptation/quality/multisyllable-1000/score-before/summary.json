@@ -1,0 +1,49 @@
+{
+  "signature": {
+    "model": "/kaggle/working/runs/multisyllable-1000/extended",
+    "revision": null,
+    "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3",
+    "snapshot_sha256": null,
+    "vi_docs_sha256": "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+    "en_docs_sha256": "c0396658aa80566784e12635b4df457332f1fbb36b62f54378bf00484cce29f8",
+    "belebele_sha256": "ff64989e00cd69857a9046f8d48640460085311c37e3dc430115eeaac182504a",
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 20,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda"
+  },
+  "snapshot": null,
+  "vi": {
+    "docs": 2000,
+    "chars": 4192698,
+    "tokens": 1031995,
+    "bpc": 1.5943150516505258,
+    "chars_per_token": 4.0627115441450785
+  },
+  "en": {
+    "docs": 2000,
+    "chars": 3348304,
+    "tokens": 747253,
+    "bpc": 1.1064787392764421,
+    "chars_per_token": 4.480817072664814
+  },
+  "belebele": {
+    "items": 900,
+    "acc_char": 0.3433333333333333,
+    "acc_sum": 0.33111111111111113
+  },
+  "generation": {
+    "prompts": 20,
+    "new_tokens": 256,
+    "decode_chars_per_second": 73.13657345509948,
+    "decode_tokens_per_second": 20.214422535281127,
+    "prefill_chars_per_second": 7862.294808994965,
+    "generated_chars_per_token": 3.60390625,
+    "repetition_4_mean": 0.7130131697278863,
+    "max_memory_gib": 3.448610305786133
+  },
+  "device_name": "Tesla T4"
+}

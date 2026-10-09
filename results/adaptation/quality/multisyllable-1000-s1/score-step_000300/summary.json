@@ -1,0 +1,154 @@
+{
+  "signature": {
+    "model": "/kaggle/working/runs/multisyllable-1000-s1/extended",
+    "revision": null,
+    "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3",
+    "snapshot_sha256": "9d979733b026a7acc54ab9bc44b7d968a6828ae942ccd6396f89c86aa5ef5bd8",
+    "vi_docs_sha256": "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+    "en_docs_sha256": "c0396658aa80566784e12635b4df457332f1fbb36b62f54378bf00484cce29f8",
+    "belebele_sha256": "ff64989e00cd69857a9046f8d48640460085311c37e3dc430115eeaac182504a",
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 0,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda"
+  },
+  "snapshot": {
+    "new_ids": [
+      151669,
+      152669
+    ],
+    "step": 300,
+    "tokens": 4915200,
+    "chars": 19886409,
+    "signature": {
+      "model": "/kaggle/working/runs/multisyllable-1000-s1/extended",
+      "revision": null,
+      "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3",
+      "shards": [
+        [
+          "shard_00000.parquet",
+          183670666
+        ],
+        [
+          "shard_00001.parquet",
+          179029671
+        ],
+        [
+          "shard_00002.parquet",
+          187465086
+        ],
+        [
+          "shard_00003.parquet",
+          182354298
+        ],
+        [
+          "shard_00004.parquet",
+          182415172
+        ],
+        [
+          "shard_00005.parquet",
+          185115302
+        ],
+        [
+          "shard_00006.parquet",
+          179455140
+        ],
+        [
+          "shard_00007.parquet",
+          186361459
+        ],
+        [
+          "shard_00008.parquet",
+          182292636
+        ],
+        [
+          "shard_00009.parquet",
+          183824485
+        ],
+        [
+          "shard_00010.parquet",
+          183270158
+        ],
+        [
+          "shard_00011.parquet",
+          182200325
+        ],
+        [
+          "shard_00012.parquet",
+          184360934
+        ],
+        [
+          "shard_00013.parquet",
+          181672493
+        ],
+        [
+          "shard_00014.parquet",
+          184701396
+        ],
+        [
+          "shard_00015.parquet",
+          181422717
+        ],
+        [
+          "shard_00016.parquet",
+          184644208
+        ],
+        [
+          "shard_00017.parquet",
+          181982894
+        ],
+        [
+          "shard_00018.parquet",
+          183800897
+        ],
+        [
+          "shard_00019.parquet",
+          182735109
+        ]
+      ],
+      "held_out_sha256": [
+        "e550434619d3bbe39a33335fe57969acf61001122239adb21f2f9f377315172c",
+        "d3eee4aabe101e14a49bc43b3540ae011b1d6925b55cd25a77908fb6f7351b58",
+        "fdaca0d9d871c2d04eafa11782d1d602080db82b8b12d49a9f89d3bc99a95c44"
+      ],
+      "steps": 1200,
+      "batch": 32,
+      "micro_batch": 4,
+      "seq_len": 512,
+      "lr": 0.0001,
+      "embed_lr": 0.0001,
+      "warmup": 60,
+      "min_lr_ratio": 0.1,
+      "weight_decay": 0.0,
+      "layers": "0,1,-2,-1",
+      "seed": 1,
+      "dtype": "fp16",
+      "grad_clip": 1.0,
+      "grad_checkpointing": true
+    },
+    "kind": "snapshot"
+  },
+  "vi": {
+    "docs": 2000,
+    "chars": 4192698,
+    "tokens": 1031995,
+    "bpc": 1.1690434717322655,
+    "chars_per_token": 4.0627115441450785
+  },
+  "en": {
+    "docs": 2000,
+    "chars": 3348304,
+    "tokens": 747253,
+    "bpc": 1.0636623532569283,
+    "chars_per_token": 4.480817072664814
+  },
+  "belebele": {
+    "items": 900,
+    "acc_char": 0.35333333333333333,
+    "acc_sum": 0.35
+  },
+  "device_name": "Tesla T4"
+}
