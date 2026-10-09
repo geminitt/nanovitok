@@ -1,0 +1,16 @@
+{
+  "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/syllable-1000/extended",
+  "revision": null,
+  "tokenizer_sha256": "1a3b31a04793f8527205cd3e5e100cea4a454dda8bc924221e343cf11858b134",
+  "snapshot_sha256": "35283a1f063d98d8e4da2b6498fc1de097dbc68270cf1fad8137bb731cfcada8",
+  "vi_docs_sha256": "dd356f435a99d63ffd3fc29970d5b8697a786a57fc8032442529eaaa034c0a3a",
+  "en_docs_sha256": null,
+  "belebele_sha256": null,
+  "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+  "speed_prompts": 20,
+  "speed_prompt_chars": 500,
+  "new_tokens": 256,
+  "batch_size": 8,
+  "dtype": "fp16",
+  "device": "cuda"
+}

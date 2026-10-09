@@ -20,15 +20,16 @@ def paired_bootstrap_bpc(nats_a, nats_b, chars, n: int = 10_000, seed: int = 0) 
     nats_a, nats_b, chars = map(np.asarray, (nats_a, nats_b, chars))
     assert nats_a.shape == nats_b.shape == chars.shape and len(chars) > 0
     rng = np.random.default_rng(seed)
-    diffs, rels = [], []
+    diffs: list[np.ndarray] = []
+    rels: list[np.ndarray] = []
     for start in range(0, n, 500):  # chunked to bound memory
         idx = rng.integers(0, len(chars), size=(min(500, n - start), len(chars)))
         sa, sb = nats_a[idx].sum(axis=1), nats_b[idx].sum(axis=1)
         diffs.append((sa - sb) / (chars[idx].sum(axis=1) * math.log(2)))
         rels.append(sa / sb - 1)  # same characters on both sides, so the ratio of nats is the ratio of bpc
-    diffs, rels = np.concatenate(diffs), np.concatenate(rels)
-    lo, mid, hi = np.percentile(diffs, [2.5, 50, 97.5])
-    rlo, rhi = np.percentile(rels, [2.5, 97.5])
+    all_diffs, all_rels = np.concatenate(diffs), np.concatenate(rels)
+    lo, mid, hi = np.percentile(all_diffs, [2.5, 50, 97.5])
+    rlo, rhi = np.percentile(all_rels, [2.5, 97.5])
     assert lo <= mid <= hi and rlo <= rhi
     return {"diff": bpc(nats_a, chars) - bpc(nats_b, chars), "ci95": [float(lo), float(hi)],
             "median": float(mid), "significant": bool(lo > 0 or hi < 0),

@@ -1,0 +1,16 @@
+{
+  "model": "/root/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
+  "revision": null,
+  "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+  "snapshot_sha256": "2ce798d7561ebd87a30f0c58ea77e5ee80f68f8fee3b0f6396c4fa9237fe34c3",
+  "vi_docs_sha256": "dd356f435a99d63ffd3fc29970d5b8697a786a57fc8032442529eaaa034c0a3a",
+  "en_docs_sha256": null,
+  "belebele_sha256": null,
+  "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+  "speed_prompts": 20,
+  "speed_prompt_chars": 500,
+  "new_tokens": 256,
+  "batch_size": 8,
+  "dtype": "fp16",
+  "device": "cuda"
+}

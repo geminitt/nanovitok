@@ -1,7 +1,7 @@
 """Shared tokenizer definitions. Must import nothing beyond the stdlib, so it also works in the
 SuperBPE training environment (which has a forked `tokenizers` and no torch)."""
 
-CONDITIONS = ["bpe-nfc", "bpe-nfd", "super-nfc", "super-nfd"]
+CONDITIONS = ["bpe-nfc", "super-nfc"]
 
 # nanochat's special tokens, in nanochat's order.
 SPECIAL_TOKENS = [
@@ -32,8 +32,8 @@ STAGE2_REGEX = r"\p{N}{1,3}| ?[^\s\p{L}\p{M}\p{N}]{2,}[\r\n/]*| +(?!\S)"
 
 
 def parse(condition: str) -> tuple[str, str]:
-    """'super-nfd' -> ('super', 'nfd')."""
+    """'super-nfc' -> ('super', 'nfc')."""
     algo, _, norm = condition.partition("-")
-    if algo not in ("bpe", "super") or norm not in ("nfc", "nfd"):
+    if algo not in ("bpe", "super") or norm != "nfc":
         raise ValueError(f"unknown condition {condition!r}: expected one of {CONDITIONS}")
     return algo, norm

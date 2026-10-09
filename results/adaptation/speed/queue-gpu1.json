@@ -1,0 +1,20 @@
+{
+  "multisyllable-1000-before": {
+    "status": "done",
+    "exit_code": 0,
+    "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+    "gpu": 1
+  },
+  "multisyllable-1000": {
+    "status": "done",
+    "exit_code": 0,
+    "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+    "gpu": 1
+  },
+  "multisyllable-1000-s1": {
+    "status": "done",
+    "exit_code": 0,
+    "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+    "gpu": 1
+  }
+}

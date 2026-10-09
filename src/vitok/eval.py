@@ -1,9 +1,8 @@
-"""Evaluate one trained checkpoint: per-document nats on clean / diacritic-stripped test text,
-and log-probabilities for minimal pairs. Bits per NFC character are computed in vitok.analysis
+"""Evaluate one trained checkpoint: per-document nats on NFC test text. Bits per NFC character are computed in vitok.analysis
 over the documents every condition could score.
 
     NANOCHAT_BASE_DIR=runs/super-nfc_d8 python -m vitok.eval \
-        --test test.jsonl --pairs minimal_pairs.jsonl --model-tag d8 --out results/super-nfc_d8_s0.json
+        --test test.jsonl --model-tag d8 --out results/super-nfc_d8_s0.json
 """
 
 import argparse
@@ -14,15 +13,6 @@ import time
 from pathlib import Path
 
 import torch
-
-from vitok.text import strip_diacritics, strip_diacritics_partial
-
-VARIANTS = {
-    "clean": lambda s: s,
-    "strip50": lambda s: strip_diacritics_partial(s, 0.5, seed=0),
-    "strip100": strip_diacritics,
-}
-
 
 @torch.no_grad()
 def sequence_nats(model, tokenizer, texts: list[str], max_len: int, batch_size: int = 16) -> list[float | None]:
@@ -61,8 +51,6 @@ def sequence_nats(model, tokenizer, texts: list[str], max_len: int, batch_size: 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test", type=Path, required=True, help="documents to score (test.jsonl or val_docs.jsonl)")
-    ap.add_argument("--pairs", type=Path, default=None, help="minimal pairs; skipped when absent")
-    ap.add_argument("--variants", nargs="+", choices=list(VARIANTS), default=list(VARIANTS))
     ap.add_argument("--model-tag", required=True)
     ap.add_argument("--step", type=int, default=None)
     ap.add_argument("--batch-size", type=int, default=16)
@@ -82,23 +70,17 @@ def main():
     t0 = time.time()
     result = {"step": step, "max_seq_len": max_len, "user_config": meta.get("user_config"),
               "doc_ids": [d["id"] for d in docs], "docs": {}}
-    for name in args.variants:
-        texts = [VARIANTS[name](d["text"]) for d in docs]
-        result["docs"][name] = {
-            "chars": [len(t) for t in texts],
-            "nats": sequence_nats(model, tokenizer, texts, max_len, args.batch_size),
-        }
-    if args.pairs:
-        pairs = [json.loads(line) for line in args.pairs.read_text(encoding="utf-8").splitlines()]
-        good = sequence_nats(model, tokenizer, [p["good"] for p in pairs], max_len, args.batch_size)
-        bad = sequence_nats(model, tokenizer, [p["bad"] for p in pairs], max_len, args.batch_size)
-        result["pairs"] = {"ids": [p["id"] for p in pairs], "good_nats": good, "bad_nats": bad}
+    texts = [d["text"] for d in docs]
+    result["docs"]["clean"] = {
+        "chars": [len(t) for t in texts],
+        "nats": sequence_nats(model, tokenizer, texts, max_len, args.batch_size),
+    }
     assert all(len(v["nats"]) == len(v["chars"]) == len(docs) for v in result["docs"].values())
     result["eval_seconds"] = time.time() - t0
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result), encoding="utf-8")
-    skipped = sum(n is None for n in result["docs"][args.variants[0]]["nats"])
+    skipped = sum(n is None for n in result["docs"]["clean"]["nats"])
     print(f"wrote {args.out} | docs skipped (too long): {skipped}/{len(docs)} | {result['eval_seconds']:.0f}s")
 
 

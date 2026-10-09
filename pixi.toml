@@ -20,12 +20,13 @@ ipykernel = ">=7.3.0,<8"
 matplotlib = ">=3.11.1,<4"
 kagglehub = ">=1.0.2,<2"
 hypothesis = ">=6.168.3,<7"
+datasets = ">=5.0.1,<6"
 
 [pypi-dependencies]
 tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
-underthesea = ">=9.5.0, <10"
+transformers = ">=4.56"
 
 [tasks]
 test = "pytest -q tests"
@@ -42,16 +43,33 @@ tokenizers = "*"
 huggingface_hub = "*"
 filelock = "*"
 psutil = "*"
+pytest = ">=9.1.1,<10"
+hypothesis = ">=6.168.5,<7"
+matplotlib = ">=3.11.2,<4"
+kagglehub = ">=1.0.2,<2"
 
 [feature.gpu.pypi-dependencies]
 torch = ">=2.14.0, <3"
 tiktoken = "*"
 rustbpe = "*"
 vitok = { path = ".", editable = true }
+transformers = ">=4.56"
+
+[feature.gpu.tasks]
+# the CPU suite against the gpu environment's libraries (CUDA hidden, so results match the default environment)
+test-cpu = { cmd = "pytest -q tests", env = { CUDA_VISIBLE_DEVICES = "" } }
 
 [feature.dev.dependencies]
 pytest-cov = ">=7.1.0,<8"
 mutmut = ">=3.8.0,<4"
+ruff = ">=0.16.10,<0.17"
+mypy = ">=2.4.0,<3"
+
+[feature.dev.tasks]
+lint = "ruff check"
+typecheck = "mypy"
+# the gate set run after every step (PLAN.md): tests, lint, type check
+check = { depends-on = ["test", "lint", "typecheck"] }
 
 [environments]
 gpu = { features = ["gpu"], no-default-feature = true }

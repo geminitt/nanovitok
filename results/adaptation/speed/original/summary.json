@@ -1,0 +1,37 @@
+{
+  "signature": {
+    "model": "/root/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
+    "revision": null,
+    "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "snapshot_sha256": null,
+    "vi_docs_sha256": "dd356f435a99d63ffd3fc29970d5b8697a786a57fc8032442529eaaa034c0a3a",
+    "en_docs_sha256": null,
+    "belebele_sha256": null,
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 20,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda"
+  },
+  "snapshot": null,
+  "vi": {
+    "docs": 20,
+    "chars": 38722,
+    "tokens": 11187,
+    "bpc": 1.2851812457975735,
+    "chars_per_token": 3.4613390542594082
+  },
+  "generation": {
+    "prompts": 20,
+    "new_tokens": 256,
+    "decode_chars_per_second": 75.93164475178497,
+    "decode_tokens_per_second": 20.948360285302574,
+    "prefill_chars_per_second": 7972.04019636546,
+    "generated_chars_per_token": 3.610546875,
+    "repetition_4_mean": 0.6043717770796595,
+    "max_memory_gib": 3.448742389678955
+  },
+  "device_name": "Tesla T4"
+}

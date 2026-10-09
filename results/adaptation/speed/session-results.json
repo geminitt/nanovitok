@@ -1,0 +1,126 @@
+{
+  "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+  "status": "done",
+  "models": {
+    "original": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 0,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 75.93164475178497,
+        "decode_tokens_per_second": 20.948360285302574,
+        "prefill_chars_per_second": 7972.04019636546,
+        "generated_chars_per_token": 3.610546875,
+        "repetition_4_mean": 0.6043717770796595,
+        "max_memory_gib": 3.448742389678955
+      },
+      "device_name": "Tesla T4"
+    },
+    "base": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 0,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 71.15865366221827,
+        "decode_tokens_per_second": 20.6868342744863,
+        "prefill_chars_per_second": 7918.752146470928,
+        "generated_chars_per_token": 3.4263671875,
+        "repetition_4_mean": 0.6675725218441196,
+        "max_memory_gib": 3.448742389678955
+      },
+      "device_name": "Tesla T4"
+    },
+    "syllable-1000-before": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 0,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 78.0882876540855,
+        "decode_tokens_per_second": 20.609100964388123,
+        "prefill_chars_per_second": 7887.778399695898,
+        "generated_chars_per_token": 3.77421875,
+        "repetition_4_mean": 0.6868148756795861,
+        "max_memory_gib": 3.4503159523010254
+      },
+      "device_name": "Tesla T4"
+    },
+    "syllable-1000": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 0,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 77.31110819328413,
+        "decode_tokens_per_second": 20.337682559743595,
+        "prefill_chars_per_second": 7774.053892042509,
+        "generated_chars_per_token": 3.7865234375,
+        "repetition_4_mean": 0.6850195806206052,
+        "max_memory_gib": 3.4503159523010254
+      },
+      "device_name": "Tesla T4"
+    },
+    "multisyllable-1000-before": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 1,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 72.28537565367137,
+        "decode_tokens_per_second": 19.979157589081076,
+        "prefill_chars_per_second": 7843.946045019917,
+        "generated_chars_per_token": 3.60390625,
+        "repetition_4_mean": 0.7130131697278863,
+        "max_memory_gib": 3.448698043823242
+      },
+      "device_name": "Tesla T4"
+    },
+    "multisyllable-1000": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 1,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 79.13608092895002,
+        "decode_tokens_per_second": 20.37221809790748,
+        "prefill_chars_per_second": 8107.866179823427,
+        "generated_chars_per_token": 3.8693359375,
+        "repetition_4_mean": 0.7908342413896476,
+        "max_memory_gib": 3.448698043823242
+      },
+      "device_name": "Tesla T4"
+    },
+    "multisyllable-1000-s1": {
+      "status": "done",
+      "exit_code": 0,
+      "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+      "gpu": 1,
+      "generation": {
+        "prompts": 20,
+        "new_tokens": 256,
+        "decode_chars_per_second": 79.0804845927755,
+        "decode_tokens_per_second": 20.707011933211227,
+        "prefill_chars_per_second": 8029.421989870909,
+        "generated_chars_per_token": 3.8041015625,
+        "repetition_4_mean": 0.7276710962554075,
+        "max_memory_gib": 3.448698043823242
+      },
+      "device_name": "Tesla T4"
+    }
+  },
+  "wall_seconds": 1127.7660816090001
+}

@@ -4,35 +4,21 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import QWEN_RE, SENTENCES, SPECIALS, qwen_like_base
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from tokenizers import Regex, Tokenizer, decoders, normalizers, pre_tokenizers
+from tokenizers import Tokenizer, normalizers, pre_tokenizers
 from tokenizers.models import BPE
-from tokenizers.trainers import BpeTrainer
 
-from conftest import SENTENCES
 from vitok import retrofit
 
-# Qwen2.5/Qwen3's pre-tokenizer regex, so the tiny base below splits text the way the real base does
-QWEN_RE = (r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+"
-           r"|\s+(?!\S)|\s+")
-SPECIALS = ["<|endoftext|>", "<|im_start|>", "<|im_end|>"]
 TEXT = st.text(alphabet="aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạếềểễệọộớờởỡợúùủũụứừửữựABCĐHNTV 0123456789.,:;!?'\"-()\n\t",
                max_size=80)
 
 
 @pytest.fixture(scope="module")
-def base(tmp_path_factory) -> dict:
-    """A small Qwen-like byte-level BPE (NFC, regex Split + ByteLevel, special tokens after the vocabulary)."""
-    tok = Tokenizer(BPE())
-    tok.normalizer = normalizers.NFC()
-    tok.pre_tokenizer = retrofit._pre_tokenizer(QWEN_RE)
-    tok.decoder = decoders.ByteLevel()
-    tok.train_from_iterator(["The quick brown fox, don't stop!"] * 5 + SENTENCES * 3,
-                            BpeTrainer(vocab_size=420, show_progress=False,
-                                       initial_alphabet=pre_tokenizers.ByteLevel.alphabet()))
-    tok.add_special_tokens(SPECIALS)
-    return json.loads(tok.to_str())
+def base() -> dict:
+    return qwen_like_base()
 
 
 @pytest.fixture(scope="module")
@@ -96,7 +82,8 @@ def test_kinds_differ_only_in_whether_tokens_may_join_words(learned):
     if kind == "single":
         assert not spans and out["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"] == QWEN_RE
     else:
-        assert spans and out["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"] == retrofit.WORD_RUN + "|" + QWEN_RE
+        regex = out["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"]
+        assert spans and regex == retrofit.WORD_RUN + "|" + QWEN_RE
 
 
 def test_report_counts_savings_reachability_and_unchanged_text(base, learned):
@@ -133,7 +120,8 @@ def test_cli_writes_tokenizer_manifest_and_report(base, corpus, tmp_path, monkey
 
     def run(out, n_new, kind="multi"):
         monkeypatch.setattr(sys, "argv", ["retrofit", "--base", str(base_path), "--corpus", str(corpus), "--kind", kind,
-                                          "--n-new", str(n_new), "--docs", str(docs), "--others", str(other), "--out", str(out)])
+                                          "--n-new", str(n_new), "--docs", str(docs), "--others", str(other),
+                                          "--out", str(out)])
         retrofit.main()
         return json.loads(capsys.readouterr().out)
 
@@ -152,7 +140,8 @@ def test_cli_writes_tokenizer_manifest_and_report(base, corpus, tmp_path, monkey
                              "packages", "created"} and set(manifest["packages"]) == {"tokenizers", "numpy"}
     report = json.loads((out / "report.json").read_text())
     assert printed == report and report["new_tokens"] > 0 and report["identical_ids"] == {"english.txt": 1}
-    assert Tokenizer.from_file(str(out / "tokenizer.json")).get_vocab_size() == as_tok(base).get_vocab_size() + report["new_tokens"]
+    grown = Tokenizer.from_file(str(out / "tokenizer.json")).get_vocab_size()
+    assert grown == as_tok(base).get_vocab_size() + report["new_tokens"]
     # zero new tokens is allowed and gives the base back, into an existing folder
     assert run(out, 0, "single")["new_tokens"] == 0
     assert json.loads((out / "manifest.json").read_text())["merges_learned"] == 0

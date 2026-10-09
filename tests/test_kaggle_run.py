@@ -25,7 +25,7 @@ def test_fetch_checkpoints_lays_out_runs_and_resumes(tmp_path, tokenizers_dir):
 
     assert checkpoint_files("super-nfc_d10_s0") == ["runs/super-nfc_d10_s0/base_checkpoints/d10/meta_015258.json",
                                                     "runs/super-nfc_d10_s0/base_checkpoints/d10/model_015258.pt"]
-    calls, broken = [], {"runs/bpe-nfd_d6_s0/base_checkpoints/d6/meta_003814.json"}
+    calls, broken = [], {"runs/super-nfc_d6_s0/base_checkpoints/d6/meta_003814.json"}
 
     def fake_download(version, rel, stage):
         calls.append(rel)
@@ -36,7 +36,7 @@ def test_fetch_checkpoints_lays_out_runs_and_resumes(tmp_path, tokenizers_dir):
         path.write_text(rel)
         return path
 
-    only = ["bpe-nfc_d6_s0", "bpe-nfd_d6_s0"]
+    only = ["bpe-nfc_d6_s0", "super-nfc_d6_s0"]
     assert fetch(tmp_path, tokenizers_dir, only, download=fake_download) == sorted(broken)
     run = tmp_path / "results-v4" / "runs" / "bpe-nfc_d6_s0"
     assert (run / "base_checkpoints" / "d6" / "model_003814.pt").read_text().endswith("model_003814.pt")
@@ -46,5 +46,5 @@ def test_fetch_checkpoints_lays_out_runs_and_resumes(tmp_path, tokenizers_dir):
     calls.clear()
     broken.clear()
     assert fetch(tmp_path, tokenizers_dir, only, download=fake_download) == []
-    assert calls == ["runs/bpe-nfd_d6_s0/base_checkpoints/d6/meta_003814.json"]  # only the missing file
+    assert calls == ["runs/super-nfc_d6_s0/base_checkpoints/d6/meta_003814.json"]  # only the missing file
     assert not (tmp_path / ".fetch-staging").exists()

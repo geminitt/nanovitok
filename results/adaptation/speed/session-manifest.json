@@ -1,0 +1,93 @@
+{
+  "session_id": "00b237a0-ad29-4f8a-9279-13f316f50247",
+  "jobs": {
+    "original": {
+      "model": "/root/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/base/tokenizer.json",
+      "snapshot": null,
+      "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+    },
+    "base": {
+      "model": "/root/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/base/tokenizer.json",
+      "snapshot": "/kaggle/input/notebooks/spritker/nanovitok-03-full-a/runs/base/train/final.pt",
+      "snapshot_sha256": "2ce798d7561ebd87a30f0c58ea77e5ee80f68f8fee3b0f6396c4fa9237fe34c3",
+      "training_commit": "c99d8c9216deb2b8dee143cbca6b48f006697402",
+      "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+    },
+    "syllable-1000": {
+      "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/syllable-1000/extended",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/syllable-1000/tokenizer.json",
+      "snapshot": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/syllable-1000/train/final.pt",
+      "snapshot_sha256": "35283a1f063d98d8e4da2b6498fc1de097dbc68270cf1fad8137bb731cfcada8",
+      "training_commit": "c99d8c9216deb2b8dee143cbca6b48f006697402",
+      "tokenizer_sha256": "1a3b31a04793f8527205cd3e5e100cea4a454dda8bc924221e343cf11858b134"
+    },
+    "syllable-1000-before": {
+      "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/syllable-1000/extended",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/syllable-1000/tokenizer.json",
+      "snapshot": null,
+      "tokenizer_sha256": "1a3b31a04793f8527205cd3e5e100cea4a454dda8bc924221e343cf11858b134"
+    },
+    "multisyllable-1000": {
+      "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-a/runs/multisyllable-1000/extended",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/multisyllable-1000/tokenizer.json",
+      "snapshot": "/kaggle/input/notebooks/spritker/nanovitok-03-full-a/runs/multisyllable-1000/train/final.pt",
+      "snapshot_sha256": "f29b8b0337d87e45691e5cffea4f94af14567e43613d5733a46c8a1bc8edcb9a",
+      "training_commit": "c99d8c9216deb2b8dee143cbca6b48f006697402",
+      "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3"
+    },
+    "multisyllable-1000-before": {
+      "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-a/runs/multisyllable-1000/extended",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/multisyllable-1000/tokenizer.json",
+      "snapshot": null,
+      "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3"
+    },
+    "multisyllable-1000-s1": {
+      "model": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/multisyllable-1000-s1/extended",
+      "tokenizer": "/kaggle/input/datasets/spritker/vitok-code/retrofit/multisyllable-1000/tokenizer.json",
+      "snapshot": "/kaggle/input/notebooks/spritker/nanovitok-03-full-b/runs/multisyllable-1000-s1/train/final.pt",
+      "snapshot_sha256": "7a1564964669ecfd21315f3f8e9924695b0f504b1c4978d55f5122fbd033c35d",
+      "training_commit": "c99d8c9216deb2b8dee143cbca6b48f006697402",
+      "tokenizer_sha256": "9b7f05801aad873dd7d4ea42377827bee73d32c81d24060cc3821136a48b94d3"
+    }
+  },
+  "queues": {
+    "0": [
+      "original",
+      "base",
+      "syllable-1000-before",
+      "syllable-1000"
+    ],
+    "1": [
+      "multisyllable-1000-before",
+      "multisyllable-1000",
+      "multisyllable-1000-s1"
+    ]
+  },
+  "work": "/kaggle/working/generation-speed",
+  "prompt_file": "/kaggle/working/generation-speed/speed_docs.jsonl",
+  "prompt_sha256": "dd356f435a99d63ffd3fc29970d5b8697a786a57fc8032442529eaaa034c0a3a",
+  "dtype": "fp16",
+  "speed_prompts": 20,
+  "prompt_chars": 500,
+  "new_tokens": 256,
+  "deadline": 4050.549391186,
+  "gpus": [
+    {
+      "name": "Tesla T4",
+      "total_mib": 15360,
+      "used_mib": 0
+    },
+    {
+      "name": "Tesla T4",
+      "total_mib": 15360,
+      "used_mib": 0
+    }
+  ],
+  "packages": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "tokenizers": "0.23.1"
+  }
+}

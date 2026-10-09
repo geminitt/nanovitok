@@ -24,6 +24,7 @@ import tempfile
 import time
 from importlib.metadata import version
 from pathlib import Path
+from typing import Any
 
 from tokenizers import Regex, Tokenizer, pre_tokenizers
 
@@ -43,7 +44,12 @@ def base_parts(base: dict) -> tuple[dict, list[tuple[str, str]], str]:
     splits = [p for p in steps if p.get("type") == "Split"]
     if len(splits) != 1 or not any(p.get("type") == "ByteLevel" for p in steps):
         raise ValueError("expected a pre-tokenizer of one regex Split followed by ByteLevel")
-    merges = [tuple(m.split(" ")) if isinstance(m, str) else tuple(m) for m in model["merges"]]
+    merges = []
+    for m in model["merges"]:
+        pair = m.split(" ") if isinstance(m, str) else list(m)
+        if len(pair) != 2:
+            raise ValueError(f"merge {m!r} is not a pair of tokens")
+        merges.append((pair[0], pair[1]))
     return dict(model["vocab"]), merges, splits[0]["pattern"]["Regex"]
 
 
@@ -100,7 +106,8 @@ def retrofit(base: dict, new_merges: list[tuple[str, str]], kind: str) -> dict:
     known = set(vocab)
     for a, b in new_merges:
         if a not in known or b not in known:
-            raise ValueError(f"merge {a!r} + {b!r} uses a token that is neither in the base nor made by an earlier merge")
+            raise ValueError(f"merge {a!r} + {b!r} uses a token that is neither in the base nor made by an "
+                             "earlier merge")
         if a + b not in known:
             model["vocab"][a + b] = next_id
             next_id += 1
@@ -129,7 +136,7 @@ def _byte_decoder() -> dict[str, int]:
             keep.append(b)
             chars.append(256 + n)
             n += 1
-    return {chr(c): b for b, c in zip(keep, chars)}
+    return {chr(c): b for b, c in zip(keep, chars, strict=True)}
 
 
 # built at import: mutation testing cannot reach it here, so tests check the table itself
@@ -160,15 +167,16 @@ def measure(new: Tokenizer, base: Tokenizer, docs: list[str], others: dict[str, 
         except UnicodeDecodeError:
             partial[i] = t
     reachable = sum(new.encode(text, add_special_tokens=False).ids == [i] for i, text in whole.items())
-    report = {
+    report: dict[str, Any] = {
         "docs": len(docs), "chars": chars, "new_tokens": len(new_tokens),
         "chars_per_token_base": chars / n_base, "chars_per_token_new": chars / n_new,
         "token_change": n_new / n_base - 1,
-        "round_trip": sum(new.decode(ids) == d for ids, d in zip(enc(new, docs), docs)),
+        "round_trip": sum(new.decode(ids) == d for ids, d in zip(enc(new, docs), docs, strict=True)),
         "new_tokens_whole_chars": len(whole), "new_tokens_reachable": reachable,
         "new_tokens_partial_chars": len(partial),
         "new_tokens_used_on_docs": len(used & set(new_tokens.values())),
-        "identical_ids": {name: sum(a == b for a, b in zip(enc(base, texts), enc(new, texts))) for name, texts in others.items()},
+        "identical_ids": {name: sum(a == b for a, b in zip(enc(base, texts), enc(new, texts), strict=True))
+                          for name, texts in others.items()},
         "identical_ids_of": {name: len(texts) for name, texts in others.items()},
     }
     assert 0 <= report["new_tokens_used_on_docs"] <= report["new_tokens"] and report["round_trip"] <= len(docs)

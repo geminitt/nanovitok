@@ -58,11 +58,11 @@ def main():
     args = ap.parse_args()
 
     docs = load_docs(args.docs, args.n_docs)
-    result = {}
+    result: dict = {}
     for cond in CONDITIONS:
         tok = Tokenizer.from_file(str(args.tokenizers / cond / "tokenizer.json"))
         result[cond] = stats_for(tok, docs)
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         b, s = result[f"bpe-{norm}"], result[f"super-{norm}"]
         result[f"token_reduction_{norm}"] = 1 - s["tokens"] / b["tokens"]
     args.out.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -70,7 +70,7 @@ def main():
         r = result[cond]
         print(f"{cond:10s} chars/token={r['chars_per_token']:.3f} tokens/syllable={r['tokens_per_syllable']:.3f} "
               f"superword share={r['superword_token_share']:.1%}")
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         red = result[f"token_reduction_{norm}"]
         print(f"SuperBPE token reduction ({norm}): {red:.1%}  -> Gate 1 {'PASS' if red >= 0.15 else 'FAIL'} (>=15%)")
 

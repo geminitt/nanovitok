@@ -1,10 +1,9 @@
 import json
 
 import pytest
-
+from conftest import SENTENCES
 from tokenizers import Tokenizer
 
-from conftest import SENTENCES
 from vitok.compression import stats_for
 from vitok.hf_tokenizer import HFTokenizer
 from vitok.text import nfc
@@ -28,10 +27,13 @@ def test_unseen_bytes_are_not_dropped(tokenizers_dir):
 
 
 def test_token_bytes_are_utf8_lengths(tokenizers_dir, tmp_path):
-    import shutil, torch
+    import shutil
+
+    import torch
+
     from vitok.hf_tokenizer import write_token_bytes
     d = tmp_path / "tok"
-    shutil.copytree(tokenizers_dir / "bpe-nfd", d)
+    shutil.copytree(tokenizers_dir / "bpe-nfc", d)
     write_token_bytes(d)
     tb = torch.load(d / "token_bytes.pt")
     hf = HFTokenizer.from_directory(d)
@@ -64,20 +66,13 @@ def test_special_tokens_and_bos(tokenizers_dir):
     assert hf.decode(ids) == "<|bos|>xin chào<|assistant_end|>"
 
 
-def test_nfd_tokenizers_see_combining_marks(tokenizers_dir):
-    nfd_tok = Tokenizer.from_file(str(tokenizers_dir / "bpe-nfd" / "tokenizer.json"))
-    nfc_tok = Tokenizer.from_file(str(tokenizers_dir / "bpe-nfc" / "tokenizer.json"))
-    word = "Việt"
-    # same text, NFD tokenizer works on decomposed bytes (dot below U+0323 = 0xCC 0xA3)
-    assert nfd_tok.normalizer is not None
-    assert len(nfd_tok.encode(word).ids) >= 1 and len(nfc_tok.encode(word).ids) >= 1
-    nfd_bytes = "".join(nfd_tok.encode(word).tokens)
-    assert "Ì£" in nfd_bytes  # byte-level rendering of U+0323
 
 
 def test_pretokenizers_keep_nfd_marks_on_letters():
     import unicodedata
+
     from tokenizers import Regex, pre_tokenizers
+
     from vitok.tokenizer_spec import STAGE1_REGEX, STAGE2_REGEX
 
     text = unicodedata.normalize("NFD", "Một người Việt đến.. tốt")
@@ -90,14 +85,15 @@ def test_pretokenizers_keep_nfd_marks_on_letters():
 
 def test_superbpe_inherits_merges(tokenizers_dir):
     meta = json.loads((tokenizers_dir / "train_meta.json").read_text())
-    for norm in ("nfc", "nfd"):
+    for norm in ("nfc",):
         assert meta[norm]["n_alphabet"] == 256
         assert meta[norm]["n_inherited_merges"] == round(0.9 * 600) - 256
 
 
 @pytest.mark.parametrize("cond", ["bpe-nfc", "super-nfc"])
 def test_compression_stats_are_the_counts(tokenizers_dir, cond):
-    import collections, re
+    import collections
+    import re
     tok = Tokenizer.from_file(str(tokenizers_dir / cond / "tokenizer.json"))
     got = stats_for(tok, SENTENCES, top_k=5)
     ids = [i for d in SENTENCES for i in tok.encode(d, add_special_tokens=False).ids]
@@ -113,4 +109,5 @@ def test_compression_stats_are_the_counts(tokenizers_dir, cond):
     assert got["superword_token_share"] == pytest.approx(sum(used[i] for i in superwords) / len(ids))
     want_top = [(tok.decode([i]), c) for i, c in used.most_common() if i in superwords][:5]
     assert got["top_superwords"] == want_top
-    assert (len(superwords) > 0) == (cond == "super-nfc") and (got["superword_token_share"] > 0) == (cond == "super-nfc")
+    is_super = cond == "super-nfc"
+    assert (len(superwords) > 0) == is_super and (got["superword_token_share"] > 0) == is_super

@@ -1,6 +1,6 @@
 """Evaluate every trained checkpoint found under a directory (for example on the val shard).
 
-    python -m vitok.eval_checkpoints --runs kaggle/outputs --docs val_docs.jsonl --variants clean \
+    python -m vitok.eval_checkpoints --runs kaggle/outputs --docs val_docs.jsonl \
         --nanochat third_party/nanochat --out results/val
 
 A run is a directory named {condition}_d{depth}_s{seed} holding base_checkpoints/d{depth}/model_*.pt and
@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-RUN_RE = re.compile(r"(?:bpe|super)-nf[cd]_d(?P<depth>\d+)_s\d+")
+RUN_RE = re.compile(r"(?:bpe|super)-nfc_d(?P<depth>\d+)_s\d+")
 
 
 def find_runs(root: Path) -> dict[str, Path]:
@@ -33,7 +33,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=Path, required=True, help="searched recursively for runs")
     ap.add_argument("--docs", type=Path, required=True)
-    ap.add_argument("--variants", nargs="+", default=["clean"])
     ap.add_argument("--nanochat", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--only", nargs="*", default=None, help="run tags to evaluate (default: all)")
@@ -57,7 +56,7 @@ def main():
         env = {**os.environ, "NANOCHAT_BASE_DIR": str(run_dir.resolve()), "NANOCHAT_DTYPE": args.dtype,
                "PYTHONPATH": os.pathsep.join([str(args.nanochat.resolve()), os.environ.get("PYTHONPATH", "")])}
         cmd = [sys.executable, "-m", "vitok.eval", "--test", str(args.docs.resolve()),
-               f"--model-tag=d{RUN_RE.fullmatch(tag)['depth']}", "--variants", *args.variants,
+               f"--model-tag=d{RUN_RE.fullmatch(tag)['depth']}",
                "--batch-size", str(args.batch_size), "--out", str(out.resolve())]
         with open(args.out / f"{tag}.log", "w") as log:
             subprocess.run(cmd, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
