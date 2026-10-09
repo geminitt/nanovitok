@@ -30,7 +30,7 @@ include = [
     "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
     "src/vitok/heldout.py", "src/vitok/pipeline.py", "src/vitok/kaggle_session.py",
     "tests/test_extend.py", "tests/test_cpt_data.py", "tests/test_adapt.py", "tests/test_score.py", "tests/test_heldout.py",
-    "tests/test_pipeline.py", "tests/test_kaggle_session.py", "tests/test_notebook03.py",
+    "tests/test_pipeline.py", "tests/test_kaggle_session.py", "tests/test_notebook03.py", "tests/test_notebook04.py",
 ]
 
 [tool.ruff.lint]
