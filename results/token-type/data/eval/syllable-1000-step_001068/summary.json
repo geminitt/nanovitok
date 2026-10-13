@@ -1,0 +1,121 @@
+{
+  "signature": {
+    "model": "/vol/full/work/syllable-1000/extended",
+    "revision": null,
+    "tokenizer_sha256": "871b4675483d68741d8f4a4038f436a43d3c819c6dd525bb873f40d821674882",
+    "snapshot_sha256": "a83d77a0e65b78e9c036842278dc9954b0e0ef166882cbad65291d6a634e8988",
+    "vi_docs_sha256": null,
+    "en_docs_sha256": null,
+    "belebele_sha256": null,
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 0,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda",
+    "lm": {
+      "fineweb2": "c51abe2e5449c98eb596db6668c0021cea20843c43c900dfce589c7258c9fb95",
+      "wikipedia": "137bb832ad8916712ab4324be7e58d01ed10ea7f02213ea184ce3634772be2f2",
+      "legal": "065e6d141d7420bdfab83ceefb842d4d5797b5c8bca624675b3a6bc6ed512e8a",
+      "flores": "a7aab2a0a916c7ef0cc3a01436c860159a2477f1075c40dd36ca135b0ecaf7f1",
+      "english": "0f4c85218eb1d3ab56fdb679557d09f62cd89af8c719f036c9b5a00061919279"
+    },
+    "mc": {},
+    "speed_docs_sha256": null
+  },
+  "snapshot": {
+    "new_ids": [
+      151669,
+      152669
+    ],
+    "step": 1068,
+    "tokens": 69992448,
+    "chars": 256124187,
+    "signature": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer_sha256": "871b4675483d68741d8f4a4038f436a43d3c819c6dd525bb873f40d821674882",
+      "shards": [],
+      "held_out_sha256": [],
+      "steps": 1526,
+      "batch": 64,
+      "micro_batch": 8,
+      "seq_len": 1024,
+      "lr": 0.0001,
+      "embed_lr": 0.0001,
+      "warmup": 30,
+      "min_lr_ratio": 0.1,
+      "weight_decay": 0.1,
+      "layers": "all",
+      "seed": 0,
+      "dtype": "bf16",
+      "grad_clip": 1.0,
+      "grad_checkpointing": true,
+      "stream": "3ef95bac514eff8cb4c7a34e1c4e76228d06d062b1e039c10e8649cc2a3d2cc7",
+      "dev_sha256": "64d994fc2e490a45b410ca59c8c27e66734ceda85b56cc5116b43b6c9a075097",
+      "dev_every": 31,
+      "snapshot_dtype": "bf16",
+      "dev_dtype": "fp16"
+    },
+    "kind": "snapshot"
+  },
+  "lm": {
+    "fineweb2": {
+      "docs": 1000,
+      "chars": 2103163,
+      "tokens": 576721,
+      "bpc": 0.9897673806963534,
+      "chars_per_token": 3.6467598717577476,
+      "timing": {
+        "seconds": 15.459375829999999,
+        "scored": 1000
+      }
+    },
+    "wikipedia": {
+      "docs": 1000,
+      "chars": 2496832,
+      "tokens": 729967,
+      "bpc": 1.1262542166464415,
+      "chars_per_token": 3.4204724323154334,
+      "timing": {
+        "seconds": 18.37723852099998,
+        "scored": 1000
+      }
+    },
+    "legal": {
+      "docs": 1000,
+      "chars": 2492919,
+      "tokens": 741502,
+      "bpc": 0.6634066025958041,
+      "chars_per_token": 3.3619855374631493,
+      "timing": {
+        "seconds": 18.950420741000016,
+        "scored": 1000
+      }
+    },
+    "flores": {
+      "docs": 1012,
+      "chars": 138595,
+      "tokens": 36837,
+      "bpc": 1.266400076575966,
+      "chars_per_token": 3.7623856448679316,
+      "timing": {
+        "seconds": 5.7071853530001135,
+        "scored": 1012
+      }
+    },
+    "english": {
+      "docs": 1000,
+      "chars": 1655704,
+      "tokens": 374912,
+      "bpc": 1.113074220460402,
+      "chars_per_token": 4.416247012632298,
+      "timing": {
+        "seconds": 10.852238531000012,
+        "scored": 1000
+      }
+    }
+  },
+  "device_name": "NVIDIA A100-SXM4-40GB"
+}

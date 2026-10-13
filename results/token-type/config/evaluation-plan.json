@@ -1,0 +1,306 @@
+{
+  "score": {
+    "batch_size": 8,
+    "dtype": "fp16"
+  },
+  "sets": {
+    "full": {
+      "lm": {
+        "fineweb2": "/vol/eval/sets/fineweb2.jsonl",
+        "wikipedia": "/vol/eval/sets/wikipedia.jsonl",
+        "legal": "/vol/eval/sets/legal.jsonl",
+        "flores": "/vol/eval/sets/flores.jsonl",
+        "english": "/vol/eval/sets/english.jsonl"
+      },
+      "mc": {
+        "belebele": "/vol/eval/sets/belebele.jsonl",
+        "global_mmlu": "/vol/eval/sets/global_mmlu.jsonl",
+        "xnli": "/vol/eval/sets/xnli.jsonl",
+        "okapi_arc": "/vol/eval/sets/okapi_arc.jsonl",
+        "okapi_hellaswag": "/vol/eval/sets/okapi_hellaswag.jsonl",
+        "hellaswag_en": "/vol/eval/sets/hellaswag_en.jsonl"
+      }
+    },
+    "lm": {
+      "lm": {
+        "fineweb2": "/vol/eval/sets/fineweb2.jsonl",
+        "wikipedia": "/vol/eval/sets/wikipedia.jsonl",
+        "legal": "/vol/eval/sets/legal.jsonl",
+        "flores": "/vol/eval/sets/flores.jsonl",
+        "english": "/vol/eval/sets/english.jsonl"
+      }
+    }
+  },
+  "speed": {
+    "docs": "/vol/eval/sets/fineweb2.jsonl",
+    "prompts": 20,
+    "new_tokens": 256
+  },
+  "jobs": {
+    "original": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "full",
+      "speed": true,
+      "out": "/vol/eval/out/original"
+    },
+    "syllable-1000-zero": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "full",
+      "speed": true,
+      "out": "/vol/eval/out/syllable-1000-zero"
+    },
+    "multisyllable-1000-zero": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "full",
+      "speed": true,
+      "out": "/vol/eval/out/multisyllable-1000-zero"
+    },
+    "base-final": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "full",
+      "speed": true,
+      "snapshot": "/vol/full/work/base/train/final.pt",
+      "out": "/vol/eval/out/base-final"
+    },
+    "base-step_000153": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000153.pt",
+      "out": "/vol/eval/out/base-step_000153"
+    },
+    "base-step_000305": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000305.pt",
+      "out": "/vol/eval/out/base-step_000305"
+    },
+    "base-step_000458": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000458.pt",
+      "out": "/vol/eval/out/base-step_000458"
+    },
+    "base-step_000610": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000610.pt",
+      "out": "/vol/eval/out/base-step_000610"
+    },
+    "base-step_000763": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000763.pt",
+      "out": "/vol/eval/out/base-step_000763"
+    },
+    "base-step_000916": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_000916.pt",
+      "out": "/vol/eval/out/base-step_000916"
+    },
+    "base-step_001068": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_001068.pt",
+      "out": "/vol/eval/out/base-step_001068"
+    },
+    "base-step_001221": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_001221.pt",
+      "out": "/vol/eval/out/base-step_001221"
+    },
+    "base-step_001373": {
+      "model": "/opt/model",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer": "/vol/full/base.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/base/train/snapshots/step_001373.pt",
+      "out": "/vol/eval/out/base-step_001373"
+    },
+    "syllable-1000-final": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "full",
+      "speed": true,
+      "snapshot": "/vol/full/work/syllable-1000/train/final.pt",
+      "out": "/vol/eval/out/syllable-1000-final"
+    },
+    "syllable-1000-step_000153": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000153.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000153"
+    },
+    "syllable-1000-step_000305": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000305.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000305"
+    },
+    "syllable-1000-step_000458": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000458.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000458"
+    },
+    "syllable-1000-step_000610": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000610.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000610"
+    },
+    "syllable-1000-step_000763": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000763.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000763"
+    },
+    "syllable-1000-step_000916": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_000916.pt",
+      "out": "/vol/eval/out/syllable-1000-step_000916"
+    },
+    "syllable-1000-step_001068": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_001068.pt",
+      "out": "/vol/eval/out/syllable-1000-step_001068"
+    },
+    "syllable-1000-step_001221": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_001221.pt",
+      "out": "/vol/eval/out/syllable-1000-step_001221"
+    },
+    "syllable-1000-step_001373": {
+      "model": "/vol/full/work/syllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/syllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/syllable-1000/train/snapshots/step_001373.pt",
+      "out": "/vol/eval/out/syllable-1000-step_001373"
+    },
+    "multisyllable-1000-final": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "full",
+      "speed": true,
+      "snapshot": "/vol/full/work/multisyllable-1000/train/final.pt",
+      "out": "/vol/eval/out/multisyllable-1000-final"
+    },
+    "multisyllable-1000-step_000153": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000153.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000153"
+    },
+    "multisyllable-1000-step_000305": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000305.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000305"
+    },
+    "multisyllable-1000-step_000458": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000458.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000458"
+    },
+    "multisyllable-1000-step_000610": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000610.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000610"
+    },
+    "multisyllable-1000-step_000763": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000763.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000763"
+    },
+    "multisyllable-1000-step_000916": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_000916.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_000916"
+    },
+    "multisyllable-1000-step_001068": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_001068.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_001068"
+    },
+    "multisyllable-1000-step_001221": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_001221.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_001221"
+    },
+    "multisyllable-1000-step_001373": {
+      "model": "/vol/full/work/multisyllable-1000/extended",
+      "revision": null,
+      "tokenizer": "/vol/full/multisyllable-1000.json",
+      "sets": "lm",
+      "snapshot": "/vol/full/work/multisyllable-1000/train/snapshots/step_001373.pt",
+      "out": "/vol/eval/out/multisyllable-1000-step_001373"
+    }
+  }
+}

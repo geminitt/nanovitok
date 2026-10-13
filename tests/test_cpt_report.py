@@ -119,3 +119,17 @@ def test_the_token_savings_chart_names_every_domain(tmp_path, monkeypatch):
     cpt_figures.token_savings(cost, tmp_path)
     labels = [t.get_text() for t in figs[0].axes[0].get_xticklabels()]
     assert labels == list(cpt_figures.DOMAINS.values())
+
+
+def test_the_committed_results_regenerate_from_the_committed_item_files(tmp_path):
+    from pathlib import Path
+
+    from vitok import cpt_figures
+    res = Path(__file__).resolve().parents[1] / "results" / "token-type"
+    steps = json.loads((res / "config" / "full-runs.json").read_text())["train"]["snapshot_steps"]
+    cpt_report.main(["--eval", str(res / "data" / "eval"), "--train", str(res / "data" / "train"),
+                     "--evalsets", str(res / "data"), "--snapshot-steps", *map(str, steps), "--out", str(tmp_path)])
+    cpt_figures.main(["--results", str(tmp_path / "results.json"), "--out", str(tmp_path)])
+    for name in ("results.json", "report.md", "learning_curves.png", "domain_curves.png", "final_differences.png",
+                 "token_savings.png", "training_curves.png"):
+        assert (tmp_path / name).read_bytes() == (res / name).read_bytes(), name
