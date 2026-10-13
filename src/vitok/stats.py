@@ -139,3 +139,31 @@ def binomial_lower(k: int, n: int, level: float = 0.95) -> float:
         mid = (lo + hi) / 2
         lo, hi = (mid, hi) if _betainc(k, n - k + 1, mid) < target else (lo, mid)
     return (lo + hi) / 2
+
+
+def paired_bootstrap_mean_bpc(group_a: list, group_b: list, chars, n: int = 10_000, seed: int = 0) -> dict:
+    """mean bpc of the runs in group_a minus mean bpc of the runs in group_b, every run scored on the same documents
+    (per-document nats), with a paired bootstrap over documents (PLAN.md, choice of N: the mean over token types)."""
+    a, b = (np.asarray(g, dtype=np.float64) for g in (group_a, group_b))
+    chars = np.asarray(chars, dtype=np.float64)
+    assert a.ndim == b.ndim == 2 and a.shape[1] == b.shape[1] == len(chars) > 0 and len(a) and len(b)
+    rng = np.random.default_rng(seed)
+    diffs = []
+    for start in range(0, n, 500):
+        idx = rng.integers(0, len(chars), size=(min(500, n - start), len(chars)))
+        c = chars[idx].sum(axis=1) * math.log(2)
+        diffs.append(np.mean([r[idx].sum(axis=1) / c for r in a], axis=0)
+                     - np.mean([r[idx].sum(axis=1) / c for r in b], axis=0))
+    d = np.concatenate(diffs)
+    lo, hi = np.percentile(d, [2.5, 97.5])
+    point = float(np.mean([bpc(r, chars) for r in a]) - np.mean([bpc(r, chars) for r in b]))
+    assert lo <= hi
+    return {"diff": point, "ci95": [float(lo), float(hi)]}
+
+
+def choose_n(small: list, large: list, chars, n_small: int, n_large: int) -> tuple[int, dict]:
+    """PLAN.md: the N with the lower mean dev bpc over the token types wins; a tie (the interval contains 0) goes to
+    the larger N. `small` / `large`: per-document nats of each token type's run at that N."""
+    out = paired_bootstrap_mean_bpc(small, large, chars)
+    lo, hi = out["ci95"]
+    return (n_small if hi < 0 else n_large), out

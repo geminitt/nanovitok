@@ -148,3 +148,20 @@ def test_a_side_wins_only_when_every_seed_pairing_agrees(intervals, want):
 def test_the_clopper_pearson_lower_bound(k, n, want):
     from vitok import stats
     assert stats.binomial_lower(k, n) == pytest.approx(want, rel=1e-3, abs=1e-7)
+
+
+def test_the_choice_of_n_compares_means_over_types_and_breaks_ties_toward_the_larger_n():
+    from vitok import stats
+    rng = np.random.default_rng(0)
+    chars = rng.integers(300, 2500, 400).astype(float)
+    base = chars * rng.uniform(0.7, 0.9, 400)  # nats per document
+    noise = lambda: rng.normal(1, 0.01, 400)
+    better = [base * 0.97 * noise(), base * 0.98 * noise()]  # both types lower at the small N
+    worse = [base * noise(), base * noise()]
+    assert stats.choose_n(better, worse, chars, 1000, 4000)[0] == 1000
+    assert stats.choose_n(worse, better, chars, 1000, 4000)[0] == 4000
+    same = [base * noise(), base * noise()]
+    n, out = stats.choose_n(same, [r * 1.0 for r in same], chars, 1000, 4000)
+    assert n == 4000 and out["ci95"] == pytest.approx([0, 0], abs=1e-12)  # identical runs: a tie
+    point = np.mean([stats.bpc(r, chars) for r in better]) - np.mean([stats.bpc(r, chars) for r in worse])
+    assert stats.paired_bootstrap_mean_bpc(better, worse, chars, n=1000)["diff"] == pytest.approx(point)

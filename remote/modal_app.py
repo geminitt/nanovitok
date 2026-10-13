@@ -22,9 +22,13 @@ sys.path.insert(0, str(REPO / "src"))
 from vitok import remote  # noqa: E402  (after the path: the SDK's Python does not have the package installed)
 
 MODEL = (Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots" / remote.MODEL_REVISION)
-JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1200)}
+# timeouts from the smoke run's measurements (history/stage5-smoke-2026-10-13.md); each bound = timeout × listed rates
+JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1200),
+        "probe_n": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500),
+        "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=2400)}
 
 app = modal.App("nanovitok-token-type")
+FUNCTION = dict(retries=0, max_containers=1, scaledown_window=2, single_use_containers=True)
 volume = modal.Volume.from_name("nanovitok-token-type", create_if_missing=True)
 image = (modal.Image.debian_slim(python_version="3.12")
          .pip_install(*(f"{p}=={v}" for p, v in remote.PACKAGES.items()))
@@ -68,3 +72,35 @@ def smoke(config: str, conditions: str, approved_max_usd: float = 0.0, queue_min
     bound = remote.check_approval(JOBS["smoke"], approved_max_usd or None)
     print(f"bound ${bound:.2f} (timeout at listed rates; startup, image build and storage are billed outside it)")
     print(json.dumps(smoke_queue.remote(config, conditions.split(), queue_minutes), indent=2))
+
+
+def _resources(name: str) -> dict:
+    job = JOBS[name]
+    return dict(gpu=job.gpu, cpu=(job.cpu, job.cpu), memory=(job.memory_gib * 1024, job.memory_gib * 1024),
+                timeout=job.timeout_seconds)
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **FUNCTION, **_resources("probe_n"))
+def probe_n_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -> dict:
+    return _run(config, conditions, JOBS["probe_n"], queue_minutes)
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **FUNCTION, **_resources("probe_lr"))
+def probe_lr_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -> dict:
+    return _run(config, conditions, JOBS["probe_lr"], queue_minutes)
+
+
+def _launch(name: str, fn, config: str, conditions: str, approved_max_usd: float, queue_minutes: float):
+    bound = remote.check_approval(JOBS[name], approved_max_usd or None)
+    print(f"{name}: bound ${bound:.2f} (timeout at listed rates; startup, image build and storage are billed outside)")
+    print(json.dumps(fn.remote(config, conditions.split(), queue_minutes), indent=2))
+
+
+@app.local_entrypoint()
+def probe_n(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
+    _launch("probe_n", probe_n_queue, config, conditions, approved_max_usd, queue_minutes)
+
+
+@app.local_entrypoint()
+def probe_lr(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
+    _launch("probe_lr", probe_lr_queue, config, conditions, approved_max_usd, queue_minutes)
