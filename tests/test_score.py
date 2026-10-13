@@ -412,8 +412,12 @@ def test_named_sets_are_scored_like_the_fixed_parts(setup, tmp_path):
         assert r["id"] == item["id"] and r["gold"] == item["gold"] and r["chars"] == list(map(len, item["choices"]))
         per_char = [v / c for v, c in zip(r["logprobs"], r["chars"], strict=True)]
         assert r["correct_char"] == (per_char.index(max(per_char)) == r["gold"])
+    timing = s["mc"]["quiz"].pop("timing")
     assert s["mc"]["quiz"] == {"items": 5, "acc_char": sum(r["correct_char"] for r in quiz) / 5,
                                "acc_sum": sum(r["correct_sum"] for r in quiz) / 5}
+    # every part records the seconds this run spent on it and how many items it scored, so rates are measured
+    assert timing["scored"] == 5 and timing["seconds"] > 0
+    assert s["lm"]["web"]["timing"]["scored"] == len(texts) and s["generation"]["timing"]["scored"] == 1
     assert len(records(tmp_path, "generation")) == 1 and "vi" not in s
     sig = json.loads((tmp_path / "signature.json").read_text())
     assert set(sig["lm"]) == {"web", "english"} and set(sig["mc"]) == {"quiz"}
@@ -426,8 +430,9 @@ def test_named_sets_resume_after_a_deadline_and_refuse_other_files(setup, tmp_pa
     while score.run(named_args(d, out, "--deadline-minutes", "0")) == score.EXIT_INCOMPLETE:
         pass
     for part in ("lm_web", "lm_english", "mc_quiz"):
-        strip = lambda rs: [{k: v for k, v in r.items()} for r in rs]
-        assert strip(records(out, part)) == strip(records(tmp_path / "whole", part))
+        assert records(out, part) == records(tmp_path / "whole", part)
+    whole, pieces = (json.loads((x / "summary.json").read_text()) for x in (tmp_path / "whole", out))
+    assert pieces["lm"]["web"]["timing"]["scored"] < whole["lm"]["web"]["timing"]["scored"]  # only the last piece
     (tmp_path / "other.jsonl").write_text(json.dumps({"text": "khác"}) + "\n", "utf-8")
     a = named_args(d, out)
     a.lm = [("web", tmp_path / "other.jsonl"), ("english", d / "en.jsonl")]

@@ -364,32 +364,44 @@ def run(args) -> int:
     started = time.monotonic()
     deadline = lambda: args.deadline_minutes is not None and time.monotonic() - started > 60 * args.deadline_minutes
     summary: dict[str, object] = {"signature": sig, "snapshot": meta}
+
+    def timed(path: Path, part):
+        """A part's summary plus the seconds this run spent on it and the items it scored (a measured rate)."""
+        before, t0 = len(_done(path)), time.monotonic()
+        out = part()
+        out["timing"] = {"seconds": time.monotonic() - t0, "scored": len(_done(path)) - before}
+        return out
+
     try:
         if args.vi_docs:
             vi = _texts(args.vi_docs)
-            summary["vi"] = score_docs(model, tok, eos, vi, args.out / "vi_docs.jsonl", args.batch_size, amp, deadline)
+            summary["vi"] = timed(args.out / "vi_docs.jsonl", lambda: score_docs(
+                model, tok, eos, vi, args.out / "vi_docs.jsonl", args.batch_size, amp, deadline))
         if args.en_docs:
-            summary["en"] = score_docs(model, tok, eos, _texts(args.en_docs), args.out / "en_docs.jsonl",
-                                       args.batch_size, amp, deadline)
+            summary["en"] = timed(args.out / "en_docs.jsonl", lambda: score_docs(
+                model, tok, eos, _texts(args.en_docs), args.out / "en_docs.jsonl", args.batch_size, amp, deadline))
         if args.belebele:
             items = [json.loads(line) for line in args.belebele.read_text(encoding="utf-8").splitlines() if line]
-            summary["belebele"] = score_belebele(model, tok, items, args.out / "belebele.jsonl", args.batch_size,
-                                                 amp, deadline)
+            summary["belebele"] = timed(args.out / "belebele.jsonl", lambda: score_belebele(
+                model, tok, items, args.out / "belebele.jsonl", args.batch_size, amp, deadline))
         for name, path in args.lm:
             lm = summary.setdefault("lm", {})
             assert isinstance(lm, dict)
-            lm[name] = score_docs(model, tok, eos, _texts(path), args.out / f"lm_{name}.jsonl", args.batch_size, amp,
-                                  deadline)
+            out = args.out / f"lm_{name}.jsonl"
+            lm[name] = timed(out, lambda path=path, out=out: score_docs(model, tok, eos, _texts(path), out,
+                                                                        args.batch_size, amp, deadline))
         for name, path in args.mc:
             items = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
             mc = summary.setdefault("mc", {})
             assert isinstance(mc, dict)
-            mc[name] = score_mc(model, tok, items, args.out / f"mc_{name}.jsonl", args.batch_size, amp, deadline)
+            out = args.out / f"mc_{name}.jsonl"
+            mc[name] = timed(out, lambda items=items, out=out: score_mc(model, tok, items, out, args.batch_size, amp,
+                                                                        deadline))
         if args.speed_prompts:
             source = _texts(args.speed_docs) if args.speed_docs else vi
             prompts = [truncate_chars(t, args.speed_prompt_chars) for t in source[:args.speed_prompts]]
-            summary["generation"] = score_generation(model, tok, prompts, args.out / "generation.jsonl",
-                                                     args.new_tokens, amp, deadline)
+            summary["generation"] = timed(args.out / "generation.jsonl", lambda: score_generation(
+                model, tok, prompts, args.out / "generation.jsonl", args.new_tokens, amp, deadline))
     except Deadline:
         print("stopped by the deadline; rerun the same command to resume", flush=True)
         return EXIT_INCOMPLETE
