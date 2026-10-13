@@ -121,7 +121,9 @@ def _done(path: Path) -> dict[int, dict]:
     """Records already written (a line torn by a crash is dropped and redone)."""
     done = {}
     if path.exists():
-        for line in path.read_text(encoding="utf-8").splitlines():
+        with open(path, encoding="utf-8") as f:
+            lines = list(f)
+        for line in lines:
             try:
                 rec = json.loads(line)
             except json.JSONDecodeError:
@@ -381,7 +383,7 @@ def run(args) -> int:
             summary["en"] = timed(args.out / "en_docs.jsonl", lambda: score_docs(
                 model, tok, eos, _texts(args.en_docs), args.out / "en_docs.jsonl", args.batch_size, amp, deadline))
         if args.belebele:
-            items = [json.loads(line) for line in args.belebele.read_text(encoding="utf-8").splitlines() if line]
+            items = cpt_data.jsonl_rows(args.belebele)
             summary["belebele"] = timed(args.out / "belebele.jsonl", lambda: score_belebele(
                 model, tok, items, args.out / "belebele.jsonl", args.batch_size, amp, deadline))
         for name, path in args.lm:
@@ -391,7 +393,7 @@ def run(args) -> int:
             lm[name] = timed(out, lambda path=path, out=out: score_docs(model, tok, eos, _texts(path), out,
                                                                         args.batch_size, amp, deadline))
         for name, path in args.mc:
-            items = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            items = cpt_data.jsonl_rows(path)
             mc = summary.setdefault("mc", {})
             assert isinstance(mc, dict)
             out = args.out / f"mc_{name}.jsonl"

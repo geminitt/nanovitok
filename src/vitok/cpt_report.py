@@ -18,7 +18,7 @@ import argparse
 import json
 from pathlib import Path
 
-from vitok import stats
+from vitok import cpt_data, stats
 
 VI = ["fineweb2", "wikipedia", "legal", "flores"]
 CONDITIONS = ["base", "syllable-1000", "multisyllable-1000"]
@@ -26,7 +26,7 @@ PAIRS = [("syllable-1000", "base"), ("multisyllable-1000", "base"), ("multisylla
 
 
 def records(folder: Path, part: str) -> list[dict]:
-    rows = [json.loads(line) for line in (folder / f"{part}.jsonl").read_text(encoding="utf-8").splitlines()]
+    rows = cpt_data.jsonl_rows(folder / f"{part}.jsonl")
     rows.sort(key=lambda r: r["i"])
     if [r["i"] for r in rows] != list(range(len(rows))):
         raise SystemExit(f"{folder / part}.jsonl is incomplete")
@@ -92,8 +92,8 @@ def generation(eval_dir: Path, models: list[str]) -> dict:
 def curves(train_dir: Path, eval_dir: Path, steps_per_snapshot: list[int]) -> dict:
     out: dict = {}
     for c in CONDITIONS:
-        t = [json.loads(line) for line in (train_dir / c / "train" / "train_log.jsonl").read_text().splitlines()]
-        dev = [json.loads(line) for line in (train_dir / c / "train" / "dev_log.jsonl").read_text().splitlines()]
+        t = cpt_data.jsonl_rows(train_dir / c / "train" / "train_log.jsonl")
+        dev = cpt_data.jsonl_rows(train_dir / c / "train" / "dev_log.jsonl")
         by_step = {r["step"] + 1: r for r in t}  # a log record's step is zero-based: tokens after step + 1 steps
         snaps = {}
         start = eval_dir / ("original" if c == "base" else f"{c}-zero")

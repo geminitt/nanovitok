@@ -111,6 +111,12 @@ def parquet_texts(paths: Iterable[Path]) -> Iterator[str]:
             yield from pf.read_row_group(rg, columns=["text"]).column("text").to_pylist()
 
 
-def jsonl_texts(path: Path) -> list[str]:
+def jsonl_rows(path: Path) -> list[dict]:
+    """Records of a JSONL file, split at newlines only: str.splitlines() also breaks at U+0085, U+2028 and other
+    separators that JSON keeps raw inside strings (one Global-MMLU question holds a U+0085)."""
     with open(path, encoding="utf-8") as f:
-        return [json.loads(line)["text"] for line in f if line.strip()]
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def jsonl_texts(path: Path) -> list[str]:
+    return [r["text"] for r in jsonl_rows(path)]

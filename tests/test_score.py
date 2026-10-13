@@ -379,8 +379,12 @@ def test_comparison_reports_snapshots_and_skips_parts_one_side_lacks(setup, tmp_
 # ---- named language-modeling and multiple-choice sets (the token-type experiment, vitok.evalsets format) ----
 
 def mc_items():
-    return [{"id": f"m{i}", "context": SENTENCES[i] + "\nTrả lời:", "gold": i % 3,
-             "choices": [" " + SENTENCES[(i + k) % 8][:15 + 5 * k] for k in range(3)]} for i in range(5)]
+    items = [{"id": f"m{i}", "context": SENTENCES[i] + "\nTrả lời:", "gold": i % 3,
+              "choices": [" " + SENTENCES[(i + k) % 8][:15 + 5 * k] for k in range(3)]} for i in range(5)]
+    # str.splitlines() breaks at these, inside a JSON string; Global-MMLU holds a U+0085 (NEL) in one question
+    items[1]["context"] = items[1]["context"].replace(" ", "\x85", 1)
+    items[2]["choices"][1] += "\u2028"
+    return items
 
 
 def named_args(d, out, *extra):
