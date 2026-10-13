@@ -35,7 +35,7 @@ for name in ("config.json", "generation_config.json", "model.safetensors"):
     image = image.add_local_file(MODEL / name, "/opt/model/" + name)
 
 
-def _run(config: str, conditions: list[str], job: remote.Job) -> dict:
+def _run(config: str, conditions: list[str], job: remote.Job, queue_minutes: float = 0.0) -> dict:
     from importlib.metadata import version
 
     import torch
@@ -48,7 +48,8 @@ def _run(config: str, conditions: list[str], job: remote.Job) -> dict:
     (work / "environment.json").write_text(json.dumps(
         pre | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version}, indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
-        result = remote.run_queue(Path(config), conditions, work, job.queue_minutes())
+        minutes = min(queue_minutes, job.queue_minutes()) if queue_minutes > 0 else job.queue_minutes()
+        result = remote.run_queue(Path(config), conditions, work, minutes)
     result["commit_errors"] = pc.errors
     return result
 
@@ -57,12 +58,13 @@ def _run(config: str, conditions: list[str], job: remote.Job) -> dict:
               memory=(JOBS["smoke"].memory_gib * 1024, JOBS["smoke"].memory_gib * 1024),
               timeout=JOBS["smoke"].timeout_seconds, retries=0, max_containers=1, scaledown_window=2,
               single_use_containers=True, volumes={remote.VOLUME_ROOT: volume})
-def smoke_queue(config: str, conditions: list[str]) -> dict:
-    return _run(config, conditions, JOBS["smoke"])
+def smoke_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -> dict:
+    return _run(config, conditions, JOBS["smoke"], queue_minutes)
 
 
 @app.local_entrypoint()
-def smoke(config: str, conditions: str, approved_max_usd: float = 0.0):
+def smoke(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
+    """`--queue-minutes` shortens the queue's deadline (a planned stop mid-run, to test resuming in a new container)."""
     bound = remote.check_approval(JOBS["smoke"], approved_max_usd or None)
     print(f"bound ${bound:.2f} (timeout at listed rates; startup, image build and storage are billed outside it)")
-    print(json.dumps(smoke_queue.remote(config, conditions.split()), indent=2))
+    print(json.dumps(smoke_queue.remote(config, conditions.split(), queue_minutes), indent=2))
