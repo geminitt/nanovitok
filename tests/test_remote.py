@@ -96,3 +96,20 @@ def test_the_source_digest_follows_the_code_and_ignores_caches(tmp_path):
     (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
     (tmp_path / "pkg" / "b.py").write_text("")
     assert remote.source_sha256(tmp_path / "pkg") != first
+
+
+def test_the_launch_commit_names_head_marks_a_dirty_package_and_survives_a_missing_git(tmp_path, monkeypatch):
+    import subprocess
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+    (tmp_path / "src" / "vitok").mkdir(parents=True)
+    (tmp_path / "src" / "vitok" / "a.py").write_text("x = 1\n")
+    subprocess.run([*git, "init", "-q", str(tmp_path)], check=True)
+    subprocess.run([*git, "-C", str(tmp_path), "add", "."], check=True)
+    subprocess.run([*git, "-C", str(tmp_path), "commit", "-qm", "x"], check=True)
+    head = subprocess.run(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], capture_output=True, text=True,
+                          check=True).stdout.strip()
+    assert remote.launch_commit(tmp_path) == head
+    (tmp_path / "src" / "vitok" / "a.py").write_text("x = 2\n")
+    assert remote.launch_commit(tmp_path) == head + "-dirty"
+    monkeypatch.setenv("PATH", str(tmp_path / "nothing"))  # inside a container image: no git at all
+    assert remote.launch_commit(tmp_path) == "unknown"

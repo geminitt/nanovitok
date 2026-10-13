@@ -12,7 +12,6 @@ the end, and returns the outcome. Rerunning the same command resumes from the ch
 """
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -21,15 +20,6 @@ import modal
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 from vitok import remote  # noqa: E402  (after the path: the SDK's Python does not have the package installed)
-
-
-def _commit() -> str:
-    """HEAD at launch, marked dirty when the package source differs from it; the image records it for manifests."""
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "status", "--porcelain", "--", "src/vitok"], cwd=REPO, capture_output=True,
-                           text=True).stdout.strip()
-    return (head or "unknown") + ("-dirty" if dirty else "")
-
 
 MODEL = (Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots" / remote.MODEL_REVISION)
 # timeouts from the smoke run's measurements (history/stage5-smoke-2026-10-13.md); each bound = timeout × listed rates
@@ -49,7 +39,9 @@ volume = modal.Volume.from_name("nanovitok-token-type", create_if_missing=True)
 image = (modal.Image.debian_slim(python_version="3.12")
          .pip_install(*(f"{p}=={v}" for p, v in remote.PACKAGES.items()))
          .env({"PYTHONPATH": "/opt/src", "HF_HUB_OFFLINE": "1", "TOKENIZERS_PARALLELISM": "false",
-               "VITOK_MODEL_DIR": "/opt/model", "VITOK_GIT_COMMIT": _commit()})
+               "VITOK_MODEL_DIR": "/opt/model",
+               # git exists only where the app is launched; a container re-imports this file without it
+               "VITOK_GIT_COMMIT": remote.launch_commit(REPO) if modal.is_local() else ""})
          .add_local_dir(REPO / "src" / "vitok", "/opt/src/vitok"))
 for name in ("config.json", "generation_config.json", "model.safetensors"):
     image = image.add_local_file(MODEL / name, "/opt/model/" + name)

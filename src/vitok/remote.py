@@ -154,3 +154,14 @@ def source_sha256(folder: Path) -> str:
         if "__pycache__" not in f.parts:
             h.update(f.relative_to(folder).as_posix().encode() + b"\0" + f.read_bytes() + b"\0")
     return h.hexdigest()
+
+
+def launch_commit(repo: Path) -> str:
+    """HEAD of `repo`, marked dirty when src/vitok differs from it; "unknown" without git (as inside an image)."""
+    try:
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", "src/vitok"], cwd=repo, capture_output=True,
+                               text=True).stdout.strip()
+    except OSError:
+        return "unknown"
+    return (head or "unknown") + ("-dirty" if dirty else "")
