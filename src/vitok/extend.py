@@ -48,15 +48,29 @@ def new_token_pieces(base: Tokenizer, new: Tokenizer) -> dict[int, list[int]]:
 
 @torch.no_grad()
 def extend(model, pieces: dict[int, list[int]], pad_to: int = 64):
-    """Grow the input embedding (and a tied or untied output head) for the new ids, in place; returns the model."""
+    """Grow the input embedding (and a tied or untied output head) for the new ids, in place; returns the model.
+
+    Rows the resize adds beyond the new ids (padding to a multiple of `pad_to`) take the mean of the original rows
+    no token used (zeros if there are none), not the random initialization the resize draws: the rows are output
+    candidates of a tied head, so random values would make every extension, and the training after it, differ.
+    """
     emb = model.get_input_embeddings()
     old_rows = emb.weight.shape[0]
     need = max(pieces, default=-1) + 1
+    first_new = min(pieces, default=old_rows)
+    head = model.get_output_embeddings()
+    spare = {name: w[first_new:old_rows].float().mean(0) if old_rows > first_new else torch.zeros(w.shape[1])
+             for name, w in (("emb", emb.weight), ("head", head.weight if head is not None else emb.weight))}
     if need > old_rows:
         model.resize_token_embeddings(need, pad_to_multiple_of=pad_to, mean_resizing=False)
         emb = model.get_input_embeddings()
     head = model.get_output_embeddings()
     tied = head is not None and head.weight.data_ptr() == emb.weight.data_ptr()
+    for i in range(old_rows, emb.weight.shape[0]):
+        if i not in pieces:
+            emb.weight[i] = spare["emb"].to(emb.weight.dtype)
+            if head is not None and not tied:
+                head.weight[i] = spare["head"].to(head.weight.dtype)
     for i, ids in pieces.items():
         emb.weight[i] = emb.weight[ids].float().mean(dim=0).to(emb.weight.dtype)
         if head is not None and not tied:
