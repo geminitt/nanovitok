@@ -41,6 +41,11 @@ def test_batches_are_the_documents_in_order_with_eos_between(tok):
     assert all(b.input_ids.shape == (3, 16) for b in batches)
     covered = sum(b.chars for b in batches)
     assert sum(map(len, DOCS[: batches[-1].state["docs_read"]])) >= covered > 0
+    # each token carries the characters it adds (eos adds none), so any slice of a batch knows the text it covers
+    per_token = [c for d in DOCS for c in cpt_data.token_chars(tok.encode(d, add_special_tokens=False).offsets) + [0]]
+    flat = np.concatenate([b.token_chars.ravel() for b in batches]).tolist()
+    assert flat == per_token[: len(flat)]
+    assert all(b.token_chars.shape == b.input_ids.shape and int(b.token_chars.sum()) == b.chars for b in batches)
 
 
 @pytest.mark.parametrize("stop", [0, 1, 4, 9])
@@ -54,6 +59,7 @@ def test_a_resumed_stream_continues_exactly(tok, stop):
     rest = run(DOCS[state["docs_read"]:], json.loads(json.dumps(state)))  # the state survives JSON
     assert [b.input_ids.tolist() for b in head + rest] == [b.input_ids.tolist() for b in full]
     assert [b.chars for b in head + rest] == [b.chars for b in full]
+    assert [b.token_chars.tolist() for b in head + rest] == [b.token_chars.tolist() for b in full]
 
 
 def test_packing_refuses_degenerate_shapes(tok):

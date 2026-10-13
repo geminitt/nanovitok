@@ -336,7 +336,8 @@ def test_the_signature_holds_every_setting_that_changes_the_result(setup, tmp_pa
                               ["shard_00001.parquet", (setup / "shard_00001.parquet").stat().st_size]],
                    "held_out_sha256": ["held"], "steps": STEPS, "batch": BATCH, "micro_batch": BATCH, "seq_len": SEQ,
                    "lr": 3e-3, "embed_lr": 5e-3, "warmup": 2, "min_lr_ratio": 0.1, "weight_decay": 0.0,
-                   "layers": "0,-1", "seed": 3, "dtype": "fp32", "grad_clip": 1.0, "grad_checkpointing": False}
+                   "layers": "0,-1", "seed": 3, "dtype": "fp32", "grad_clip": 1.0, "grad_checkpointing": False,
+                   "stream": None, "dev_sha256": None, "dev_every": 0, "snapshot_dtype": "fp32"}
 
 
 @pytest.mark.parametrize("change", ["tokenizer", "held-out"])
@@ -359,9 +360,10 @@ def test_defaults_are_the_approved_design():
                           "h", "--out", "o", "--steps", "10", "--batch", "32"])
     assert (a.seq_len, a.layers, a.lr, a.embed_lr, a.warmup, a.min_lr_ratio, a.weight_decay, a.grad_clip, a.seed,
             a.dtype, a.micro_batch, a.revision, a.encode_batch, a.save_every, a.log_every, a.max_bad_steps,
-            a.snapshot_steps, a.deadline_minutes, a.grad_checkpointing, a.eos_token) == \
+            a.snapshot_steps, a.deadline_minutes, a.grad_checkpointing, a.eos_token, a.stream, a.dev_docs,
+            a.dev_every, a.dev_batch, a.snapshot_dtype) == \
         (512, "0,1,-2,-1", 1e-4, 1e-4, 50, 0.1, 0.0, 1.0, 0, "fp32", 32, None, 256, 100, 10, 20, [], None, False,
-         "<|endoftext|>")
+         "<|endoftext|>", None, None, 0, 8, "fp32")
     assert a.device == ("cuda" if torch.cuda.is_available() else "cpu")
     assert isinstance(a.out, Path) and isinstance(a.tokenizer, Path) and isinstance(a.shards[0], Path)
     required = ["--model", "--base-tokenizer", "--tokenizer", "--shards", "--held-out", "--out", "--steps", "--batch"]
@@ -474,3 +476,123 @@ def test_without_git_the_manifest_takes_the_bundle_commit(setup, tmp_path, monke
     monkeypatch.setenv("VITOK_GIT_COMMIT", "b756b73")
     run(setup, "base", tmp_path, steps=1)
     assert json.loads((tmp_path / "manifest.json").read_text())["git_commit"] == "b756b73"
+
+
+# ---- the token-type experiment (PLAN.md 2026-10-13): full-parameter mode, exact training bpc, dev curve ----
+
+def test_all_layers_train_every_transformer_weight_and_the_final_norm_but_no_old_row(setup, tmp_path):
+    from transformers import AutoModelForCausalLM
+    for cond in ("multi", "base"):
+        out = tmp_path / cond
+        assert run(setup, cond, out, "--layers", "all", "--weight-decay", "0.1") == 0
+        start = AutoModelForCausalLM.from_pretrained(setup / f"{cond}-model")
+        trained = AutoModelForCausalLM.from_pretrained(setup / f"{cond}-model")
+        new = range(*adapt.load_snapshot(trained, out / "final.pt")["new_ids"])
+        a, b = dict(start.named_parameters()), dict(trained.named_parameters())
+        for name in a:
+            if name == adapt.EMBED:
+                old = [i for i in range(a[name].shape[0]) if i not in new]
+                assert torch.equal(a[name][old], b[name][old])
+                assert (a[name][new.start:new.stop] != b[name][new.start:new.stop]).any(dim=1).all() or not len(new)
+            else:  # every layer weight and the final norm
+                assert not torch.equal(a[name], b[name]), name
+
+
+def test_the_training_bpc_divides_the_predicted_tokens_nats_by_their_characters(setup, tmp_path):
+    import math
+    run(setup, "multi", tmp_path)
+    rec = log(tmp_path)
+    for r, b in zip(rec, expected_batches(setup, "multi", STEPS), strict=True):
+        predicted = int(b.token_chars[:, 1:].sum())  # the first token of a row is context, not predicted
+        assert r["train_bpc"] == pytest.approx(r["loss"] * BATCH * (SEQ - 1) / (math.log(2) * predicted), rel=1e-9)
+
+
+def dev_log(out):
+    return [json.loads(line) for line in (out / "dev_log.jsonl").read_text().splitlines()]
+
+
+def test_the_dev_curve_is_scored_at_the_start_every_k_steps_and_at_the_end(setup, tmp_path):
+    import math
+
+    from transformers import AutoModelForCausalLM
+
+    from vitok import score
+    dev = tmp_path / "dev.jsonl"
+    dev.write_text("".join(json.dumps({"text": t}) + "\n" for t in SENTENCES[:5]), encoding="utf-8")
+    out = tmp_path / "o"
+    assert run(setup, "multi", out, "--dev-docs", str(dev), "--dev-every", "3", "--snapshot-steps", "3") == 0
+    rec = dev_log(out)
+    assert [r["step"] for r in rec] == [0, 3, 6, 8]
+    tok = Tokenizer.from_file(str(setup / "multi.json"))
+    eos = tok.token_to_id("<|endoftext|>")
+    seqs = [[eos] + tok.encode(t, add_special_tokens=False).ids for t in SENTENCES[:5]]
+    for step, weights in ((0, None), (3, out / "snapshots" / "step_000003.pt"), (8, out / "final.pt")):
+        model = AutoModelForCausalLM.from_pretrained(setup / "multi-model").eval()
+        if weights:
+            adapt.load_snapshot(model, weights)
+        nats = -sum(score.sum_logprobs(model, seqs, [1] * len(seqs), 8))
+        r = next(r for r in rec if r["step"] == step)
+        assert r["chars"] == sum(len(t) for t in SENTENCES[:5]) and r["tokens"] == sum(len(q) - 1 for q in seqs)
+        assert r["bpc"] == pytest.approx(nats / (math.log(2) * r["chars"]), rel=1e-5)
+    # a run cut into pieces by its deadline records the same curve
+    pieces = tmp_path / "p"
+    while run(setup, "multi", pieces, "--dev-docs", str(dev), "--dev-every", "3", "--snapshot-steps", "3",
+              "--deadline-minutes", "0") != 0:
+        pass
+    strip = lambda rs: [{k: v for k, v in r.items() if k != "seconds"} for r in rs]
+    assert strip(dev_log(pieces)) == strip(rec)
+
+
+def test_snapshots_can_be_kept_in_bf16_while_the_checkpoint_stays_fp32(setup, tmp_path):
+    assert run(setup, "multi", tmp_path, "--snapshot-steps", "2", "--snapshot-dtype", "bf16",
+               "--deadline-minutes", "0") == adapt.EXIT_INCOMPLETE
+    while run(setup, "multi", tmp_path, "--snapshot-steps", "2", "--snapshot-dtype", "bf16",
+              "--deadline-minutes", "0") != 0:
+        if (tmp_path / "checkpoint.pt").exists():
+            ck = torch.load(tmp_path / "checkpoint.pt", map_location="cpu", weights_only=False)
+            assert all(t.dtype == torch.float32 for t in ck["params"].values())
+    for path in (tmp_path / "snapshots" / "step_000002.pt", tmp_path / "final.pt"):
+        snap = torch.load(path, map_location="cpu", weights_only=False)
+        assert all(t.dtype == torch.bfloat16 for t in snap["params"].values())
+
+
+def test_a_stream_folder_feeds_the_same_batches_as_its_documents(setup, tmp_path):
+    from vitok import cpt_data, stream
+    docs = [t for t in cpt_data.parquet_texts([setup / "shard_00000.parquet", setup / "shard_00001.parquet"])]
+    units = [("u", i) for i in range(len(docs) // 50)]
+    folder = tmp_path / "stream"
+    stream.build(folder, 0, sum(map(len, docs[:50 * len(units)])), 2000, set(), units,
+                 lambda name, rg: docs[rg * 50:(rg + 1) * 50], {"s": 1})
+    ordered = list(stream.stream_texts(folder))
+    a = argv(setup, "multi", tmp_path / "o")
+    i = a.index("--shards")
+    a[i:i + 5] = ["--stream", str(folder)]  # --shards s0 s1 --held-out h  ->  --stream folder
+    assert adapt.train(adapt.parse_args(a)) == 0
+    tok = Tokenizer.from_file(str(setup / "multi.json"))
+    want = list(itertools.islice(cpt_data.packed_batches(tok, ordered, tok.token_to_id("<|endoftext|>"), SEQ, BATCH),
+                                 STEPS))
+    assert [r["chars"] for r in log(tmp_path / "o")] == list(itertools.accumulate(b.chars for b in want))
+    man = adapt.signature(adapt.parse_args(a), "t", [])
+    assert man["stream"] == stream._sha256(folder / "stream_manifest.json") and man["shards"] == []
+
+
+@pytest.mark.parametrize("extra,message", [
+    (["--stream", "s"], "exactly one of --shards and --stream"),
+    (["--dev-every", "2"], "--dev-every needs --dev-docs"),
+])
+def test_data_and_dev_options_are_checked(setup, tmp_path, extra, message):
+    with pytest.raises(SystemExit, match=message):
+        adapt.parse_args([*argv(setup, "multi", tmp_path), *extra])
+    with pytest.raises(SystemExit, match="--held-out"):
+        adapt.parse_args(["--model", "m", "--base-tokenizer", "b", "--tokenizer", "t", "--shards", "s", "--out", "o",
+                          "--steps", "1", "--batch", "1"])
+
+
+def test_a_second_process_cannot_write_into_a_running_runs_folder(setup, tmp_path):
+    import fcntl
+    tmp_path.mkdir(exist_ok=True)
+    with open(tmp_path / ".lock", "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)  # another process is writing here
+        with pytest.raises(SystemExit, match="another process is writing"):
+            run(setup, "base", tmp_path)
+    assert run(setup, "base", tmp_path, steps=1) == 0  # free again once the holder lets go

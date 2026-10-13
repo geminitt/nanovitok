@@ -40,9 +40,10 @@ def training_docs(docs: Iterable[str], held_out: set[bytes]) -> Iterator[str]:
 
 @dataclass
 class Batch:
-    input_ids: np.ndarray  # (batch, seq_len) int64
-    chars: int             # characters of text the batch's tokens cover
-    state: dict            # everything needed to resume right after this batch (documents read, leftover tokens)
+    input_ids: np.ndarray    # (batch, seq_len) int64
+    chars: int               # characters of text the batch's tokens cover
+    state: dict              # everything needed to resume right after this batch (documents read, leftover tokens)
+    token_chars: np.ndarray  # (batch, seq_len) characters each token adds (eos: 0); sums to `chars`
 
 
 def token_chars(offsets: list[tuple[int, int]]) -> list[int]:
@@ -81,9 +82,10 @@ def packed_batches(tokenizer, docs: Iterable[str], eos_id: int, seq_len: int, ba
 
     def emit():
         rows = np.asarray(ids_buf[:need], dtype=np.int64).reshape(batch, seq_len)
-        chars = int(sum(chars_buf[:need]))
+        per_token = np.asarray(chars_buf[:need], dtype=np.int64).reshape(batch, seq_len)
         del ids_buf[:need], chars_buf[:need]
-        return Batch(rows, chars, {"docs_read": read, "ids": list(ids_buf), "chars": list(chars_buf)})
+        return Batch(rows, int(per_token.sum()), {"docs_read": read, "ids": list(ids_buf), "chars": list(chars_buf)},
+                     per_token)
 
     while len(ids_buf) >= need:
         yield emit()

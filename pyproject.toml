@@ -33,6 +33,8 @@ include = [
     "tests/test_pipeline.py", "tests/test_kaggle_session.py", "tests/test_notebook03.py", "tests/test_notebook04.py",
     "src/vitok/report.py", "tests/test_report.py", "src/vitok/survey.py", "tests/test_survey.py",
     "tests/test_pilot_cleanup.py", "src/vitok/evalsets.py", "tests/test_evalsets.py",
+    "src/vitok/stream.py", "tests/test_stream.py", "src/vitok/remote.py", "tests/test_remote.py",
+    "tests/test_token_type_e2e.py", "remote/modal_app.py",
 ]
 
 [tool.ruff.lint]
@@ -49,7 +51,8 @@ files = [
     "src/vitok/extend.py", "src/vitok/cpt_data.py", "src/vitok/adapt.py", "src/vitok/score.py", "src/vitok/compare.py",
     "src/vitok/heldout.py", "src/vitok/pipeline.py", "src/vitok/kaggle_session.py",
     "src/vitok/report.py",
-    "src/vitok/survey.py", "src/vitok/evalsets.py",
+    "src/vitok/survey.py", "src/vitok/evalsets.py", "src/vitok/stream.py",
+    "src/vitok/remote.py",
 ]
 check_untyped_defs = true
 ignore_missing_imports = true

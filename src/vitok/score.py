@@ -32,7 +32,7 @@ import torch
 from tokenizers import Tokenizer
 
 from vitok import cpt_data
-from vitok.adapt import EXIT_INCOMPLETE, input_weight, load_snapshot
+from vitok.adapt import EXIT_INCOMPLETE, hold_lock, input_weight, load_snapshot
 from vitok.data import truncate_chars
 
 PROMPT = "{passage}\nCâu hỏi: {question}\nTrả lời:"  # Vietnamese "Question:" / "Answer:" (experimental input)
@@ -213,6 +213,45 @@ def score_belebele(model, tok, items: list[dict], path: Path, batch_size, amp_dt
             "acc_sum": sum(r["correct_sum"] for r in done.values()) / n}
 
 
+def score_mc(model, tok, items: list[dict], path: Path, batch_size, amp_dtype, deadline):
+    """Multiple choice in the vitok.evalsets format ({"id", "context", "choices", "gold"}): each choice is scored as
+    a continuation of the context; predictions by log-likelihood per character (acc_char) and in total (acc_sum)."""
+    done = _done(path)
+    _rewrite(path, done)
+    todo = [i for i in range(len(items)) if i not in done]
+    for b in range(0, len(todo), batch_size * 2):
+        part = todo[b:b + batch_size * 2]
+        seqs: list[list[int]] = []
+        starts: list[int] = []
+        spans: list[tuple[int, int]] = []
+        for i in part:
+            it = items[i]
+            if not 0 <= it["gold"] < len(it["choices"]):
+                raise SystemExit(f"item {it['id']}: gold {it['gold']} outside its {len(it['choices'])} choices")
+            ctx = tok.encode(it["context"], add_special_tokens=False).ids
+            spans.append((len(seqs), len(it["choices"])))
+            for choice in it["choices"]:
+                seqs.append(ctx + tok.encode(choice, add_special_tokens=False).ids)
+                starts.append(len(ctx))
+        lps = sum_logprobs(model, seqs, starts, batch_size, amp_dtype)
+        recs = []
+        for i, (first, n) in zip(part, spans, strict=True):
+            it, lp = items[i], lps[first:first + n]
+            chars = [len(c) for c in it["choices"]]
+            by_char = [v / c for v, c in zip(lp, chars, strict=True)]
+            recs.append({"i": i, "id": it["id"], "logprobs": lp, "chars": chars, "gold": it["gold"],
+                         "correct_sum": max(range(n), key=lp.__getitem__) == it["gold"],
+                         "correct_char": max(range(n), key=by_char.__getitem__) == it["gold"]})
+        _append(path, recs)
+        if deadline():
+            raise Deadline
+    done = _done(path)
+    assert sorted(done) == list(range(len(items)))
+    n = len(done)
+    return {"items": n, "acc_char": sum(r["correct_char"] for r in done.values()) / n,
+            "acc_sum": sum(r["correct_sum"] for r in done.values()) / n}
+
+
 def score_generation(model, tok, prompts: list[str], path: Path, new_tokens, amp_dtype, deadline):
     device = next(model.parameters()).device
     banned = sorted(i for i, t in tok.get_added_tokens_decoder().items() if t.special)
@@ -242,6 +281,13 @@ def score_generation(model, tok, prompts: list[str], path: Path, new_tokens, amp
             "max_memory_gib": max((r["max_memory_gib"] or 0) for r in recs) or None}
 
 
+def _named(spec: str) -> tuple[str, Path]:
+    name, sep, path = spec.partition("=")
+    if not sep or not name or not path:
+        raise argparse.ArgumentTypeError(f"expected name=file, got {spec!r}")
+    return name, Path(path)
+
+
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", required=True, help="Hugging Face id or folder of the starting model")
@@ -251,7 +297,12 @@ def parse_args(argv=None):
     ap.add_argument("--vi-docs", type=Path, default=None, help="jsonl with a text field (the test documents)")
     ap.add_argument("--en-docs", type=Path, default=None, help="jsonl with a text field (English documents)")
     ap.add_argument("--belebele", type=Path, default=None, help="jsonl of Belebele vie_Latn items")
-    ap.add_argument("--speed-prompts", type=int, default=0, help="generation prompts, taken from --vi-docs")
+    ap.add_argument("--lm", type=_named, nargs="*", default=[], help="name=jsonl of documents scored for bpc")
+    ap.add_argument("--mc", type=_named, nargs="*", default=[], help="name=jsonl of multiple-choice items "
+                    "(vitok.evalsets format)")
+    ap.add_argument("--speed-docs", type=Path, default=None, help="jsonl the generation prompts come from "
+                    "(default --vi-docs)")
+    ap.add_argument("--speed-prompts", type=int, default=0, help="generation prompts, from --speed-docs")
     ap.add_argument("--speed-prompt-chars", type=int, default=500)
     ap.add_argument("--new-tokens", type=int, default=256)
     ap.add_argument("--batch-size", type=int, default=8)
@@ -263,8 +314,12 @@ def parse_args(argv=None):
     args = ap.parse_args(argv)
     if args.dtype != "fp32" and not args.device.startswith("cuda"):
         raise SystemExit(f"--dtype {args.dtype} needs a CUDA device")
-    if args.speed_prompts and not args.vi_docs:
-        raise SystemExit("--speed-prompts takes its prompts from --vi-docs")
+    if args.speed_prompts and not (args.speed_docs or args.vi_docs):
+        raise SystemExit("--speed-prompts takes its prompts from --speed-docs (or --vi-docs)")
+    for kind in ("lm", "mc"):
+        names = [n for n, _ in getattr(args, kind)]
+        if len(set(names)) != len(names):
+            raise SystemExit(f"a --{kind} set is named twice: {names}")
     if args.speed_prompts and args.new_tokens < 2:
         raise SystemExit("--new-tokens must be at least 2")
     return args
@@ -281,12 +336,14 @@ def run(args) -> int:
     from transformers import AutoModelForCausalLM
 
     args.out.mkdir(parents=True, exist_ok=True)
+    lock = hold_lock(args.out)  # noqa: F841  (released when the process ends)
     sig = {"model": str(args.model), "revision": args.revision, "tokenizer_sha256": _sha256(args.tokenizer),
            "snapshot_sha256": _sha256(args.snapshot), "vi_docs_sha256": _sha256(args.vi_docs),
            "en_docs_sha256": _sha256(args.en_docs), "belebele_sha256": _sha256(args.belebele), "prompt": PROMPT,
            "speed_prompts": args.speed_prompts, "speed_prompt_chars": args.speed_prompt_chars,
            "new_tokens": args.new_tokens, "batch_size": args.batch_size, "dtype": args.dtype,
-           "device": args.device}
+           "device": args.device, "lm": {n: _sha256(p) for n, p in args.lm}, "mc": {n: _sha256(p) for n, p in args.mc},
+           "speed_docs_sha256": _sha256(args.speed_docs)}
     sig_path = args.out / "signature.json"
     if sig_path.exists() and json.loads(sig_path.read_text()) != sig:
         old = json.loads(sig_path.read_text())
@@ -318,8 +375,19 @@ def run(args) -> int:
             items = [json.loads(line) for line in args.belebele.read_text(encoding="utf-8").splitlines() if line]
             summary["belebele"] = score_belebele(model, tok, items, args.out / "belebele.jsonl", args.batch_size,
                                                  amp, deadline)
+        for name, path in args.lm:
+            lm = summary.setdefault("lm", {})
+            assert isinstance(lm, dict)
+            lm[name] = score_docs(model, tok, eos, _texts(path), args.out / f"lm_{name}.jsonl", args.batch_size, amp,
+                                  deadline)
+        for name, path in args.mc:
+            items = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            mc = summary.setdefault("mc", {})
+            assert isinstance(mc, dict)
+            mc[name] = score_mc(model, tok, items, args.out / f"mc_{name}.jsonl", args.batch_size, amp, deadline)
         if args.speed_prompts:
-            prompts = [truncate_chars(t, args.speed_prompt_chars) for t in vi[:args.speed_prompts]]
+            source = _texts(args.speed_docs) if args.speed_docs else vi
+            prompts = [truncate_chars(t, args.speed_prompt_chars) for t in source[:args.speed_prompts]]
             summary["generation"] = score_generation(model, tok, prompts, args.out / "generation.jsonl",
                                                      args.new_tokens, amp, deadline)
     except Deadline:

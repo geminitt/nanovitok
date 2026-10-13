@@ -110,3 +110,41 @@ def test_t_cdf_is_the_student_t_cdf(x):
     for df in (3, 10, 1000):
         assert t_cdf(-x, df) == pytest.approx(1 - t_cdf(x, df), abs=1e-10)
         assert t_cdf(x, df) <= t_cdf(x + 0.5, df) + 1e-12
+
+
+# ---- the token-type experiment's rules (PLAN.md, Evaluation) ----
+
+def test_the_stratified_bootstrap_weighs_domains_equally_and_pairs_documents():
+    from vitok import stats
+    rng = np.random.default_rng(1)
+    b1, b2 = rng.uniform(50, 150, 400), rng.uniform(5, 15, 30)  # a large and a small domain
+    out = stats.stratified_relative_bootstrap({"big": (b1 * 1.02, b1), "small": (b2 * 0.96, b2)}, n=2000)
+    assert out["per_domain"] == pytest.approx({"big": 0.02, "small": -0.04})
+    assert out["macro_rel_diff"] == pytest.approx(-0.01)
+    # identical per-document ratios leave no sampling variation: the interval collapses on the point
+    assert out["ci95"] == pytest.approx([-0.01, -0.01], abs=1e-12)
+    ratios = rng.uniform(0.9, 1.1, 400)
+    noisy = stats.stratified_relative_bootstrap({"big": (b1 * ratios, b1)}, n=2000, seed=3)
+    lo, hi = noisy["ci95"]
+    assert lo < noisy["macro_rel_diff"] < hi
+    assert noisy == stats.stratified_relative_bootstrap({"big": (b1 * ratios, b1)}, n=2000, seed=3)
+    assert noisy != stats.stratified_relative_bootstrap({"big": (b1 * ratios, b1)}, n=2000, seed=4)
+    a = {"x": (b1 * 1.01, b1), "y": (b2, b2 * 1.1)}
+    assert stats.stratified_relative_bootstrap(a, n=500, seed=7) == stats.stratified_relative_bootstrap(
+        dict(reversed(list(a.items()))), n=500, seed=7)
+
+
+@pytest.mark.parametrize("intervals,want", [
+    ([(-0.03, -0.01)], "A better"), ([(-0.03, -0.01), (-0.02, -0.001)], "A better"),
+    ([(0.01, 0.02), (0.001, 0.03)], "B better"), ([(-0.03, -0.01), (-0.01, 0.002)], "not distinguishable"),
+    ([(-0.01, 0.01)], "not distinguishable"), ([(-0.02, 0.0)], "not distinguishable"),
+])
+def test_a_side_wins_only_when_every_seed_pairing_agrees(intervals, want):
+    from vitok import stats
+    assert stats.decide(intervals) == want
+
+
+@pytest.mark.parametrize("k,n,want", [(50, 100, 0.39832), (0, 10, 0.0), (10, 10, 0.69150), (1, 1000, 0.0000253)])
+def test_the_clopper_pearson_lower_bound(k, n, want):
+    from vitok import stats
+    assert stats.binomial_lower(k, n) == pytest.approx(want, rel=1e-3, abs=1e-7)
