@@ -62,4 +62,7 @@ def test_the_queue_runs_the_pipeline_with_its_deadline_and_records_the_outcome(t
     assert a[1:3] == ["-m", "vitok.pipeline"] and a[a.index("--deadline-minutes") + 1] == "12.35"
     assert a[a.index("--conditions") + 1:a.index("--work")] == ["base", "multisyllable"]
     assert out["exit_code"] == 0 and out["conditions"] == {"base": {"status": "done"}}
+    # parallel containers share the work folder: each queue writes only files named after its conditions
+    # (Modal volumes: concurrent writes to one file are last-write-wins)
+    assert seen["log"] == tmp_path / "queue-base-multisyllable.log"
     assert json.loads((tmp_path / "result-base-multisyllable.json").read_text())["exit_code"] == 0

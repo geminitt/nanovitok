@@ -25,7 +25,9 @@ MODEL = (Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshot
 # timeouts from the smoke run's measurements (history/stage5-smoke-2026-10-13.md); each bound = timeout × listed rates
 JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1200),
         "probe_n": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500),
-        "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=2700)}
+        "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=2700),
+        # one condition per call: 1,526 steps × ≈4.7 s + checkpoints, dev curve, snapshots ≈ 8,014 s measured basis
+        "full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=9300)}
 
 app = modal.App("nanovitok-token-type")
 FUNCTION = dict(retries=0, max_containers=1, scaledown_window=2, single_use_containers=True)
@@ -49,7 +51,7 @@ def _run(config: str, conditions: list[str], job: remote.Job, queue_minutes: flo
                            and torch.cuda.is_bf16_supported(), remote.free_gib(Path(remote.VOLUME_ROOT)), 20)
     work = Path(config).parent / "work"
     work.mkdir(parents=True, exist_ok=True)
-    (work / "environment.json").write_text(json.dumps(
+    (work / f"environment-{'-'.join(conditions)}.json").write_text(json.dumps(
         pre | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version}, indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
         minutes = min(queue_minutes, job.queue_minutes()) if queue_minutes > 0 else job.queue_minutes()
@@ -104,3 +106,15 @@ def probe_n(config: str, conditions: str, approved_max_usd: float = 0.0, queue_m
 @app.local_entrypoint()
 def probe_lr(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
     _launch("probe_lr", probe_lr_queue, config, conditions, approved_max_usd, queue_minutes)
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **(FUNCTION | {"max_containers": 3}),
+              **_resources("full"))
+def full_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -> dict:
+    return _run(config, conditions, JOBS["full"], queue_minutes)
+
+
+@app.local_entrypoint()
+def full(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
+    """One condition per launch; three launches run in parallel containers (each its own bound)."""
+    _launch("full", full_queue, config, conditions, approved_max_usd, queue_minutes)

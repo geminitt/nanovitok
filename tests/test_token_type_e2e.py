@@ -64,7 +64,7 @@ def test_the_queue_survives_a_kill_and_matches_an_uninterrupted_run(tmp_path, mo
     setup(tmp_path)
     conds = ["base", "multisyllable"]
     whole = remote.run_queue(tmp_path / "run.json", conds, tmp_path / "whole", 30)
-    assert whole["exit_code"] == 0, (tmp_path / "whole" / "queue.log").read_text()[-3000:]
+    assert whole["exit_code"] == 0, (tmp_path / "whole" / "queue-base-multisyllable.log").read_text()[-3000:]
 
     # the same queue in a child process group, killed once base has trained a few steps, then rerun as is
     work = tmp_path / "killed"
@@ -83,7 +83,7 @@ def test_the_queue_survives_a_kill_and_matches_an_uninterrupted_run(tmp_path, mo
     proc.wait(30)
     assert not (work / "base" / "train" / "final.pt").exists()
     again = remote.run_queue(tmp_path / "run.json", conds, work, 30)
-    assert again["exit_code"] == 0, (work / "queue.log").read_text()[-3000:]
+    assert again["exit_code"] == 0, (work / "queue-base-multisyllable.log").read_text()[-3000:]
 
     for name in conds:
         a = torch.load(tmp_path / "whole" / name / "train" / "final.pt", map_location="cpu", weights_only=False)

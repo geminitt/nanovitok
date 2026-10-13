@@ -103,16 +103,17 @@ def run_queue(config: Path, conditions: list[str], work: Path, minutes: float,
     work.mkdir(parents=True, exist_ok=True)
     argv = [sys.executable, "-m", "vitok.pipeline", "--config", str(config), "--conditions", *conditions,
             "--work", str(work), "--deadline-minutes", f"{minutes:.2f}"]
+    tag = "-".join(conditions)
+    log_path = work / f"queue-{tag}.log"  # one writer per file: parallel containers share `work`
     started = time.monotonic()
     if run is not None:
-        code = run(argv, work / "queue.log")
+        code = run(argv, log_path)
     else:
-        with open(work / "queue.log", "a", encoding="utf-8") as log:
+        with open(log_path, "a", encoding="utf-8") as log:
             # same process group as the caller: stopping the caller stops the queue (no orphan keeps writing)
             proc = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
                                     env={**os.environ, "TOKENIZERS_PARALLELISM": "false"})
             code = proc.wait()
-    tag = "-".join(conditions)
     queue = work / f"queue-{tag}.json"
     outcome = json.loads(queue.read_text()) if queue.exists() else {}
     result = {"exit_code": code, "seconds": time.monotonic() - started, "conditions": outcome}
