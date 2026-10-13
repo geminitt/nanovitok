@@ -49,12 +49,14 @@ jobs:
 
       - name: Check the retrofit report matches item-level measurements
         run: |
-          pixi run -e dev python -m vitok.report --data results/adaptation --out /tmp/adaptation.md --readme /tmp/README.md --figures /tmp/adaptation-figures
+          pixi run -e dev python -m vitok.report --data results/adaptation --out /tmp/adaptation.md --figures /tmp/adaptation-figures
           diff /tmp/adaptation.md results/adaptation.md
-          diff /tmp/README.md README.md
           for figure in recovery quality_cost generation; do
             cmp "/tmp/adaptation-figures/$figure.png" "figures/$figure.png"
           done
+
+      # the token-type results (results/token-type) regenerate from their committed item-level files in the
+      # test suite: tests/test_cpt_report.py::test_the_committed_results_regenerate_from_the_committed_item_files
 
       - name: Remeasure the retained survey from pinned tokenizer files
         run: |

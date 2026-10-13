@@ -268,3 +268,49 @@ def test_every_known_training_setting_is_accepted(tmp_path):
     cfg["train"] |= {k: 1 for k in pipeline.TRAIN_KEYS} | {"seed": 3, "snapshot_steps": [], "grad_checkpointing": True}
     (tmp_path / "run.json").write_text(json.dumps(cfg))
     assert pipeline.load_config(tmp_path / "run.json")["train"]["grad_checkpointing"] is True
+
+
+# ---- the token-type experiment: seeded streams, a learning rate per condition, the dev curve, named sets ----
+
+def stream_config(d):
+    cfg = config(d)
+    del cfg["shards"], cfg["held_out"]
+    cfg["streams"] = {"0": str(d / "stream-0"), "1": str(d / "stream-1")}
+    cfg["dev_docs"] = str(d / "dev.jsonl")
+    cfg["train"] |= {"layers": "all", "dev_every": 2, "snapshot_dtype": "bf16"}
+    cfg["conditions"]["multisyllable"]["lr"] = 1e-4
+    cfg["score"] = {"lm": {"web": "web.jsonl", "law": "law.jsonl"}, "mc": {"quiz": "quiz.jsonl"},
+                    "speed_docs": "web.jsonl", "speed_prompts": 1, "batch_size": 2, "snapshots": True}
+    return cfg
+
+
+def test_each_seed_reads_its_own_stream_and_a_condition_may_set_its_learning_rate(tmp_path):
+    cfg = stream_config(tmp_path)
+    (tmp_path / "run.json").write_text(json.dumps(cfg))
+    pipeline.load_config(tmp_path / "run.json")
+    opt = lambda a, k: a[a.index(k) + 1]
+    cases = (("base", "0", "0.003"), ("multisyllable", "0", "0.0001"), ("multisyllable-s1", "1", "0.003"))
+    for name, seed, lr in cases:
+        a = adapt_argv(cfg, name, tmp_path)
+        assert opt(a, "--stream") == cfg["streams"][seed] and "--shards" not in a and "--held-out" not in a
+        assert opt(a, "--lr") == lr and opt(a, "--seed") == seed
+        assert (opt(a, "--dev-docs"), opt(a, "--dev-every"), opt(a, "--layers")) == (cfg["dev_docs"], "2", "all")
+        assert opt(a, "--snapshot-dtype") == "bf16"
+    for step, _, a in pipeline.commands(cfg, "base", tmp_path):
+        if step.startswith("score"):
+            i = a.index("--lm")
+            assert a[i + 1:i + 3] == ["web=web.jsonl", "law=law.jsonl"] and opt(a, "--mc") == "quiz=quiz.jsonl"
+            assert ("--speed-docs" in a) == (step in ("score-before", "score-final"))
+
+
+@pytest.mark.parametrize("change,message", [
+    (lambda c: c["streams"].pop("1"), "no stream for seed 1"),
+    (lambda c: c.update(shards=["s"]), "either shards and held_out or streams"),
+    (lambda c: c["conditions"]["base"].update(warmup=3), "may set only"),
+])
+def test_stream_configs_are_checked(tmp_path, change, message):
+    cfg = stream_config(tmp_path)
+    change(cfg)
+    (tmp_path / "run.json").write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match=message):
+        pipeline.load_config(tmp_path / "run.json")

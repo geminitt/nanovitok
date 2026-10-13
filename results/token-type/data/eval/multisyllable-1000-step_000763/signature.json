@@ -1,0 +1,25 @@
+{
+  "model": "/vol/full/work/multisyllable-1000/extended",
+  "revision": null,
+  "tokenizer_sha256": "968dd022880e1cae79de95fba5e37619fcd9148c34461250daccef36177cc1e7",
+  "snapshot_sha256": "85f4fee74c7a5bde26114bce41e21425faecc11a6c289af04237d7b80006f448",
+  "vi_docs_sha256": null,
+  "en_docs_sha256": null,
+  "belebele_sha256": null,
+  "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+  "speed_prompts": 0,
+  "speed_prompt_chars": 500,
+  "new_tokens": 256,
+  "batch_size": 8,
+  "dtype": "fp16",
+  "device": "cuda",
+  "lm": {
+    "fineweb2": "c51abe2e5449c98eb596db6668c0021cea20843c43c900dfce589c7258c9fb95",
+    "wikipedia": "137bb832ad8916712ab4324be7e58d01ed10ea7f02213ea184ce3634772be2f2",
+    "legal": "065e6d141d7420bdfab83ceefb842d4d5797b5c8bca624675b3a6bc6ed512e8a",
+    "flores": "a7aab2a0a916c7ef0cc3a01436c860159a2477f1075c40dd36ca135b0ecaf7f1",
+    "english": "0f4c85218eb1d3ab56fdb679557d09f62cd89af8c719f036c9b5a00061919279"
+  },
+  "mc": {},
+  "speed_docs_sha256": null
+}

@@ -42,6 +42,20 @@ EXIT_INCOMPLETE = 3  # stopped by the deadline or SIGTERM with a checkpoint save
 EMBED = "model.embed_tokens.weight"
 
 
+def hold_lock(folder: Path):
+    """An exclusive lock on `folder` for this process's lifetime (keep the returned file open): two processes writing
+    one run's checkpoints or logs would corrupt them, e.g. a rerun while an orphaned earlier run still writes."""
+    import fcntl
+
+    f = open(folder / ".lock", "w")  # noqa: SIM115  (held open on purpose)
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        f.close()
+        raise SystemExit(f"another process is writing into {folder}; stop it before rerunning") from None
+    return f
+
+
 def input_weight(model) -> torch.Tensor:
     """The input embedding matrix (also the output head when tied)."""
     return model.get_input_embeddings().weight
@@ -59,7 +73,9 @@ def new_token_ids(base: Tokenizer, new: Tokenizer) -> range:
 
 
 def resolve_layers(spec: str, n_layers: int) -> list[int]:
-    """"0,1,-2,-1" -> [0, 1, n-2, n-1]; refuses out-of-range or repeated layers."""
+    """"0,1,-2,-1" -> [0, 1, n-2, n-1]; "all" -> every layer; refuses out-of-range or repeated layers."""
+    if spec == "all":
+        return list(range(n_layers))
     out = []
     for part in spec.split(","):
         i = int(part)
@@ -70,14 +86,15 @@ def resolve_layers(spec: str, n_layers: int) -> list[int]:
     return sorted(out)
 
 
-def set_trainable(model, new_ids: range, layers: list[int]) -> dict[str, torch.nn.Parameter]:
-    """Freeze everything, then unfreeze the chosen layers and (if there are new ids) the embedding, whose gradient is
-    masked to the new rows. Returns the trainable parameters by name."""
+def set_trainable(model, new_ids: range, layers: list[int], final_norm: bool = False) -> dict[str, torch.nn.Parameter]:
+    """Freeze everything, then unfreeze the chosen layers (and the final norm, for full-parameter training) and (if
+    there are new ids) the embedding, whose gradient is masked to the new rows. Returns the trainable parameters."""
     for p in model.parameters():
         p.requires_grad_(False)
     trainable = {}
     for name, p in model.named_parameters():
-        if any(name.startswith(f"model.layers.{i}.") for i in layers):
+        in_layer = any(name.startswith(f"model.layers.{i}.") for i in layers)
+        if in_layer or (final_norm and name.startswith("model.norm.")):
             p.requires_grad_(True)
             trainable[name] = p
     emb = model.get_input_embeddings().weight
@@ -113,6 +130,11 @@ def precision(dtype: str) -> tuple[torch.dtype | None, bool]:
     return {"fp32": (None, False), "fp16": (torch.float16, True), "bf16": (torch.bfloat16, False)}[dtype]
 
 
+def autocast_dtype(name: str, use_cuda: bool) -> torch.dtype | None:
+    """The autocast dtype of a precision setting on this device (autocast is CUDA only here)."""
+    return precision(name)[0] if use_cuda else None
+
+
 def lr_at(step: int, steps: int, peak: float, warmup: int, min_ratio: float) -> float:
     """Linear warmup to `peak`, then cosine decay to `peak * min_ratio` at the last step."""
     if step < warmup:
@@ -121,12 +143,12 @@ def lr_at(step: int, steps: int, peak: float, warmup: int, min_ratio: float) -> 
     return peak * (min_ratio + (1 - min_ratio) * 0.5 * (1 + math.cos(math.pi * min(1.0, t))))
 
 
-def trainable_state(trainable: dict, new_ids: range) -> dict[str, torch.Tensor]:
-    """CPU copies of the trainable weights; the embedding is stored as its new rows only."""
+def trainable_state(trainable: dict, new_ids: range, dtype: torch.dtype | None = None) -> dict[str, torch.Tensor]:
+    """CPU copies of the trainable weights (in `dtype` if given); the embedding is stored as its new rows only."""
     out = {}
     for name, p in trainable.items():
         t = p.detach()[new_ids.start:new_ids.stop] if name == EMBED else p.detach()
-        out[name] = t.to("cpu", copy=True)
+        out[name] = t.to("cpu", dtype=dtype or t.dtype, copy=True)
     return out
 
 
@@ -144,6 +166,22 @@ def load_snapshot(model, path: Path) -> dict:
             raise ValueError(f"snapshot weight {name} has shape {tuple(t.shape)}, the model {tuple(target.shape)}")
         target.copy_(t.to(target.dtype))
     return {k: v for k, v in snap.items() if k != "params"}
+
+
+@torch.no_grad()
+def dev_bpc(model, tok, eos: int, texts: list[str], batch_size: int, amp_dtype) -> dict:
+    """bpc of the dev documents, each scored given an eos context, as `vitok.score` scores test documents."""
+    from vitok.score import sum_logprobs  # imported here: vitok.score imports this module
+
+    seqs = [[eos] + tok.encode(t, add_special_tokens=False).ids for t in texts]
+    was_training = model.training
+    model.eval()
+    try:
+        nats = -sum(sum_logprobs(model, seqs, [1] * len(seqs), batch_size, amp_dtype))
+    finally:
+        model.train(was_training)
+    chars = sum(map(len, texts))
+    return {"nats": nats, "chars": chars, "tokens": sum(len(q) - 1 for q in seqs), "bpc": nats / (math.log(2) * chars)}
 
 
 def _atomic_save(obj, path: Path):
@@ -166,11 +204,14 @@ def _sha256(path: Path) -> str:
 def signature(args, tok_sha: str, held_sha: list[str]) -> dict:
     """Everything that changes what the run computes; a checkpoint resumes only under the same signature."""
     return {"model": str(args.model), "revision": args.revision, "tokenizer_sha256": tok_sha,
-            "shards": [[p.name, p.stat().st_size] for p in args.shards], "held_out_sha256": held_sha,
+            "shards": [[p.name, p.stat().st_size] for p in args.shards or []], "held_out_sha256": held_sha,
             "steps": args.steps, "batch": args.batch, "micro_batch": args.micro_batch, "seq_len": args.seq_len,
             "lr": args.lr, "embed_lr": args.embed_lr, "warmup": args.warmup, "min_lr_ratio": args.min_lr_ratio,
             "weight_decay": args.weight_decay, "layers": args.layers, "seed": args.seed, "dtype": args.dtype,
-            "grad_clip": args.grad_clip, "grad_checkpointing": args.grad_checkpointing}
+            "grad_clip": args.grad_clip, "grad_checkpointing": args.grad_checkpointing,
+            "stream": _sha256(args.stream / "stream_manifest.json") if args.stream else None,
+            "dev_sha256": _sha256(args.dev_docs) if args.dev_docs else None, "dev_every": args.dev_every,
+            "snapshot_dtype": args.snapshot_dtype, "dev_dtype": args.dev_dtype}
 
 
 def _rng_state() -> dict:
@@ -187,7 +228,8 @@ def _set_rng_state(s: dict):
 
 
 def _truncate_log(path: Path, upto_step: int):
-    """Keep the log lines of steps the checkpoint covers; drop later lines and a line torn by a crash."""
+    """Keep the log lines of steps the checkpoint covers (step < upto_step; the dev log passes its step + 1); drop
+    later lines and a line torn by a crash."""
     if not path.exists():
         return
     keep = []
@@ -207,9 +249,11 @@ def parse_args(argv=None):
     ap.add_argument("--revision", default=None)
     ap.add_argument("--base-tokenizer", type=Path, required=True, help="the original tokenizer.json")
     ap.add_argument("--tokenizer", type=Path, required=True, help="this condition's tokenizer.json")
-    ap.add_argument("--shards", type=Path, nargs="+", required=True, help="parquet files with a text column, in order")
-    ap.add_argument("--held-out", type=Path, nargs="+", required=True,
-                    help="jsonl files whose texts must not be trained on")
+    ap.add_argument("--shards", type=Path, nargs="+", default=None, help="parquet files with a text column, in order")
+    ap.add_argument("--stream", type=Path, default=None,
+                    help="a vitok.stream folder (seeded order, held-out texts already removed), instead of --shards")
+    ap.add_argument("--held-out", type=Path, nargs="*", default=[],
+                    help="jsonl files whose texts must not be trained on (required with --shards)")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--steps", type=int, required=True)
     ap.add_argument("--batch", type=int, required=True, help="rows per step (equal across conditions)")
@@ -221,7 +265,8 @@ def parse_args(argv=None):
     ap.add_argument("--min-lr-ratio", type=float, default=0.1)
     ap.add_argument("--weight-decay", type=float, default=0.0, help="on the layers' matrices (never on embedding rows)")
     ap.add_argument("--grad-clip", type=float, default=1.0)
-    ap.add_argument("--layers", default="0,1,-2,-1", help="trainable layers; negative counts from the top")
+    ap.add_argument("--layers", default="0,1,-2,-1",
+                    help="trainable layers, negative counts from the top; 'all' = every layer and the final norm")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--dtype", choices=["fp32", "fp16", "bf16"], default="fp32", help="autocast dtype on CUDA")
     ap.add_argument("--grad-checkpointing", action="store_true")
@@ -235,7 +280,21 @@ def parse_args(argv=None):
     ap.add_argument("--deadline-minutes", type=float, default=None,
                     help="checkpoint and stop after this much wall time")
     ap.add_argument("--max-bad-steps", type=int, default=20, help="abort after this many consecutive non-finite losses")
+    ap.add_argument("--dev-docs", type=Path, default=None, help="jsonl of dev documents scored during training")
+    ap.add_argument("--dev-every", type=int, default=0, help="score the dev documents every this many steps (and at "
+                    "the start and the end)")
+    ap.add_argument("--dev-batch", type=int, default=8)
+    ap.add_argument("--dev-dtype", choices=["fp32", "fp16", "bf16"], default="fp32",
+                    help="precision of the dev scores (bf16 rounds per-document nats ~10x more than fp16)")
+    ap.add_argument("--snapshot-dtype", choices=["fp32", "bf16"], default="fp32",
+                    help="dtype of snapshots and final weights (the resume checkpoint stays fp32)")
     args = ap.parse_args(argv)
+    if (args.shards is None) == (args.stream is None):
+        raise SystemExit("give exactly one of --shards and --stream")
+    if args.shards is not None and not args.held_out:
+        raise SystemExit("--shards needs --held-out (a stream folder has its held-out texts removed already)")
+    if args.dev_every and not args.dev_docs:
+        raise SystemExit("--dev-every needs --dev-docs")
     args.micro_batch = args.micro_batch or args.batch
     args.embed_lr = args.embed_lr or args.lr
     if args.steps < 1 or args.batch < 1 or args.batch % args.micro_batch:
@@ -252,6 +311,7 @@ def train(args) -> int:
     from transformers import AutoModelForCausalLM
 
     args.out.mkdir(parents=True, exist_ok=True)
+    lock = hold_lock(args.out)  # noqa: F841  (released when the process ends)
     (args.out / "snapshots").mkdir(exist_ok=True)
     ckpt_path, log_path = args.out / "checkpoint.pt", args.out / "train_log.jsonl"
     base_tok, tok = Tokenizer.from_file(str(args.base_tokenizer)), Tokenizer.from_file(str(args.tokenizer))
@@ -286,7 +346,7 @@ def train(args) -> int:
     if len(new_ids) and head is not None and head.weight.data_ptr() != input_weight(model).data_ptr():
         raise SystemExit("an untied output head is not supported: its new rows would stay at their initial values")
     layers = resolve_layers(args.layers, model.config.num_hidden_layers)
-    trainable = set_trainable(model, new_ids, layers)
+    trainable = set_trainable(model, new_ids, layers, final_norm=args.layers == "all")
     # a fixed sample of old rows, compared at every save: frozen rows must stay bit-identical
     emb = input_weight(model)
     probe_rows = torch.linspace(0, (new_ids.start or vocab_rows) - 1, 256).long().unique()
@@ -295,6 +355,7 @@ def train(args) -> int:
     opt = make_optimizer(trainable, args.lr, args.embed_lr, args.weight_decay)
     use_cuda = args.device.startswith("cuda")
     amp_dtype, scale_loss = precision(args.dtype)
+    snapshot_dtype = torch.bfloat16 if args.snapshot_dtype == "bf16" else None
     scaler = torch.amp.GradScaler("cuda", enabled=scale_loss)
 
     step, tokens, chars, data_state = 0, 0, 0, None
@@ -307,9 +368,32 @@ def train(args) -> int:
         assert torch.equal(emb.detach()[probe_rows], probe), "old embedding rows differ after loading the checkpoint"
         print(f"resumed at step {step} ({tokens:,} tokens, {chars:,} chars)", flush=True)
     _truncate_log(log_path, step)
+    dev_path = args.out / "dev_log.jsonl"
+    _truncate_log(dev_path, step + 1)  # the dev score at a step is written before that step's checkpoint
+    dev_texts = cpt_data.jsonl_texts(args.dev_docs) if args.dev_docs else []
+    amp = autocast_dtype(args.dev_dtype, use_cuda)  # dev scores choose the probe: full precision by default
+
+    def score_dev(at: int):
+        t = time.monotonic()
+        rec = {"step": at, **dev_bpc(model, tok, eos, dev_texts, args.dev_batch, amp)}
+        rec["seconds"] = time.monotonic() - t
+        with open(dev_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        print("dev", json.dumps(rec), flush=True)
+
+    if dev_texts and step == 0 and not (dev_path.exists() and dev_path.read_text().strip()):
+        score_dev(0)
 
     held = cpt_data.held_out_digests(t for p in args.held_out for t in cpt_data.jsonl_texts(p))
-    docs = cpt_data.training_docs(cpt_data.parquet_texts(args.shards), held)
+    if args.stream:
+        from vitok import stream as training_stream
+
+        source = training_stream.stream_texts(args.stream)
+    else:
+        source = cpt_data.parquet_texts(args.shards)
+    docs = cpt_data.training_docs(source, held)
     docs = islice(docs, data_state["docs_read"] if data_state else 0, None)
     batches = cpt_data.packed_batches(tok, docs, eos, args.seq_len, args.batch, encode_batch=args.encode_batch,
                                       state=data_state)
@@ -321,7 +405,8 @@ def train(args) -> int:
 
     def save(path: Path, kind: str):
         assert torch.equal(emb.detach()[probe_rows], probe), "frozen old embedding rows changed during training"
-        obj = {"params": trainable_state(trainable, new_ids), "new_ids": [new_ids.start, new_ids.stop],
+        obj = {"params": trainable_state(trainable, new_ids, None if kind == "checkpoint" else snapshot_dtype),
+               "new_ids": [new_ids.start, new_ids.stop],
                "step": step, "tokens": tokens, "chars": chars, "signature": sig, "kind": kind}
         if kind == "checkpoint":
             obj |= {"optimizer": opt.state_dict(), "scaler": scaler.state_dict(), "rng": _rng_state(),
@@ -357,7 +442,11 @@ def train(args) -> int:
             chars += b.chars
             last_state = b.state
             if step % args.log_every == 0 or step == args.steps or not finite:
+                # nats of the predicted tokens over the characters they add (a row's first token is only context)
+                predicted = int(b.token_chars[:, 1:].sum())
+                n_pred = b.input_ids.shape[0] * (b.input_ids.shape[1] - 1)
                 rec = {"step": step - 1, "loss": loss_sum, "grad_norm": grad_norm, "lr": opt.param_groups[0]["lr"],
+                       "train_bpc": loss_sum * n_pred / (math.log(2) * predicted) if predicted else None,
                        "tokens": tokens, "chars": chars, "step_seconds": time.monotonic() - t0,
                        "elapsed_seconds": time.monotonic() - started, "finite": finite,
                        "max_memory_gib": torch.cuda.max_memory_allocated() / 2**30 if use_cuda else None}
@@ -367,6 +456,8 @@ def train(args) -> int:
                 print(json.dumps(rec), flush=True)
             if bad > args.max_bad_steps:  # after logging, so the log shows the step that ends the run
                 raise SystemExit(f"{bad} consecutive steps with a non-finite loss or gradient at step {step - 1}")
+            if dev_texts and ((args.dev_every and step % args.dev_every == 0) or step == args.steps):
+                score_dev(step)
             if step in args.snapshot_steps:
                 save(args.out / "snapshots" / f"step_{step:06d}.pt", "snapshot")
             over = args.deadline_minutes is not None and time.monotonic() - started > 60 * args.deadline_minutes

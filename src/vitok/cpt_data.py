@@ -40,9 +40,10 @@ def training_docs(docs: Iterable[str], held_out: set[bytes]) -> Iterator[str]:
 
 @dataclass
 class Batch:
-    input_ids: np.ndarray  # (batch, seq_len) int64
-    chars: int             # characters of text the batch's tokens cover
-    state: dict            # everything needed to resume right after this batch (documents read, leftover tokens)
+    input_ids: np.ndarray    # (batch, seq_len) int64
+    chars: int               # characters of text the batch's tokens cover
+    state: dict              # everything needed to resume right after this batch (documents read, leftover tokens)
+    token_chars: np.ndarray  # (batch, seq_len) characters each token adds (eos: 0); sums to `chars`
 
 
 def token_chars(offsets: list[tuple[int, int]]) -> list[int]:
@@ -81,9 +82,10 @@ def packed_batches(tokenizer, docs: Iterable[str], eos_id: int, seq_len: int, ba
 
     def emit():
         rows = np.asarray(ids_buf[:need], dtype=np.int64).reshape(batch, seq_len)
-        chars = int(sum(chars_buf[:need]))
+        per_token = np.asarray(chars_buf[:need], dtype=np.int64).reshape(batch, seq_len)
         del ids_buf[:need], chars_buf[:need]
-        return Batch(rows, chars, {"docs_read": read, "ids": list(ids_buf), "chars": list(chars_buf)})
+        return Batch(rows, int(per_token.sum()), {"docs_read": read, "ids": list(ids_buf), "chars": list(chars_buf)},
+                     per_token)
 
     while len(ids_buf) >= need:
         yield emit()
@@ -109,6 +111,12 @@ def parquet_texts(paths: Iterable[Path]) -> Iterator[str]:
             yield from pf.read_row_group(rg, columns=["text"]).column("text").to_pylist()
 
 
-def jsonl_texts(path: Path) -> list[str]:
+def jsonl_rows(path: Path) -> list[dict]:
+    """Records of a JSONL file, split at newlines only: str.splitlines() also breaks at U+0085, U+2028 and other
+    separators that JSON keeps raw inside strings (one Global-MMLU question holds a U+0085)."""
     with open(path, encoding="utf-8") as f:
-        return [json.loads(line)["text"] for line in f if line.strip()]
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def jsonl_texts(path: Path) -> list[str]:
+    return [r["text"] for r in jsonl_rows(path)]

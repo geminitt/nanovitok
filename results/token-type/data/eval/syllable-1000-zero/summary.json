@@ -1,0 +1,163 @@
+{
+  "signature": {
+    "model": "/vol/full/work/syllable-1000/extended",
+    "revision": null,
+    "tokenizer_sha256": "871b4675483d68741d8f4a4038f436a43d3c819c6dd525bb873f40d821674882",
+    "snapshot_sha256": null,
+    "vi_docs_sha256": null,
+    "en_docs_sha256": null,
+    "belebele_sha256": null,
+    "prompt": "{passage}\nC\u00e2u h\u1ecfi: {question}\nTr\u1ea3 l\u1eddi:",
+    "speed_prompts": 20,
+    "speed_prompt_chars": 500,
+    "new_tokens": 256,
+    "batch_size": 8,
+    "dtype": "fp16",
+    "device": "cuda",
+    "lm": {
+      "fineweb2": "c51abe2e5449c98eb596db6668c0021cea20843c43c900dfce589c7258c9fb95",
+      "wikipedia": "137bb832ad8916712ab4324be7e58d01ed10ea7f02213ea184ce3634772be2f2",
+      "legal": "065e6d141d7420bdfab83ceefb842d4d5797b5c8bca624675b3a6bc6ed512e8a",
+      "flores": "a7aab2a0a916c7ef0cc3a01436c860159a2477f1075c40dd36ca135b0ecaf7f1",
+      "english": "0f4c85218eb1d3ab56fdb679557d09f62cd89af8c719f036c9b5a00061919279"
+    },
+    "mc": {
+      "belebele": "626613942eb71a2511e03d90c979628c862d8c6a8efa19136a67406ea0e0f0ae",
+      "global_mmlu": "1ce226ced480e544ee0e9c99e56aab5bf8dbf68e51a404843ef369e13de26913",
+      "xnli": "599a861de508e4395db5e9f89923c0375a29ea42434db3274088a892f2dccf48",
+      "okapi_arc": "42630d0206d27e10138c3edb50693fa55676994d179156efbf8f659245debdc1",
+      "okapi_hellaswag": "2cae9572309c4a66d4dc4df5a1fc80abbf88d8f3dfd99d40fe6984698c3b868f",
+      "hellaswag_en": "0f5b54ec506d69e2b6e65f2402464ed42d0534fa40b57071a54386632b7f9014"
+    },
+    "speed_docs_sha256": "c51abe2e5449c98eb596db6668c0021cea20843c43c900dfce589c7258c9fb95"
+  },
+  "snapshot": null,
+  "lm": {
+    "fineweb2": {
+      "docs": 1000,
+      "chars": 2103163,
+      "tokens": 576721,
+      "bpc": 1.511783573081587,
+      "chars_per_token": 3.6467598717577476,
+      "timing": {
+        "seconds": 0.03837585799988119,
+        "scored": 0
+      }
+    },
+    "wikipedia": {
+      "docs": 1000,
+      "chars": 2496832,
+      "tokens": 729967,
+      "bpc": 1.4921391479441182,
+      "chars_per_token": 3.4204724323154334,
+      "timing": {
+        "seconds": 0.04192491200001314,
+        "scored": 0
+      }
+    },
+    "legal": {
+      "docs": 1000,
+      "chars": 2492919,
+      "tokens": 741502,
+      "bpc": 1.0240246030085087,
+      "chars_per_token": 3.3619855374631493,
+      "timing": {
+        "seconds": 12.242905743999927,
+        "scored": 616
+      }
+    },
+    "flores": {
+      "docs": 1012,
+      "chars": 138595,
+      "tokens": 36837,
+      "bpc": 1.8842685391632108,
+      "chars_per_token": 3.7623856448679316,
+      "timing": {
+        "seconds": 5.81231827900001,
+        "scored": 1012
+      }
+    },
+    "english": {
+      "docs": 1000,
+      "chars": 1655704,
+      "tokens": 374912,
+      "bpc": 1.1243393254059377,
+      "chars_per_token": 4.416247012632298,
+      "timing": {
+        "seconds": 10.971959917999811,
+        "scored": 1000
+      }
+    }
+  },
+  "mc": {
+    "belebele": {
+      "items": 900,
+      "acc_char": 0.33555555555555555,
+      "acc_sum": 0.33555555555555555,
+      "timing": {
+        "seconds": 21.238419041000043,
+        "scored": 900
+      }
+    },
+    "global_mmlu": {
+      "items": 14036,
+      "acc_char": 0.2757195782274152,
+      "acc_sum": 0.2524223425477344,
+      "timing": {
+        "seconds": 329.0535637600001,
+        "scored": 14036
+      }
+    },
+    "xnli": {
+      "items": 5010,
+      "acc_char": 0.4117764471057884,
+      "acc_sum": 0.4231536926147705,
+      "timing": {
+        "seconds": 83.99841457899993,
+        "scored": 5010
+      }
+    },
+    "okapi_arc": {
+      "items": 1166,
+      "acc_char": 0.2804459691252144,
+      "acc_sum": 0.24099485420240138,
+      "timing": {
+        "seconds": 25.881566435999957,
+        "scored": 1166
+      }
+    },
+    "okapi_hellaswag": {
+      "items": 9162,
+      "acc_char": 0.332787600960489,
+      "acc_sum": 0.30397293167430695,
+      "timing": {
+        "seconds": 213.59297027700018,
+        "scored": 9162
+      }
+    },
+    "hellaswag_en": {
+      "items": 10042,
+      "acc_char": 0.4735112527384983,
+      "acc_sum": 0.3743278231428002,
+      "timing": {
+        "seconds": 229.74117742599992,
+        "scored": 10042
+      }
+    }
+  },
+  "generation": {
+    "prompts": 20,
+    "new_tokens": 256,
+    "decode_chars_per_second": 110.56657244239614,
+    "decode_tokens_per_second": 31.24734120892277,
+    "prefill_chars_per_second": 12723.296888478872,
+    "generated_chars_per_token": 3.524609375,
+    "repetition_4_mean": 0.6633427739303124,
+    "max_memory_gib": 3.4382190704345703,
+    "timing": {
+      "seconds": 164.4316509800003,
+      "scored": 20
+    }
+  },
+  "device_name": "NVIDIA A100-SXM4-40GB"
+}

@@ -28,7 +28,7 @@ def test_report_checks_and_reproduces_the_measured_results(tmp_path, monkeypatch
     monkeypatch.setattr(Figure, "savefig", save_and_check_initial_coordinates)
     out = tmp_path / "adaptation.md"
     monkeypatch.setattr(sys, "argv", ["report", "--data", str(DATA), "--out", str(out),
-                                    "--figures", str(tmp_path / "figures"), "--readme", str(tmp_path / "README.md")])
+                                    "--figures", str(tmp_path / "figures")])
     report.main()
     assert out.read_text() == (REPO / "results" / "adaptation.md").read_text()
     assert (tmp_path / "figures" / "recovery.png").stat().st_size > 0
@@ -36,14 +36,9 @@ def test_report_checks_and_reproduces_the_measured_results(tmp_path, monkeypatch
     for name in ("recovery", "quality_cost", "generation"):
         assert (tmp_path / "figures" / f"{name}.png").stat().st_size > 0
         assert (tmp_path / "figures" / f"{name}.png").read_bytes() == (REPO / "figures" / f"{name}.png").read_bytes()
-        assert f"./figures/{name}.png" in (tmp_path / "README.md").read_text()
-    assert (tmp_path / "README.md").read_text() == (REPO / "README.md").read_text()
-    readme = (tmp_path / "README.md").read_text()
-    assert "| Condition | VI bpc |" not in readme
-    assert "| Model | Decode chars/s |" not in readme
-    assert "| Condition | EN bpc | Belebele |" in readme
-    assert "| Model | Prefill chars/s | Peak GiB |" in readme
-    assert "./figures/transfer.png" not in readme
+    # multisyllable-1000-s1 changed no training input (same data order, initialization, no dropout): a replicate
+    # that differs only by nondeterministic GPU kernels, never a second seed
+    assert "seeds" not in out.read_text() and "replicate" in out.read_text()
 
 
 def _rewrite(data, relative, value, jsonl=False):

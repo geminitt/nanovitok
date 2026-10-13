@@ -168,7 +168,7 @@ def test_bad_inputs_are_refused(setup, tmp_path):
                            (["--eos-token", "<none>"], "has no")]:
         with pytest.raises(SystemExit, match=message):
             score.run(args(d, tmp_path / message.replace(" ", "-"), *extra))
-    with pytest.raises(SystemExit, match="from --vi-docs"):
+    with pytest.raises(SystemExit, match="takes its prompts from --speed-docs"):
         score.parse_args(["--model", "m", "--tokenizer", "t", "--speed-prompts", "1", "--out", "o"])
 
 
@@ -374,3 +374,90 @@ def test_comparison_reports_snapshots_and_skips_parts_one_side_lacks(setup, tmp_
     assert c["snapshot"]["step"] == 7 and c["snapshot_reference"] is None and "belebele" not in c
     c2 = compare.compare(tmp_path / "ref", tmp_path / "run")
     assert c2["snapshot"] is None and c2["snapshot_reference"]["tokens"] == 70 and "belebele" not in c2
+
+
+# ---- named language-modeling and multiple-choice sets (the token-type experiment, vitok.evalsets format) ----
+
+def mc_items():
+    items = [{"id": f"m{i}", "context": SENTENCES[i] + "\nTrả lời:", "gold": i % 3,
+              "choices": [" " + SENTENCES[(i + k) % 8][:15 + 5 * k] for k in range(3)]} for i in range(5)]
+    # str.splitlines() breaks at these, inside a JSON string; Global-MMLU holds a U+0085 (NEL) in one question
+    items[1]["context"] = items[1]["context"].replace(" ", "\x85", 1)
+    items[2]["choices"][1] += "\u2028"
+    return items
+
+
+def named_args(d, out, *extra):
+    (d / "mc.jsonl").write_text("".join(json.dumps(it, ensure_ascii=False) + "\n" for it in mc_items()), "utf-8")
+    return score.parse_args(["--model", str(d / "model"), "--tokenizer", str(d / "multi.json"), "--batch-size", "2",
+                             "--lm", f"web={d / 'vi.jsonl'}", f"english={d / 'en.jsonl'}",
+                             "--mc", f"quiz={d / 'mc.jsonl'}",
+                             "--speed-docs", str(d / "vi.jsonl"), "--speed-prompts", "1", "--new-tokens", "4",
+                             "--out", str(out), *extra])
+
+
+def test_named_sets_are_scored_like_the_fixed_parts(setup, tmp_path):
+    d, model, tok = setup
+    assert score.run(named_args(d, tmp_path)) == 0
+    s = json.loads((tmp_path / "summary.json").read_text())
+    web = records(tmp_path, "lm_web")
+    texts = [json.loads(line)["text"] for line in (d / "vi.jsonl").read_text().splitlines()]
+    eos = tok.token_to_id("<|endoftext|>")
+    seq = [eos] + tok.encode(texts[5], add_special_tokens=False).ids
+    assert web[5]["nats"] == pytest.approx(-reference_logprob(model, seq, 1), rel=1e-5)
+    assert s["lm"]["web"]["bpc"] == pytest.approx(sum(r["nats"] for r in web) / (math.log(2) * sum(map(len, texts))))
+    assert s["lm"]["english"]["docs"] == 1
+    quiz = records(tmp_path, "mc_quiz")
+    it = mc_items()[3]
+    ctx = tok.encode(it["context"], add_special_tokens=False).ids
+    ans = tok.encode(it["choices"][2], add_special_tokens=False).ids
+    assert quiz[3]["logprobs"][2] == pytest.approx(reference_logprob(model, ctx + ans, len(ctx)), rel=1e-5)
+    for r, item in zip(quiz, mc_items(), strict=True):
+        assert r["id"] == item["id"] and r["gold"] == item["gold"] and r["chars"] == list(map(len, item["choices"]))
+        per_char = [v / c for v, c in zip(r["logprobs"], r["chars"], strict=True)]
+        assert r["correct_char"] == (per_char.index(max(per_char)) == r["gold"])
+    timing = s["mc"]["quiz"].pop("timing")
+    assert s["mc"]["quiz"] == {"items": 5, "acc_char": sum(r["correct_char"] for r in quiz) / 5,
+                               "acc_sum": sum(r["correct_sum"] for r in quiz) / 5}
+    # every part records the seconds this run spent on it and how many items it scored, so rates are measured
+    assert timing["scored"] == 5 and timing["seconds"] > 0
+    assert s["lm"]["web"]["timing"]["scored"] == len(texts) and s["generation"]["timing"]["scored"] == 1
+    assert len(records(tmp_path, "generation")) == 1 and "vi" not in s
+    sig = json.loads((tmp_path / "signature.json").read_text())
+    assert set(sig["lm"]) == {"web", "english"} and set(sig["mc"]) == {"quiz"}
+
+
+def test_named_sets_resume_after_a_deadline_and_refuse_other_files(setup, tmp_path):
+    d, _, _ = setup
+    assert score.run(named_args(d, tmp_path / "whole")) == 0
+    out = tmp_path / "pieces"
+    while score.run(named_args(d, out, "--deadline-minutes", "0")) == score.EXIT_INCOMPLETE:
+        pass
+    for part in ("lm_web", "lm_english", "mc_quiz"):
+        assert records(out, part) == records(tmp_path / "whole", part)
+    whole, pieces = (json.loads((x / "summary.json").read_text()) for x in (tmp_path / "whole", out))
+    assert pieces["lm"]["web"]["timing"]["scored"] < whole["lm"]["web"]["timing"]["scored"]  # only the last piece
+    (tmp_path / "other.jsonl").write_text(json.dumps({"text": "khác"}) + "\n", "utf-8")
+    a = named_args(d, out)
+    a.lm = [("web", tmp_path / "other.jsonl"), ("english", d / "en.jsonl")]
+    with pytest.raises(SystemExit, match=r"differs in \['lm'\]"):
+        score.run(a)
+
+
+@pytest.mark.parametrize("bad,message", [(["--lm", "web"], "name=file"), (["--mc", "=x"], "name=file"),
+                                         (["--lm", "a=x", "a=y"], "named twice"),
+                                         (["--speed-prompts", "2"], "--speed-docs")])
+def test_named_set_arguments_are_checked(bad, message, capsys):
+    with pytest.raises(SystemExit) as e:
+        score.parse_args(["--model", "m", "--tokenizer", "t", "--out", "o", *bad])
+    assert message in str(e.value) + capsys.readouterr().err
+
+
+def test_a_second_process_cannot_write_into_a_running_evaluation(setup, tmp_path):
+    import fcntl
+    d, _, _ = setup
+    tmp_path.mkdir(exist_ok=True)
+    with open(tmp_path / ".lock", "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(SystemExit, match="another process is writing"):
+            score.run(named_args(d, tmp_path))

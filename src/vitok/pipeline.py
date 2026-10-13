@@ -26,7 +26,9 @@ from pathlib import Path
 from vitok.adapt import EXIT_INCOMPLETE
 
 TRAIN_KEYS = ("steps", "batch", "micro_batch", "seq_len", "lr", "embed_lr", "warmup", "min_lr_ratio", "weight_decay",
-              "grad_clip", "layers", "dtype", "save_every", "log_every")
+              "grad_clip", "layers", "dtype", "save_every", "log_every", "dev_every", "dev_batch", "snapshot_dtype",
+              "dev_dtype")
+CONDITION_KEYS = ("tokenizer", "seed", "lr", "embed_lr")  # a learning rate per condition: chosen by the dev sweep
 SCORE_KEYS = ("batch_size", "dtype")
 SPEED_KEYS = ("speed_prompts", "speed_prompt_chars", "new_tokens")  # measured before training and on the final weights
 
@@ -37,13 +39,21 @@ class Incomplete(Exception):
 
 def load_config(path: Path) -> dict:
     cfg = json.loads(path.read_text(encoding="utf-8"))
-    missing = [k for k in ("model", "revision", "base_tokenizer", "check_texts", "conditions", "train", "score",
-                           "shards", "held_out") if k not in cfg]
+    missing = [k for k in ("model", "revision", "base_tokenizer", "check_texts", "conditions", "train", "score")
+               if k not in cfg]
     if missing:
         raise ValueError(f"{path} lacks {missing}")
+    if ("streams" in cfg) == ("shards" in cfg or "held_out" in cfg) or ("shards" in cfg) != ("held_out" in cfg):
+        raise ValueError(f"{path} must give either shards and held_out or streams (one folder per seed)")
     for name, cond in cfg["conditions"].items():
         if "tokenizer" not in cond:
             raise ValueError(f"condition {name} has no tokenizer")
+        if set(cond) - set(CONDITION_KEYS):
+            extra = sorted(set(cond) - set(CONDITION_KEYS))
+            raise ValueError(f"condition {name} may set only {CONDITION_KEYS}, not {extra}")
+        seed = str(cond.get("seed", cfg["train"].get("seed", 0)))
+        if "streams" in cfg and seed not in cfg["streams"]:
+            raise ValueError(f"condition {name} has no stream for seed {seed}")
     unknown = set(cfg["train"]) - set(TRAIN_KEYS) - {"seed", "snapshot_steps", "grad_checkpointing"}
     if unknown:
         raise ValueError(f"unknown training settings {sorted(unknown)}")
@@ -79,15 +89,23 @@ def commands(cfg: dict, name: str, work: Path) -> list[tuple[str, Path, list[str
     for part in ("vi_docs", "en_docs", "belebele"):
         if cfg["score"].get(part):
             score += [f"--{part.replace('_', '-')}", cfg["score"][part]]
+    for kind in ("lm", "mc"):
+        if cfg["score"].get(kind):
+            score += [f"--{kind}", *(f"{n}={p}" for n, p in cfg["score"][kind].items())]
     speed = _flags(cfg["score"], SPEED_KEYS)
+    if cfg["score"].get("speed_docs") and speed:
+        speed += ["--speed-docs", cfg["score"]["speed_docs"]]
     if cfg["score"].get("before_training", True):
         steps.append(("score-before", out / "score-before" / "summary.json",
                       score + speed + ["--out", str(out / "score-before")]))
-    train = cfg["train"]
+    train = cfg["train"] | {k: cond[k] for k in ("lr", "embed_lr") if k in cond}
     seed = cond.get("seed", train.get("seed", 0))
+    data = (["--stream", cfg["streams"][str(seed)]] if "streams" in cfg
+            else ["--shards", *cfg["shards"], "--held-out", *cfg["held_out"]])
+    dev = ["--dev-docs", cfg["dev_docs"]] if cfg.get("dev_docs") else []
     steps.append(("adapt", out / "train" / "final.pt",
                   py + ["vitok.adapt", "--model", model, *revision, "--base-tokenizer", cfg["base_tokenizer"],
-                        "--tokenizer", cond["tokenizer"], "--shards", *cfg["shards"], "--held-out", *cfg["held_out"],
+                        "--tokenizer", cond["tokenizer"], *data, *dev,
                         "--out", str(out / "train"), "--seed", str(seed), *_flags(train, TRAIN_KEYS),
                         *(["--grad-checkpointing"] if train.get("grad_checkpointing") else []),
                         *(["--snapshot-steps", *map(str, train["snapshot_steps"])]

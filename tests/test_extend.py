@@ -58,6 +58,20 @@ def test_extension_keeps_old_rows_and_logits_and_sets_new_rows_to_the_mean(token
         o = original.get_output_embeddings().weight
         for i, ids in pieces.items():
             torch.testing.assert_close(head[i], o[ids].mean(0))
+    # rows the resize adds beyond the new ids (padding to a multiple of 64) are fixed, not random: the mean of the
+    # original rows no token used, so a rerun extends to the same weights whatever the global random state
+    runs = []
+    for seed in (1, 2):  # each process starts from its own random state
+        model = tiny_qwen3(rows, tied)
+        torch.manual_seed(seed)
+        runs.append(extend.extend(model, pieces))
+    assert all(torch.equal(a, b) for a, b in zip(runs[0].state_dict().values(), runs[1].state_dict().values(),
+                                                 strict=True))
+    spare = original.get_input_embeddings().weight[min(pieces):rows]
+    fill = spare.mean(0) if len(spare) else torch.zeros(emb.shape[1])
+    for i in range(rows, emb.shape[0]):
+        if i not in pieces:
+            torch.testing.assert_close(emb[i], fill)
     # a sentence that uses new tokens runs and gives finite logits over the grown vocabulary
     ids = new.encode(SENTENCES[1], add_special_tokens=False).ids
     assert any(i in pieces for i in ids)

@@ -58,7 +58,7 @@ Notebook wall time: 1127.766 seconds, excluding platform startup/teardown.
 | multisyllable-1000 | 37 | 34 | 0.812589 |
 | multisyllable-1000-s1 | 40 | 37 | 0.819893 |
 
-Intervals resample documents and do not cover full training-seed uncertainty. Two multisyllable seeds and one base seed were run. The canonical-versus-marginal text likelihood gap is unmeasured.
+Intervals resample documents and do not cover run-to-run training variation. multisyllable-1000-s1 is a replicate of multisyllable-1000 (same data order and initialization; only nondeterministic GPU kernels differ), not a second seed. The canonical-versus-marginal text likelihood gap is unmeasured.
 All conditions processed 19,660,800 tokens. fp16 scaling skipped updates on non-finite gradients; losses and saved tensors are finite. No clear Belebele improvement was established.
 
 | Condition | Processed steps | Successful updates | Characters read |

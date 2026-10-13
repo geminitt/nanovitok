@@ -93,3 +93,77 @@ def t_quantile(p: float, df: int) -> float:
         mid = (lo + hi) / 2
         lo, hi = (mid, hi) if t_cdf(mid, df) < p else (lo, mid)
     return (lo + hi) / 2
+
+
+def stratified_relative_bootstrap(domains: dict, n: int = 10_000, seed: int = 0) -> dict:
+    """Macro mean over domains of the relative bpc difference sum(nats_a) / sum(nats_b) - 1, with a paired bootstrap
+    that resamples documents within each domain (PLAN.md, primary metric). `domains`: name -> (nats_a, nats_b).
+
+    Within a domain both models score the same documents, so the ratio of nats is the ratio of bpc; every domain
+    weighs the same in the mean however many characters it has.
+    """
+    assert domains and n > 0
+    rng = np.random.default_rng(seed)
+    per_domain, draws = {}, []
+    for name in sorted(domains):  # fixed order: the generator's stream does not depend on dict order
+        a, b = (np.asarray(x, dtype=np.float64) for x in domains[name])
+        assert a.shape == b.shape and a.ndim == 1 and len(a) > 0 and b.sum() > 0, name
+        per_domain[name] = float(a.sum() / b.sum() - 1)
+        idx = rng.integers(0, len(a), size=(n, len(a)))
+        draws.append(a[idx].sum(axis=1) / b[idx].sum(axis=1) - 1)
+    macro = np.mean(draws, axis=0)
+    lo, hi = np.percentile(macro, [2.5, 97.5])
+    point = float(np.mean(list(per_domain.values())))
+    assert lo <= hi
+    return {"macro_rel_diff": point, "ci95": [float(lo), float(hi)], "per_domain": per_domain}
+
+
+def decide(intervals: list) -> str:
+    """The plan's rule for A against B from the 95% intervals of rel. bpc(A) / bpc(B) - 1, one per seed pairing:
+    A is better when every interval lies below 0, B when every one lies above, otherwise not distinguishable."""
+    assert intervals and all(lo <= hi for lo, hi in intervals)
+    if all(hi < 0 for _, hi in intervals):
+        return "A better"
+    if all(lo > 0 for lo, _ in intervals):
+        return "B better"
+    return "not distinguishable"
+
+
+def binomial_lower(k: int, n: int, level: float = 0.95) -> float:
+    """Lower end of the two-sided Clopper-Pearson interval of a proportion k / n (0 when k == 0)."""
+    assert 0 <= k <= n and n > 0 and 0 < level < 1
+    if k == 0:
+        return 0.0
+    target, lo, hi = (1 - level) / 2, 0.0, k / n
+    for _ in range(200):  # P(X >= k | p) = I_p(k, n - k + 1) rises with p; find where it equals the tail
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if _betainc(k, n - k + 1, mid) < target else (lo, mid)
+    return (lo + hi) / 2
+
+
+def paired_bootstrap_mean_bpc(group_a: list, group_b: list, chars, n: int = 10_000, seed: int = 0) -> dict:
+    """mean bpc of the runs in group_a minus mean bpc of the runs in group_b, every run scored on the same documents
+    (per-document nats), with a paired bootstrap over documents (PLAN.md, choice of N: the mean over token types)."""
+    a, b = (np.asarray(g, dtype=np.float64) for g in (group_a, group_b))
+    chars = np.asarray(chars, dtype=np.float64)
+    assert a.ndim == b.ndim == 2 and a.shape[1] == b.shape[1] == len(chars) > 0 and len(a) and len(b)
+    rng = np.random.default_rng(seed)
+    diffs = []
+    for start in range(0, n, 500):
+        idx = rng.integers(0, len(chars), size=(min(500, n - start), len(chars)))
+        c = chars[idx].sum(axis=1) * math.log(2)
+        diffs.append(np.mean([r[idx].sum(axis=1) / c for r in a], axis=0)
+                     - np.mean([r[idx].sum(axis=1) / c for r in b], axis=0))
+    d = np.concatenate(diffs)
+    lo, hi = np.percentile(d, [2.5, 97.5])
+    point = float(np.mean([bpc(r, chars) for r in a]) - np.mean([bpc(r, chars) for r in b]))
+    assert lo <= hi
+    return {"diff": point, "ci95": [float(lo), float(hi)]}
+
+
+def choose_n(small: list, large: list, chars, n_small: int, n_large: int) -> tuple[int, dict]:
+    """PLAN.md: the N with the lower mean dev bpc over the token types wins; a tie (the interval contains 0) goes to
+    the larger N. `small` / `large`: per-document nats of each token type's run at that N."""
+    out = paired_bootstrap_mean_bpc(small, large, chars)
+    lo, hi = out["ci95"]
+    return (n_small if hi < 0 else n_large), out
