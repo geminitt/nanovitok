@@ -12,6 +12,7 @@ the end, and returns the outcome. Rerunning the same command resumes from the ch
 """
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -20,6 +21,15 @@ import modal
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 from vitok import remote  # noqa: E402  (after the path: the SDK's Python does not have the package installed)
+
+
+def _commit() -> str:
+    """HEAD at launch, marked dirty when the package source differs from it; the image records it for manifests."""
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", "src/vitok"], cwd=REPO, capture_output=True,
+                           text=True).stdout.strip()
+    return (head or "unknown") + ("-dirty" if dirty else "")
+
 
 MODEL = (Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots" / remote.MODEL_REVISION)
 # timeouts from the smoke run's measurements (history/stage5-smoke-2026-10-13.md); each bound = timeout × listed rates
@@ -39,10 +49,17 @@ volume = modal.Volume.from_name("nanovitok-token-type", create_if_missing=True)
 image = (modal.Image.debian_slim(python_version="3.12")
          .pip_install(*(f"{p}=={v}" for p, v in remote.PACKAGES.items()))
          .env({"PYTHONPATH": "/opt/src", "HF_HUB_OFFLINE": "1", "TOKENIZERS_PARALLELISM": "false",
-               "VITOK_MODEL_DIR": "/opt/model"})
+               "VITOK_MODEL_DIR": "/opt/model", "VITOK_GIT_COMMIT": _commit()})
          .add_local_dir(REPO / "src" / "vitok", "/opt/src/vitok"))
 for name in ("config.json", "generation_config.json", "model.safetensors"):
     image = image.add_local_file(MODEL / name, "/opt/model/" + name)
+
+
+def _code() -> dict:
+    """The code a job ran: the launch commit and the digest of the package inside the image."""
+    import os
+    return {"git_commit": os.environ.get("VITOK_GIT_COMMIT", "unknown"),
+            "source_sha256": remote.source_sha256(Path("/opt/src/vitok"))}
 
 
 def _run(config: str, conditions: list[str], job: remote.Job, queue_minutes: float = 0.0) -> dict:
@@ -56,7 +73,8 @@ def _run(config: str, conditions: list[str], job: remote.Job, queue_minutes: flo
     work = Path(config).parent / "work"
     work.mkdir(parents=True, exist_ok=True)
     (work / f"environment-{'-'.join(conditions)}.json").write_text(json.dumps(
-        pre | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version}, indent=2))
+        pre | _code() | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version},
+        indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
         minutes = min(queue_minutes, job.queue_minutes()) if queue_minutes > 0 else job.queue_minutes()
         result = remote.run_queue(Path(config), conditions, work, minutes)
@@ -133,7 +151,8 @@ def _evaluate(plan: str, jobs: list[str], job: remote.Job) -> dict:
     pre = remote.preflight(installed, torch.cuda.is_available(), torch.cuda.is_available()
                            and torch.cuda.is_bf16_supported(), remote.free_gib(Path(remote.VOLUME_ROOT)), 5)
     (Path(plan).parent / f"environment-evaluate-{'-'.join(jobs)}.json").write_text(json.dumps(
-        pre | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version}, indent=2))
+        pre | _code() | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version},
+        indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
         result = remote.run_evaluation(Path(plan), jobs, job.queue_minutes())
     result["commit_errors"] = pc.errors

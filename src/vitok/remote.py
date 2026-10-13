@@ -144,3 +144,13 @@ def run_evaluation(plan: Path, jobs: list[str], minutes: float,
 
 def free_gib(path: Path) -> float:
     return shutil.disk_usage(path).free / 2**30
+
+
+def source_sha256(folder: Path) -> str:
+    """Digest of the package source a job ran (relative path and bytes of every .py file), to name the code exactly."""
+    import hashlib
+    h = hashlib.sha256()
+    for f in sorted(folder.rglob("*.py")):
+        if "__pycache__" not in f.parts:
+            h.update(f.relative_to(folder).as_posix().encode() + b"\0" + f.read_bytes() + b"\0")
+    return h.hexdigest()

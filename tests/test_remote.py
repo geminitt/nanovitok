@@ -82,3 +82,17 @@ def test_an_evaluation_queue_runs_with_its_deadline_and_its_own_log(tmp_path):
     assert a[a.index("--jobs") + 1:a.index("--deadline-minutes")] == ["original", "base-final"]
     assert seen["log"] == tmp_path / "evaluate-original-base-final.log"
     assert out["exit_code"] == 0 and out["jobs"] == {"original": {"status": "done"}}
+
+
+def test_the_source_digest_follows_the_code_and_ignores_caches(tmp_path):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
+    first = remote.source_sha256(tmp_path / "pkg")
+    (tmp_path / "pkg" / "__pycache__").mkdir()
+    (tmp_path / "pkg" / "__pycache__" / "a.cpython-312.pyc").write_bytes(b"\0")
+    assert remote.source_sha256(tmp_path / "pkg") == first
+    (tmp_path / "pkg" / "a.py").write_text("x = 2\n")
+    assert remote.source_sha256(tmp_path / "pkg") != first
+    (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
+    (tmp_path / "pkg" / "b.py").write_text("")
+    assert remote.source_sha256(tmp_path / "pkg") != first
