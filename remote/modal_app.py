@@ -27,7 +27,11 @@ JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_secon
         "probe_n": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500),
         "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=2700),
         # one condition per call: 1,526 steps × ≈4.7 s + checkpoints, dev curve, snapshots ≈ 8,014 s measured basis
-        "full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=9300)}
+        "full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=9300),
+        # fp16 scoring measured 3.65x faster than fp32 on the dev set; six models × (11 sets ≈ 383 s, 20 generations
+        # ≈ 152 s, loading ≈ 40 s) ≈ 3,450 s; 27 snapshots × (5 bpc sets ≈ 68 s, loading ≈ 40 s) ≈ 2,920 s
+        "eval_full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=4200),
+        "eval_curve": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=3600)}
 
 app = modal.App("nanovitok-token-type")
 FUNCTION = dict(retries=0, max_containers=1, scaledown_window=2, single_use_containers=True)
@@ -118,3 +122,45 @@ def full_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -
 def full(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
     """One condition per launch; three launches run in parallel containers (each its own bound)."""
     _launch("full", full_queue, config, conditions, approved_max_usd, queue_minutes)
+
+
+def _evaluate(plan: str, jobs: list[str], job: remote.Job) -> dict:
+    from importlib.metadata import version
+
+    import torch
+
+    installed = {p: version(p) for p in remote.PACKAGES}
+    pre = remote.preflight(installed, torch.cuda.is_available(), torch.cuda.is_available()
+                           and torch.cuda.is_bf16_supported(), remote.free_gib(Path(remote.VOLUME_ROOT)), 5)
+    (Path(plan).parent / f"environment-evaluate-{'-'.join(jobs)}.json").write_text(json.dumps(
+        pre | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version}, indent=2))
+    with remote.PeriodicCommit(volume.commit) as pc:
+        result = remote.run_evaluation(Path(plan), jobs, job.queue_minutes())
+    result["commit_errors"] = pc.errors
+    return result
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **FUNCTION, **_resources("eval_full"))
+def eval_full_queue(plan: str, jobs: list[str]) -> dict:
+    return _evaluate(plan, jobs, JOBS["eval_full"])
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **FUNCTION, **_resources("eval_curve"))
+def eval_curve_queue(plan: str, jobs: list[str]) -> dict:
+    return _evaluate(plan, jobs, JOBS["eval_curve"])
+
+
+def _launch_eval(name: str, fn, plan: str, jobs: str, approved_max_usd: float):
+    bound = remote.check_approval(JOBS[name], approved_max_usd or None)
+    print(f"{name}: bound ${bound:.2f} (timeout at listed rates; startup, image build and storage are billed outside)")
+    print(json.dumps(fn.remote(plan, jobs.split()), indent=2))
+
+
+@app.local_entrypoint()
+def eval_full(plan: str, jobs: str, approved_max_usd: float = 0.0):
+    _launch_eval("eval_full", eval_full_queue, plan, jobs, approved_max_usd)
+
+
+@app.local_entrypoint()
+def eval_curve(plan: str, jobs: str, approved_max_usd: float = 0.0):
+    _launch_eval("eval_curve", eval_curve_queue, plan, jobs, approved_max_usd)

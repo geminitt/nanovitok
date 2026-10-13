@@ -121,5 +121,26 @@ def run_queue(config: Path, conditions: list[str], work: Path, minutes: float,
     return result
 
 
+def run_evaluation(plan: Path, jobs: list[str], minutes: float,
+                   run: Callable[[list[str], Path], int] | None = None) -> dict:
+    """Run evaluation jobs (`vitok.evaluate`) with their own deadline; logs and outcome next to the plan."""
+    tag = "-".join(jobs)
+    log_path = plan.parent / f"evaluate-{tag}.log"
+    argv = [sys.executable, "-m", "vitok.evaluate", "--plan", str(plan), "--jobs", *jobs,
+            "--deadline-minutes", f"{minutes:.2f}"]
+    started = time.monotonic()
+    if run is not None:
+        code = run(argv, log_path)
+    else:
+        with open(log_path, "a", encoding="utf-8") as log:
+            code = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
+                                    env={**os.environ, "TOKENIZERS_PARALLELISM": "false"}).wait()
+    outcome = plan.parent / f"evaluate-{tag}.json"
+    result = {"exit_code": code, "seconds": time.monotonic() - started,
+              "jobs": json.loads(outcome.read_text()) if outcome.exists() else {}}
+    (plan.parent / f"result-evaluate-{tag}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    return result
+
+
 def free_gib(path: Path) -> float:
     return shutil.disk_usage(path).free / 2**30

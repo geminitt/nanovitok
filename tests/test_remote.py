@@ -66,3 +66,19 @@ def test_the_queue_runs_the_pipeline_with_its_deadline_and_records_the_outcome(t
     # (Modal volumes: concurrent writes to one file are last-write-wins)
     assert seen["log"] == tmp_path / "queue-base-multisyllable.log"
     assert json.loads((tmp_path / "result-base-multisyllable.json").read_text())["exit_code"] == 0
+
+
+def test_an_evaluation_queue_runs_with_its_deadline_and_its_own_log(tmp_path):
+    seen = {}
+
+    def fake(argv, log):
+        seen["argv"], seen["log"] = argv, log
+        (tmp_path / "evaluate-original-base-final.json").write_text(json.dumps({"original": {"status": "done"}}))
+        return 0
+
+    out = remote.run_evaluation(tmp_path / "plan.json", ["original", "base-final"], 20.0, run=fake)
+    a = seen["argv"]
+    assert a[1:3] == ["-m", "vitok.evaluate"] and a[a.index("--plan") + 1] == str(tmp_path / "plan.json")
+    assert a[a.index("--jobs") + 1:a.index("--deadline-minutes")] == ["original", "base-final"]
+    assert seen["log"] == tmp_path / "evaluate-original-base-final.log"
+    assert out["exit_code"] == 0 and out["jobs"] == {"original": {"status": "done"}}
