@@ -113,3 +113,11 @@ def test_the_launch_commit_names_head_marks_a_dirty_package_and_survives_a_missi
     assert remote.launch_commit(tmp_path) == head + "-dirty"
     monkeypatch.setenv("PATH", str(tmp_path / "nothing"))  # inside a container image: no git at all
     assert remote.launch_commit(tmp_path) == "unknown"
+
+
+def test_a_job_tag_keeps_short_names_and_bounds_long_lists():
+    assert remote.job_tag(["original", "base-final"]) == "original-base-final"
+    many = [f"syllable-1000-step_{s:06d}" for s in range(0, 1400, 50)]
+    tag = remote.job_tag(many)
+    assert len(f"environment-evaluate-{tag}.json".encode()) <= 255 and tag.startswith(many[0])
+    assert tag != remote.job_tag(many[:-1]) and tag == remote.job_tag(list(many))

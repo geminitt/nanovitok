@@ -19,6 +19,7 @@ from pathlib import Path
 
 from vitok.adapt import EXIT_INCOMPLETE
 from vitok.pipeline import subprocess_run
+from vitok.remote import job_tag
 
 JOB_KEYS = {"model", "tokenizer", "sets", "out"}
 
@@ -84,7 +85,7 @@ def main(argv=None, run: Callable[[list[str], Path], int] = subprocess_run) -> i
         done = (Path(plan["jobs"][name]["out"]) / "summary.json").exists()
         outcome[name] = {"status": "done"} if code == 0 and done else \
             {"status": "failed", "error": f"exit code {code}" + ("" if done else ", no summary")}
-    tag = "-".join(args.jobs)
+    tag = job_tag(args.jobs)
     (args.plan.parent / f"evaluate-{tag}.json").write_text(json.dumps(outcome, indent=2), encoding="utf-8")
     print(json.dumps(outcome, indent=2), flush=True)
     if any(o["status"] == "failed" for o in outcome.values()):

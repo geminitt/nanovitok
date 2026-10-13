@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from vitok import evaluate
+from vitok import evaluate, remote
 from vitok.adapt import EXIT_INCOMPLETE
 
 
@@ -80,6 +80,15 @@ def test_finished_jobs_are_skipped_and_the_deadline_is_handed_down(tmp_path):
     assert evaluate.main(args, run=fake) == 0 and fake.calls == []
     out = json.loads((tmp_path / "evaluate-original-multi-final.json").read_text())
     assert out == {"original": {"status": "done"}, "multi-final": {"status": "done"}}
+
+
+def test_a_long_job_list_writes_its_outcome_under_a_bounded_name(tmp_path):
+    p = plan(tmp_path)
+    names = [f"multi-step_{s:06d}" for s in range(0, 1400, 50)]
+    p["jobs"] |= {n: p["jobs"]["multi-step_000153"] | {"out": str(tmp_path / n)} for n in names}
+    assert evaluate.main(["--plan", str(write(tmp_path, p)), "--jobs", *names, "--deadline-minutes", "30"],
+                         run=Fake()) == 0
+    assert (tmp_path / f"evaluate-{remote.job_tag(names)}.json").exists()
 
 
 def test_a_failure_is_isolated_and_a_deadline_stop_ends_the_queue(tmp_path):

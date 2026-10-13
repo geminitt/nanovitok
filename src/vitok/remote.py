@@ -103,7 +103,7 @@ def run_queue(config: Path, conditions: list[str], work: Path, minutes: float,
     work.mkdir(parents=True, exist_ok=True)
     argv = [sys.executable, "-m", "vitok.pipeline", "--config", str(config), "--conditions", *conditions,
             "--work", str(work), "--deadline-minutes", f"{minutes:.2f}"]
-    tag = "-".join(conditions)
+    tag = job_tag(conditions)
     log_path = work / f"queue-{tag}.log"  # one writer per file: parallel containers share `work`
     started = time.monotonic()
     if run is not None:
@@ -124,7 +124,7 @@ def run_queue(config: Path, conditions: list[str], work: Path, minutes: float,
 def run_evaluation(plan: Path, jobs: list[str], minutes: float,
                    run: Callable[[list[str], Path], int] | None = None) -> dict:
     """Run evaluation jobs (`vitok.evaluate`) with their own deadline; logs and outcome next to the plan."""
-    tag = "-".join(jobs)
+    tag = job_tag(jobs)
     log_path = plan.parent / f"evaluate-{tag}.log"
     argv = [sys.executable, "-m", "vitok.evaluate", "--plan", str(plan), "--jobs", *jobs,
             "--deadline-minutes", f"{minutes:.2f}"]
@@ -165,3 +165,13 @@ def launch_commit(repo: Path) -> str:
     except OSError:
         return "unknown"
     return (head or "unknown") + ("-dirty" if dirty else "")
+
+
+def job_tag(names: list[str], limit: int = 120) -> str:
+    """File-name tag for a list of jobs or conditions: the names joined when short, else the first name, the count
+    and a digest of the whole list (a 27-snapshot list joined is over the 255-byte file-name limit)."""
+    joined = "-".join(names)
+    if len(joined) <= limit:
+        return joined
+    import hashlib
+    return f"{names[0]}-and-{len(names) - 1}-more-{hashlib.sha256(joined.encode()).hexdigest()[:12]}"

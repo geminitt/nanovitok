@@ -64,7 +64,7 @@ def _run(config: str, conditions: list[str], job: remote.Job, queue_minutes: flo
                            and torch.cuda.is_bf16_supported(), remote.free_gib(Path(remote.VOLUME_ROOT)), 20)
     work = Path(config).parent / "work"
     work.mkdir(parents=True, exist_ok=True)
-    (work / f"environment-{'-'.join(conditions)}.json").write_text(json.dumps(
+    (work / f"environment-{remote.job_tag(conditions)}.json").write_text(json.dumps(
         pre | _code() | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version},
         indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
@@ -142,7 +142,7 @@ def _evaluate(plan: str, jobs: list[str], job: remote.Job) -> dict:
     installed = {p: version(p) for p in remote.PACKAGES}
     pre = remote.preflight(installed, torch.cuda.is_available(), torch.cuda.is_available()
                            and torch.cuda.is_bf16_supported(), remote.free_gib(Path(remote.VOLUME_ROOT)), 5)
-    (Path(plan).parent / f"environment-evaluate-{'-'.join(jobs)}.json").write_text(json.dumps(
+    (Path(plan).parent / f"environment-evaluate-{remote.job_tag(jobs)}.json").write_text(json.dumps(
         pre | _code() | {"gpu": torch.cuda.get_device_name(), "cuda": torch.version.cuda, "python": sys.version},
         indent=2))
     with remote.PeriodicCommit(volume.commit) as pc:
