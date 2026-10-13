@@ -108,3 +108,14 @@ def test_figures_and_tables_render_from_the_results(tmp_path):
         assert (tmp_path / "out" / f"{name}.png").stat().st_size > 10_000, name
     md = (tmp_path / "out" / "report.md").read_text()
     assert "| multisyllable-1000 vs base | -2.00% |" in md and "| easy | " in md and "A better" in md
+
+
+def test_the_token_savings_chart_names_every_domain(tmp_path, monkeypatch):
+    from vitok import cpt_figures
+    ev, tr = build(tmp_path)
+    cost = cpt_report.report(ev, tr, CHANCE, SNAPS)["cost"]["chars_per_token"]
+    figs = []
+    monkeypatch.setattr(cpt_figures, "save", lambda fig, path: figs.append(fig))
+    cpt_figures.token_savings(cost, tmp_path)
+    labels = [t.get_text() for t in figs[0].axes[0].get_xticklabels()]
+    assert labels == list(cpt_figures.DOMAINS.values())

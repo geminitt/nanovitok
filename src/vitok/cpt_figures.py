@@ -26,7 +26,7 @@ DOMAINS = {"fineweb2": "Web (FineWeb-2)", "wikipedia": "Wikipedia", "legal": "Le
            "english": "English (web)"}
 
 
-def style(ax, title: str, xlabel: str, ylabel: str):
+def style(ax, title: str, xlabel: str, ylabel: str, numeric_x: bool = True):
     ax.set_facecolor(SURFACE)
     ax.set_title(title, color=INK, fontsize=10, loc="left")
     ax.set_xlabel(xlabel, color=INK2, fontsize=9)
@@ -38,7 +38,8 @@ def style(ax, title: str, xlabel: str, ylabel: str):
     for side in ("left", "bottom"):
         ax.spines[side].set_color(AXIS)
     ax.tick_params(colors=MUTED, labelsize=8)
-    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))  # narrow small multiples: few x labels
+    if numeric_x:  # a category axis keeps its own ticks
+        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))  # narrow small multiples: few x labels
 
 
 def label_ends(ax, ends: dict[str, tuple[float, float]]):
@@ -139,7 +140,8 @@ def token_savings(cost: dict, out: Path):
                         color=INK2)
     ax.set_xticks(range(len(DOMAINS)), list(DOMAINS.values()))
     ax.set_ylim(0, 1.12 * max(cost[m][d] for m in models for d in DOMAINS))  # room for the value labels
-    style(ax, "Characters per token (higher = fewer tokens for the same text)", "", "characters per token")
+    style(ax, "Characters per token (higher = fewer tokens for the same text)", "", "characters per token",
+          numeric_x=False)
     legend_below(fig, ax)
     save(fig, out / "token_savings.png")
 
