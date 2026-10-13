@@ -130,6 +130,11 @@ def precision(dtype: str) -> tuple[torch.dtype | None, bool]:
     return {"fp32": (None, False), "fp16": (torch.float16, True), "bf16": (torch.bfloat16, False)}[dtype]
 
 
+def autocast_dtype(name: str, use_cuda: bool) -> torch.dtype | None:
+    """The autocast dtype of a precision setting on this device (autocast is CUDA only here)."""
+    return precision(name)[0] if use_cuda else None
+
+
 def lr_at(step: int, steps: int, peak: float, warmup: int, min_ratio: float) -> float:
     """Linear warmup to `peak`, then cosine decay to `peak * min_ratio` at the last step."""
     if step < warmup:
@@ -206,7 +211,7 @@ def signature(args, tok_sha: str, held_sha: list[str]) -> dict:
             "grad_clip": args.grad_clip, "grad_checkpointing": args.grad_checkpointing,
             "stream": _sha256(args.stream / "stream_manifest.json") if args.stream else None,
             "dev_sha256": _sha256(args.dev_docs) if args.dev_docs else None, "dev_every": args.dev_every,
-            "snapshot_dtype": args.snapshot_dtype}
+            "snapshot_dtype": args.snapshot_dtype, "dev_dtype": args.dev_dtype}
 
 
 def _rng_state() -> dict:
@@ -279,6 +284,8 @@ def parse_args(argv=None):
     ap.add_argument("--dev-every", type=int, default=0, help="score the dev documents every this many steps (and at "
                     "the start and the end)")
     ap.add_argument("--dev-batch", type=int, default=8)
+    ap.add_argument("--dev-dtype", choices=["fp32", "fp16", "bf16"], default="fp32",
+                    help="precision of the dev scores (bf16 rounds per-document nats ~10x more than fp16)")
     ap.add_argument("--snapshot-dtype", choices=["fp32", "bf16"], default="fp32",
                     help="dtype of snapshots and final weights (the resume checkpoint stays fp32)")
     args = ap.parse_args(argv)
@@ -364,7 +371,7 @@ def train(args) -> int:
     dev_path = args.out / "dev_log.jsonl"
     _truncate_log(dev_path, step + 1)  # the dev score at a step is written before that step's checkpoint
     dev_texts = cpt_data.jsonl_texts(args.dev_docs) if args.dev_docs else []
-    amp = amp_dtype if use_cuda else None
+    amp = autocast_dtype(args.dev_dtype, use_cuda)  # dev scores choose the probe: full precision by default
 
     def score_dev(at: int):
         t = time.monotonic()

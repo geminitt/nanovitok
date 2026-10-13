@@ -26,7 +26,8 @@ from pathlib import Path
 from vitok.adapt import EXIT_INCOMPLETE
 
 TRAIN_KEYS = ("steps", "batch", "micro_batch", "seq_len", "lr", "embed_lr", "warmup", "min_lr_ratio", "weight_decay",
-              "grad_clip", "layers", "dtype", "save_every", "log_every", "dev_every", "dev_batch", "snapshot_dtype")
+              "grad_clip", "layers", "dtype", "save_every", "log_every", "dev_every", "dev_batch", "snapshot_dtype",
+              "dev_dtype")
 CONDITION_KEYS = ("tokenizer", "seed", "lr", "embed_lr")  # a learning rate per condition: chosen by the dev sweep
 SCORE_KEYS = ("batch_size", "dtype")
 SPEED_KEYS = ("speed_prompts", "speed_prompt_chars", "new_tokens")  # measured before training and on the final weights

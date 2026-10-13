@@ -337,7 +337,7 @@ def test_the_signature_holds_every_setting_that_changes_the_result(setup, tmp_pa
                    "held_out_sha256": ["held"], "steps": STEPS, "batch": BATCH, "micro_batch": BATCH, "seq_len": SEQ,
                    "lr": 3e-3, "embed_lr": 5e-3, "warmup": 2, "min_lr_ratio": 0.1, "weight_decay": 0.0,
                    "layers": "0,-1", "seed": 3, "dtype": "fp32", "grad_clip": 1.0, "grad_checkpointing": False,
-                   "stream": None, "dev_sha256": None, "dev_every": 0, "snapshot_dtype": "fp32"}
+                   "stream": None, "dev_sha256": None, "dev_every": 0, "snapshot_dtype": "fp32", "dev_dtype": "fp32"}
 
 
 @pytest.mark.parametrize("change", ["tokenizer", "held-out"])
@@ -364,6 +364,7 @@ def test_defaults_are_the_approved_design():
             a.dev_every, a.dev_batch, a.snapshot_dtype) == \
         (512, "0,1,-2,-1", 1e-4, 1e-4, 50, 0.1, 0.0, 1.0, 0, "fp32", 32, None, 256, 100, 10, 20, [], None, False,
          "<|endoftext|>", None, None, 0, 8, "fp32")
+    assert a.dev_dtype == "fp32"  # dev scores decide the probe: full precision unless chosen otherwise
     assert a.device == ("cuda" if torch.cuda.is_available() else "cpu")
     assert isinstance(a.out, Path) and isinstance(a.tokenizer, Path) and isinstance(a.shards[0], Path)
     required = ["--model", "--base-tokenizer", "--tokenizer", "--shards", "--held-out", "--out", "--steps", "--batch"]
@@ -596,3 +597,23 @@ def test_a_second_process_cannot_write_into_a_running_runs_folder(setup, tmp_pat
         with pytest.raises(SystemExit, match="another process is writing"):
             run(setup, "base", tmp_path)
     assert run(setup, "base", tmp_path, steps=1) == 0  # free again once the holder lets go
+
+
+def test_the_dev_score_runs_in_its_own_precision(setup, tmp_path, monkeypatch):
+    assert [adapt.autocast_dtype(d, True) for d in ("fp32", "fp16", "bf16")] == [None, torch.float16, torch.bfloat16]
+    assert [adapt.autocast_dtype(d, False) for d in ("fp32", "fp16", "bf16")] == [None, None, None]
+    seen = []
+    real = adapt.dev_bpc
+
+    def spy(model, tok, eos, texts, batch_size, amp_dtype):
+        seen.append(amp_dtype)  # the setting's name, through the patched helper below
+        return real(model, tok, eos, texts, batch_size, None)
+
+    monkeypatch.setattr(adapt, "dev_bpc", spy)
+    monkeypatch.setattr(adapt, "autocast_dtype", lambda name, cuda: name)
+    dev = tmp_path / "dev.jsonl"
+    dev.write_text(json.dumps({"text": SENTENCES[0]}) + "\n", encoding="utf-8")
+    a = adapt.parse_args(argv(setup, "base", tmp_path / "o", "--dev-docs", str(dev), "--dev-dtype", "fp16", steps=1))
+    assert adapt.signature(a, "t", [])["dev_dtype"] == "fp16"
+    adapt.train(a)
+    assert seen == ["fp16", "fp16"]  # the dev setting, not the training dtype (fp32 here), reaches the scorer

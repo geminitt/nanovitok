@@ -17,7 +17,7 @@ from tokenizers import Tokenizer
 
 from vitok import remote, retrofit, stream
 
-STEPS = 8
+STEPS = 40  # long enough that the kill below (after 5 logged steps) lands inside training
 
 
 def jsonl(path, rows):
@@ -49,7 +49,7 @@ def setup(d):
            "conditions": {"base": {"tokenizer": str(d / "base.json")},
                           "multisyllable": {"tokenizer": str(d / "multi.json"), "lr": 2e-3}},
            "train": {"steps": STEPS, "batch": 4, "seq_len": 32, "lr": 3e-3, "warmup": 1, "layers": "all",
-                     "weight_decay": 0.1, "save_every": 2, "log_every": 1, "dev_every": 3, "snapshot_steps": [4],
+                     "weight_decay": 0.1, "save_every": 2, "log_every": 1, "dev_every": 10, "snapshot_steps": [4],
                      "snapshot_dtype": "bf16", "seed": 0},
            "score": {"lm": {"web": str(d / "web.jsonl"), "law": str(d / "law.jsonl")},
                      "mc": {"quiz": str(d / "quiz.jsonl")}, "speed_docs": str(d / "web.jsonl"), "speed_prompts": 1,
@@ -94,7 +94,7 @@ def test_the_queue_survives_a_kill_and_matches_an_uninterrupted_run(tmp_path, mo
         dev = [json.loads(line) for line in (work / name / "train" / "dev_log.jsonl").read_text().splitlines()]
         ref = [json.loads(line) for line in (tmp_path / "whole" / name / "train" / "dev_log.jsonl").read_text()
                .splitlines()]
-        assert [r["step"] for r in dev] == [0, 3, 6, 8] and [r["bpc"] for r in dev] == [r["bpc"] for r in ref]
+        assert [r["step"] for r in dev] == [0, 10, 20, 30, 40] and [r["bpc"] for r in dev] == [r["bpc"] for r in ref]
         train = [json.loads(line) for line in (work / name / "train" / "train_log.jsonl").read_text().splitlines()]
         assert [r["step"] for r in train] == list(range(STEPS)) and all(r["train_bpc"] > 0 for r in train)
         for part in ("score-before", "score-step_000004", "score-final"):
