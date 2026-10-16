@@ -4,7 +4,8 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 
 # Default environment: code development and CPU unit tests. Training runs on Kaggle (see kaggle/).
-# The `gpu` environment only evaluates finished checkpoints on the local GPU (vitok.eval_checkpoints).
+# The `gpu` environment evaluates finished checkpoints on the local GPU (vitok.eval_checkpoints) and runs the
+# generation demo (vitok.demo_app, Streamlit).
 
 [dependencies]
 python = "3.12.*"
@@ -47,6 +48,7 @@ pytest = ">=9.1.1,<10"
 hypothesis = ">=6.168.5,<7"
 matplotlib = ">=3.11.2,<4"
 kagglehub = ">=1.0.2,<2"
+streamlit = ">=1.59.1,<2"
 
 [feature.gpu.pypi-dependencies]
 torch = ">=2.14.0, <3"

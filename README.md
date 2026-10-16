@@ -112,6 +112,9 @@ text, and greedy continuations repeat often, so these rates do not measure equal
 
 ### Limitations
 
+- **Wrong source model.** Continued pretraining started from the post-trained `Qwen/Qwen3-0.6B` (revision `c1899de`),
+  not from the pretrained-only `Qwen/Qwen3-0.6B-Base`. This was a mistake in choosing the model. Every result here is
+  for the post-trained checkpoint; nothing was run on `-Base`, so how the results change is not known.
 - One training seed. A second seed would only reorder documents; it was not run.
 - lr 1e-4 was the largest rate in the probe grid for all three conditions; a larger rate was not tested.
 - 100 M training tokens. Whether a longer run closes the multisyllable gap is not tested.
@@ -120,6 +123,26 @@ text, and greedy continuations repeat often, so these rates do not measure equal
 
 All numbers: [results/token-type/report.md](./results/token-type/report.md) and
 [results.json](./results/token-type/results.json).
+
+---
+
+## Demo
+
+A local Streamlit app continues one prompt with the two trained models, syllable and multisyllable, side by side:
+
+```bash
+pixi run -e gpu streamlit run src/vitok/demo_app.py -- --models-dir runs/token-type-models-2026-10-13
+```
+
+It needs, per condition, `<dir>/<condition>/extended/` (the extended Qwen3 model), `<dir>/<condition>/final.pt` (the
+trained weights) and `<dir>/<condition>.json` (its tokenizer). The training runs write these files; the repository does
+not ship them. Both models fit a 6 GB GPU in fp16 (2.2 GiB measured on an RTX 1000 Ada).
+
+- **Race** streams both models at the same time. They share the GPU, so its speeds only illustrate.
+- **Benchmark** runs them one after the other, after a warm-up. Use its speeds to compare the models.
+
+> **Note:** Greedy decoding repeats text often (see Generation above), so the demo shows the effect of token length on
+> speed and characters per token, not text quality. One prompt is an illustration, not a measurement.
 
 ---
 
