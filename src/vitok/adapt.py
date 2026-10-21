@@ -13,6 +13,12 @@ vectors. Every other weight, including every old embedding row, stays bit-identi
 Equal compute: every condition takes the same number of steps of `batch` rows of `seq_len` tokens. Each step logs the
 characters its tokens cover, so results can be plotted against compute and against text read.
 
+Document-aligned steps (`--chars-per-step`, the Token Distillation study): instead, step k of every condition reads the
+same text, the next `--chars-per-step` characters of a `--stream` folder (`cpt_data.aligned_steps`), whatever its
+tokenizer makes of it; the step's tokens are cut into rows of `seq_len` (the number of rows varies), the loss is the
+mean over the step's predicted tokens, and the log carries the chain digest of the text read, which must match across
+conditions at every step. Named dev sets (`--dev-set name=path`) give a curve per domain in bpc and bpb.
+
 Long-run safety: the run checkpoints every `--save-every` steps, on SIGTERM and before `--deadline-minutes`, and the
 same command resumes from the latest checkpoint (model trainables, optimizer, gradient scaler, RNG, data position). A
 checkpoint whose run signature differs from the command's is refused, never overwritten. Snapshots of the trainable
@@ -181,7 +187,9 @@ def dev_bpc(model, tok, eos: int, texts: list[str], batch_size: int, amp_dtype) 
     finally:
         model.train(was_training)
     chars = sum(map(len, texts))
-    return {"nats": nats, "chars": chars, "tokens": sum(len(q) - 1 for q in seqs), "bpc": nats / (math.log(2) * chars)}
+    nbytes = sum(len(t.encode("utf-8")) for t in texts)
+    return {"nats": nats, "chars": chars, "bytes": nbytes, "tokens": sum(len(q) - 1 for q in seqs),
+            "bpc": nats / (math.log(2) * chars), "bpb": nats / (math.log(2) * nbytes)}
 
 
 def _atomic_save(obj, path: Path):
@@ -211,7 +219,9 @@ def signature(args, tok_sha: str, held_sha: list[str]) -> dict:
             "grad_clip": args.grad_clip, "grad_checkpointing": args.grad_checkpointing,
             "stream": _sha256(args.stream / "stream_manifest.json") if args.stream else None,
             "dev_sha256": _sha256(args.dev_docs) if args.dev_docs else None, "dev_every": args.dev_every,
-            "snapshot_dtype": args.snapshot_dtype, "dev_dtype": args.dev_dtype}
+            "snapshot_dtype": args.snapshot_dtype, "dev_dtype": args.dev_dtype,
+            "chars_per_step": args.chars_per_step,
+            "dev_sets": [[name, _sha256(path)] for name, path in args.dev_sets], "dev_limit": args.dev_limit}
 
 
 def _rng_state() -> dict:
@@ -256,7 +266,9 @@ def parse_args(argv=None):
                     help="jsonl files whose texts must not be trained on (required with --shards)")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--steps", type=int, required=True)
-    ap.add_argument("--batch", type=int, required=True, help="rows per step (equal across conditions)")
+    ap.add_argument("--batch", type=int, default=None, help="rows per step (equal across conditions)")
+    ap.add_argument("--chars-per-step", type=int, default=None,
+                    help="document-aligned steps: characters of --stream text per step, instead of --batch")
     ap.add_argument("--micro-batch", type=int, default=None, help="rows per forward pass (default: --batch)")
     ap.add_argument("--seq-len", type=int, default=512)
     ap.add_argument("--lr", type=float, default=1e-4, help="peak learning rate of the transformer layers")
@@ -283,6 +295,9 @@ def parse_args(argv=None):
     ap.add_argument("--dev-docs", type=Path, default=None, help="jsonl of dev documents scored during training")
     ap.add_argument("--dev-every", type=int, default=0, help="score the dev documents every this many steps (and at "
                     "the start and the end)")
+    ap.add_argument("--dev-set", action="append", default=[], metavar="NAME=PATH",
+                    help="a named jsonl dev set scored with the others (repeat for one curve per domain)")
+    ap.add_argument("--dev-limit", type=int, default=None, help="score only the first N documents of each dev set")
     ap.add_argument("--dev-batch", type=int, default=8)
     ap.add_argument("--dev-dtype", choices=["fp32", "fp16", "bf16"], default="fp32",
                     help="precision of the dev scores (bf16 rounds per-document nats ~10x more than fp16)")
@@ -293,13 +308,29 @@ def parse_args(argv=None):
         raise SystemExit("give exactly one of --shards and --stream")
     if args.shards is not None and not args.held_out:
         raise SystemExit("--shards needs --held-out (a stream folder has its held-out texts removed already)")
-    if args.dev_every and not args.dev_docs:
-        raise SystemExit("--dev-every needs --dev-docs")
-    args.micro_batch = args.micro_batch or args.batch
+    sets: list[tuple[str, Path]] = []
+    for spec in args.dev_set:
+        name, sep, path = spec.partition("=")
+        if not sep or not name or not path or name in [n for n, _ in sets] or name == "dev":
+            raise SystemExit(f"--dev-set {spec!r} must be NAME=PATH with a new name other than 'dev'")
+        sets.append((name, Path(path)))
+    args.dev_sets = sets
+    if args.dev_every and not (args.dev_docs or sets):
+        raise SystemExit("--dev-every needs --dev-docs or --dev-set")
+    if (args.batch is None) == (args.chars_per_step is None):
+        raise SystemExit("give exactly one of --batch and --chars-per-step")
+    if args.chars_per_step is not None:
+        if args.stream is None:
+            raise SystemExit("--chars-per-step reads a --stream folder")
+        if args.chars_per_step < 1 or args.micro_batch is None or args.micro_batch < 1:
+            raise SystemExit("--chars-per-step needs a positive value and --micro-batch (rows per forward pass)")
+    else:
+        args.micro_batch = args.micro_batch or args.batch
+        if args.batch < 1 or args.batch % args.micro_batch:
+            raise SystemExit(f"--batch must be positive and a multiple of --micro-batch ({args.micro_batch})")
     args.embed_lr = args.embed_lr or args.lr
-    if args.steps < 1 or args.batch < 1 or args.batch % args.micro_batch:
-        raise SystemExit(f"--steps and --batch must be positive and --batch ({args.batch}) a multiple of "
-                         f"--micro-batch ({args.micro_batch})")
+    if args.steps < 1:
+        raise SystemExit("--steps must be positive")
     if args.dtype != "fp32" and not args.device.startswith("cuda"):
         raise SystemExit(f"--dtype {args.dtype} needs a CUDA device")
     if any(not 1 <= s <= args.steps for s in args.snapshot_steps):
@@ -370,33 +401,45 @@ def train(args) -> int:
     _truncate_log(log_path, step)
     dev_path = args.out / "dev_log.jsonl"
     _truncate_log(dev_path, step + 1)  # the dev score at a step is written before that step's checkpoint
-    dev_texts = cpt_data.jsonl_texts(args.dev_docs) if args.dev_docs else []
+    named = ([("dev", args.dev_docs)] if args.dev_docs else []) + list(args.dev_sets)
+    dev_sets = [(name, cpt_data.jsonl_texts(path)[:args.dev_limit]) for name, path in named]
+    if any(not texts for _, texts in dev_sets):
+        raise SystemExit("a dev set is empty")
     amp = autocast_dtype(args.dev_dtype, use_cuda)  # dev scores choose the probe: full precision by default
 
     def score_dev(at: int):
-        t = time.monotonic()
-        rec = {"step": at, **dev_bpc(model, tok, eos, dev_texts, args.dev_batch, amp)}
-        rec["seconds"] = time.monotonic() - t
-        with open(dev_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
-        print("dev", json.dumps(rec), flush=True)
+        for name, texts in dev_sets:
+            t = time.monotonic()
+            rec = {"step": at, "set": name, **dev_bpc(model, tok, eos, texts, args.dev_batch, amp)}
+            rec["seconds"] = time.monotonic() - t
+            with open(dev_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            print("dev", json.dumps(rec), flush=True)
 
-    if dev_texts and step == 0 and not (dev_path.exists() and dev_path.read_text().strip()):
+    if dev_sets and step == 0 and not (dev_path.exists() and dev_path.read_text().strip()):
         score_dev(0)
 
     held = cpt_data.held_out_digests(t for p in args.held_out for t in cpt_data.jsonl_texts(p))
-    if args.stream:
+    aligned = args.chars_per_step is not None
+    if aligned:
+        from vitok.mixed_stream import mixed_records
+
+        kept = (r for r in mixed_records(args.stream) if cpt_data.digest(r["text"]) not in held)
+        recs = islice(kept, data_state["record"] if data_state else 0, None)
+        batches: Any = cpt_data.aligned_steps(recs, args.chars_per_step, data_state)
+    elif args.stream:
         from vitok import stream as training_stream
 
         source = training_stream.stream_texts(args.stream)
     else:
         source = cpt_data.parquet_texts(args.shards)
-    docs = cpt_data.training_docs(source, held)
-    docs = islice(docs, data_state["docs_read"] if data_state else 0, None)
-    batches = cpt_data.packed_batches(tok, docs, eos, args.seq_len, args.batch, encode_batch=args.encode_batch,
-                                      state=data_state)
+    if not aligned:
+        docs = cpt_data.training_docs(source, held)
+        docs = islice(docs, data_state["docs_read"] if data_state else 0, None)
+        batches = cpt_data.packed_batches(tok, docs, eos, args.seq_len, args.batch, encode_batch=args.encode_batch,
+                                          state=data_state)
 
     stop = {"signal": False}
     signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("signal", True))
@@ -422,14 +465,26 @@ def train(args) -> int:
                 raise SystemExit(f"training text ran out at step {step} of {args.steps}; add shards") from None
             for g in opt.param_groups:
                 g["lr"] = lr_at(step, args.steps, g["peak"], args.warmup, args.min_lr_ratio)
-            x = torch.from_numpy(b.input_ids).to(args.device)
+            if aligned:
+                ids, labels_np, tchars = cpt_data.step_rows(tok, b.pieces, eos, args.seq_len)
+            else:
+                ids, labels_np, tchars = b.input_ids, b.input_ids, b.token_chars
+            x = torch.from_numpy(ids).to(args.device)
+            y = torch.from_numpy(labels_np).to(args.device)
             assert int(x.max()) < vocab_rows and int(x.min()) >= 0
+            valid = y[:, 1:] != -100  # the model predicts position t + 1 from position t; padding is not predicted
+            n_valid = int(valid.sum())
+            assert n_valid > 0, "a step without predicted tokens"
             loss_sum = 0.0
-            for rows in x.split(args.micro_batch):
+            for rows, labels, v in zip(x.split(args.micro_batch), y.split(args.micro_batch),
+                                       valid.split(args.micro_batch), strict=True):
+                n = int(v.sum())
+                if n == 0:  # a last row holding a single real token predicts nothing
+                    continue
                 with torch.autocast("cuda", dtype=amp_dtype, enabled=use_cuda and amp_dtype is not None):
-                    loss = model(input_ids=rows, labels=rows).loss
-                scaler.scale(loss * rows.shape[0] / args.batch).backward()
-                loss_sum += float(loss.detach()) * rows.shape[0] / args.batch
+                    loss = model(input_ids=rows, labels=labels).loss  # the mean over this micro-batch's n tokens
+                scaler.scale(loss * (n / n_valid)).backward()
+                loss_sum += float(loss.detach()) * (n / n_valid)
             scaler.unscale_(opt)
             grad_norm = float(torch.nn.utils.clip_grad_norm_(list(trainable.values()), args.grad_clip))
             scaler.step(opt)  # skipped by the scaler when gradients overflowed
@@ -438,25 +493,28 @@ def train(args) -> int:
             finite = math.isfinite(loss_sum) and math.isfinite(grad_norm)
             bad = 0 if finite else bad + 1
             step += 1
-            tokens += b.input_ids.size
+            step_tokens = int((y != -100).sum())
+            tokens += step_tokens
             chars += b.chars
             last_state = b.state
             if step % args.log_every == 0 or step == args.steps or not finite:
                 # nats of the predicted tokens over the characters they add (a row's first token is only context)
-                predicted = int(b.token_chars[:, 1:].sum())
-                n_pred = b.input_ids.shape[0] * (b.input_ids.shape[1] - 1)
+                predicted = int(tchars[:, 1:][valid.cpu().numpy()].sum())
                 rec = {"step": step - 1, "loss": loss_sum, "grad_norm": grad_norm, "lr": opt.param_groups[0]["lr"],
-                       "train_bpc": loss_sum * n_pred / (math.log(2) * predicted) if predicted else None,
+                       "train_bpc": loss_sum * n_valid / (math.log(2) * predicted) if predicted else None,
                        "tokens": tokens, "chars": chars, "step_seconds": time.monotonic() - t0,
                        "elapsed_seconds": time.monotonic() - started, "finite": finite,
                        "max_memory_gib": torch.cuda.max_memory_allocated() / 2**30 if use_cuda else None}
+                if aligned:
+                    rec |= {"rows": int(x.shape[0]), "step_tokens": step_tokens, "step_chars": b.chars,
+                            "domain_chars": b.domain_chars, "digest": b.digest}
                 log.write(json.dumps(rec) + "\n")
                 log.flush()
                 os.fsync(log.fileno())
                 print(json.dumps(rec), flush=True)
             if bad > args.max_bad_steps:  # after logging, so the log shows the step that ends the run
                 raise SystemExit(f"{bad} consecutive steps with a non-finite loss or gradient at step {step - 1}")
-            if dev_texts and ((args.dev_every and step % args.dev_every == 0) or step == args.steps):
+            if dev_sets and ((args.dev_every and step % args.dev_every == 0) or step == args.steps):
                 score_dev(step)
             if step in args.snapshot_steps:
                 save(args.out / "snapshots" / f"step_{step:06d}.pt", "snapshot")

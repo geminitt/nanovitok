@@ -2,6 +2,7 @@
 
 import itertools
 import json
+import math
 import os
 import random
 import signal
@@ -337,7 +338,8 @@ def test_the_signature_holds_every_setting_that_changes_the_result(setup, tmp_pa
                    "held_out_sha256": ["held"], "steps": STEPS, "batch": BATCH, "micro_batch": BATCH, "seq_len": SEQ,
                    "lr": 3e-3, "embed_lr": 5e-3, "warmup": 2, "min_lr_ratio": 0.1, "weight_decay": 0.0,
                    "layers": "0,-1", "seed": 3, "dtype": "fp32", "grad_clip": 1.0, "grad_checkpointing": False,
-                   "stream": None, "dev_sha256": None, "dev_every": 0, "snapshot_dtype": "fp32", "dev_dtype": "fp32"}
+                   "stream": None, "dev_sha256": None, "dev_every": 0, "snapshot_dtype": "fp32", "dev_dtype": "fp32",
+                   "chars_per_step": None, "dev_sets": [], "dev_limit": None}
 
 
 @pytest.mark.parametrize("change", ["tokenizer", "held-out"])
@@ -617,3 +619,113 @@ def test_the_dev_score_runs_in_its_own_precision(setup, tmp_path, monkeypatch):
     assert adapt.signature(a, "t", [])["dev_dtype"] == "fp16"
     adapt.train(a)
     assert seen == ["fp16", "fp16"]  # the dev setting, not the training dtype (fp32 here), reaches the scorer
+
+
+# ---- document-aligned steps (Token Distillation study) ----
+
+CHARS = 600
+
+
+@pytest.fixture(scope="module")
+def mixed(setup):
+    from vitok import mixed_stream
+
+    rng = random.Random(1)
+    docs = [(d, " ".join(rng.choices(SENTENCES, k=rng.randint(1, 12))))
+            for d in mixed_stream.DOMAINS for _ in range(60)]
+    rng.shuffle(docs)
+    folder = setup / "mixed"
+    mixed_stream.write_mixed(folder, iter(docs), {"test": 1}, part_chars=4000)
+    return folder
+
+
+def aligned_argv(d, mixed, cond, out, *extra, steps=STEPS):
+    return ["--model", str(d / f"{cond}-model"), "--base-tokenizer", str(d / "base.json"),
+            "--tokenizer", str(d / f"{cond}.json"), "--stream", str(mixed), "--out", str(out), "--steps", str(steps),
+            "--chars-per-step", str(CHARS), "--micro-batch", "4", "--seq-len", str(SEQ), "--lr", "3e-3",
+            "--warmup", "2", "--layers", "0,-1", "--log-every", "1", "--save-every", "2", *extra]
+
+
+def arun(*a, **k):
+    return adapt.train(adapt.parse_args(aligned_argv(*a, **k)))
+
+
+def test_aligned_steps_read_the_same_text_in_every_condition(setup, mixed, tmp_path):
+    assert arun(setup, mixed, "base", tmp_path / "base") == 0 and arun(setup, mixed, "multi", tmp_path / "multi") == 0
+    b, m = log(tmp_path / "base"), log(tmp_path / "multi")
+    assert [r["digest"] for r in b] == [r["digest"] for r in m] and len({r["digest"] for r in b}) == STEPS
+    assert [r["step_chars"] for r in b] == [r["step_chars"] for r in m]
+    assert all(CHARS // 2 <= r["step_chars"] <= CHARS for r in b)
+    assert [r["domain_chars"] for r in b] == [r["domain_chars"] for r in m]
+    assert b[-1]["chars"] == m[-1]["chars"] == sum(r["step_chars"] for r in b)
+    assert m[-1]["tokens"] < b[-1]["tokens"]  # the same text in fewer tokens
+    assert all(r["rows"] == -(-r["step_tokens"] // SEQ) for r in b + m)
+
+
+def test_the_aligned_loss_is_the_mean_over_the_steps_tokens_whatever_the_micro_batch(setup, mixed, tmp_path):
+    arun(setup, mixed, "multi", tmp_path / "a")
+    arun(setup, mixed, "multi", tmp_path / "b", "--micro-batch", "1")
+    for k in final(tmp_path / "a")["params"]:
+        torch.testing.assert_close(final(tmp_path / "a")["params"][k], final(tmp_path / "b")["params"][k],
+                                   rtol=1e-4, atol=1e-5)
+    from transformers import AutoModelForCausalLM
+
+    from vitok import cpt_data, mixed_stream
+    model = AutoModelForCausalLM.from_pretrained(setup / "multi-model").eval()
+    tok = Tokenizer.from_file(str(setup / "multi.json"))
+    first = next(cpt_data.aligned_steps(mixed_stream.mixed_records(mixed), CHARS))
+    x, y, _ = cpt_data.step_rows(tok, first.pieces, tok.token_to_id("<|endoftext|>"), SEQ)
+    with torch.no_grad():
+        logits = model(input_ids=torch.from_numpy(x)).logits[:, :-1]
+    target = torch.from_numpy(y)[:, 1:]
+    want = torch.nn.functional.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1),
+                                             ignore_index=-100)
+    assert log(tmp_path / "a")[0]["loss"] == pytest.approx(float(want), rel=1e-5)
+
+
+def test_an_aligned_run_stopped_after_every_step_resumes_to_the_same_weights(setup, mixed, tmp_path):
+    arun(setup, mixed, "multi", tmp_path / "whole")
+    out = tmp_path / "pieces"
+    while arun(setup, mixed, "multi", out, "--deadline-minutes", "0") != 0:
+        pass
+    _same(final(tmp_path / "whole"), final(out))
+    assert [r["digest"] for r in log(out)] == [r["digest"] for r in log(tmp_path / "whole")]
+
+
+def test_named_dev_sets_give_one_curve_each_in_bpc_and_bpb(setup, mixed, tmp_path):
+    sets = {}
+    for name, texts in (("web", SENTENCES[:4]), ("legal", SENTENCES[4:9])):
+        sets[name] = tmp_path / f"{name}.jsonl"
+        sets[name].write_text("".join(json.dumps({"text": t}) + "\n" for t in texts), encoding="utf-8")
+    out = tmp_path / "o"
+    assert arun(setup, mixed, "multi", out, "--dev-set", f"web={sets['web']}", "--dev-set",
+                f"legal={sets['legal']}", "--dev-limit", "3", "--dev-every", "4") == 0
+    rec = dev_log(out)
+    assert [(r["step"], r["set"]) for r in rec] == [(s, n) for s in (0, 4, 8) for n in ("web", "legal")]
+    for r in rec:
+        texts = (SENTENCES[:4] if r["set"] == "web" else SENTENCES[4:9])[:3]
+        assert r["chars"] == sum(map(len, texts)) and r["bytes"] == sum(len(t.encode()) for t in texts)
+        assert r["bpb"] == pytest.approx(r["nats"] / (math.log(2) * r["bytes"]), rel=1e-12)
+    assert adapt.parse_args(aligned_argv(setup, mixed, "multi", out, "--dev-set", f"web={sets['web']}")).dev_sets \
+        == [("web", sets["web"])]
+
+
+@pytest.mark.parametrize("extra,message", [
+    (["--batch", "4"], "exactly one of --batch and --chars-per-step"),
+    (["--dev-set", "web"], "NAME=PATH"),
+    (["--dev-set", "dev=x.jsonl"], "other than 'dev'"),
+    (["--dev-set", "a=x.jsonl", "--dev-set", "a=y.jsonl"], "new name"),
+])
+def test_bad_aligned_arguments_are_refused(setup, mixed, tmp_path, extra, message):
+    with pytest.raises(SystemExit, match=message):
+        adapt.parse_args([*aligned_argv(setup, mixed, "multi", tmp_path), *extra])
+
+
+def test_aligned_steps_need_a_stream_and_a_micro_batch(setup, mixed, tmp_path):
+    a = aligned_argv(setup, mixed, "multi", tmp_path)
+    no_stream = a[:a.index("--stream")] + a[a.index("--stream") + 2:] + ["--shards", "s", "--held-out", "h"]
+    with pytest.raises(SystemExit, match="reads a --stream"):
+        adapt.parse_args(no_stream)
+    no_micro = a[:a.index("--micro-batch")] + a[a.index("--micro-batch") + 2:]
+    with pytest.raises(SystemExit, match="needs a positive value and --micro-batch"):
+        adapt.parse_args(no_micro)

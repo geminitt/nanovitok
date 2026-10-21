@@ -120,3 +120,96 @@ def jsonl_rows(path: Path) -> list[dict]:
 
 def jsonl_texts(path: Path) -> list[str]:
     return [r["text"] for r in jsonl_rows(path)]
+
+
+# ---- document-aligned steps (Token Distillation study): every condition reads the same text at every step ----
+
+@dataclass
+class Step:
+    pieces: list[tuple[str, bool]]  # (text, whether it ends its document), in stream order
+    chars: int
+    domain_chars: dict[str, int]
+    digest: str                     # chain digest of every step's text up to and including this one
+    state: dict                     # resume position after this step: next record, characters of it read, digest
+
+
+CUT_WINDOW = 4096  # characters before the limit searched for a line break or space (a step stays >= 98% full)
+
+
+def cut_point(text: str, limit: int) -> int:
+    """Characters of `text` that fit in `limit`: all of it, else up to the last line break in the last
+    min(CUT_WINDOW, limit // 2) characters of the room, else the last space there, else exactly `limit` (one rule
+    for every tokenizer, so steps match)."""
+    if limit < 1:
+        raise ValueError(f"no room for a piece ({limit} characters)")
+    if len(text) <= limit:
+        return len(text)
+    start = limit - min(CUT_WINDOW, limit // 2)
+    for sep in ("\n", " "):
+        i = text.rfind(sep, start, limit)
+        if i >= 0:
+            return i + 1
+    return limit
+
+
+def step_digest(previous: str, pieces: list[tuple[str, bool]]) -> str:
+    """The chain digest after a step: equal digests at step k mean the same text was read at every step up to k."""
+    h = hashlib.blake2b(bytes.fromhex(previous), digest_size=16)
+    for text, ends in pieces:
+        h.update(text.encode("utf-8") + (b"\x00" if ends else b"\x01"))
+    return h.hexdigest()
+
+
+def aligned_steps(records: Iterable[dict], chars_per_step: int, state: dict | None = None) -> Iterator[Step]:
+    """Cut a stream of {"text"[, "domain"]} records into steps of at most `chars_per_step` characters, without
+    tokenizing: a document that does not fit is cut (`cut_point`) and continues in the next step. `records` must
+    start at `state["record"]`; a final step that is not full is not yielded."""
+    if chars_per_step < 1:
+        raise ValueError(f"chars_per_step must be positive, got {chars_per_step}")
+    state = state or {"record": 0, "offset": 0, "digest": ""}
+    index, offset, chain = state["record"], state["offset"], state["digest"]
+    pieces: list[tuple[str, bool]] = []
+    chars = 0
+    domains: dict[str, int] = {}
+    for rec in records:
+        text, domain = rec["text"][offset:], rec.get("domain") or ""
+        if not text:
+            raise ValueError(f"record {index} is empty at offset {offset}")
+        while text:
+            n = cut_point(text, chars_per_step - chars)
+            pieces.append((text[:n], n == len(text)))
+            chars += n
+            offset += n
+            domains[domain] = domains.get(domain, 0) + n
+            text = text[n:]
+            if text or chars == chars_per_step:  # a cut means the step is full
+                chain = step_digest(chain, pieces)
+                nxt = {"record": index, "offset": offset} if text else {"record": index + 1, "offset": 0}
+                yield Step(pieces, chars, domains, chain, nxt | {"digest": chain})
+                pieces, chars, domains = [], 0, {}
+        index, offset = index + 1, 0
+
+
+def step_rows(tokenizer, pieces: list[tuple[str, bool]], eos_id: int, seq_len: int
+              ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(input_ids, labels, token_chars) of one step, each (rows, seq_len): the pieces' tokens, eos after a piece that
+    ends its document, cut into rows; the last row is padded with eos and label -100 (not predicted)."""
+    if seq_len < 2:
+        raise ValueError(f"seq_len {seq_len} must be at least 2")
+    ids: list[int] = []
+    chars: list[int] = []
+    for (_, ends), enc in zip(pieces, tokenizer.encode_batch([p for p, _ in pieces], add_special_tokens=False),
+                              strict=True):
+        ids += enc.ids
+        chars += token_chars(enc.offsets)
+        if ends:
+            ids.append(eos_id)
+            chars.append(0)
+    rows = -(-len(ids) // seq_len)
+    pad = rows * seq_len - len(ids)
+    x = np.asarray(ids + [eos_id] * pad, dtype=np.int64).reshape(rows, seq_len)
+    labels = x.copy()
+    labels.reshape(-1)[len(ids):] = -100
+    per_token = np.asarray(chars + [0] * pad, dtype=np.int64).reshape(rows, seq_len)
+    assert int(per_token.sum()) == sum(len(p) for p, _ in pieces), "token characters do not add up to the step's"
+    return x, labels, per_token
