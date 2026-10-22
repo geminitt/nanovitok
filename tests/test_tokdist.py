@@ -63,6 +63,35 @@ def test_snippets_hold_the_pieces_where_the_new_tokenizer_uses_the_token(setup):
     assert {t for t, rows in snips.items() if rows} <= used
 
 
+@pytest.mark.parametrize("per_doc", [1, 2, 50])
+def test_every_aligned_occurrence_is_found_up_to_the_per_document_cap(setup, per_doc):
+    """Completeness against a plain reference: per (token, document), min(per_doc, aligned occurrences) snippets,
+    across small encode batches; occurrences without a base boundary or spelling are counted as misaligned."""
+    d, base, new = setup
+    pieces = extend.new_token_pieces(base, new)
+    # a document without any new token first: the documents after it in its encode batch are still searched
+    texts = ["The quick brown fox."] + [r["text"] for r in mixed_stream.mixed_records(d / "stream")]
+    snips, stats = tokdist.find_snippets(texts, base, new, pieces, 10**6, 1000, per_doc, encode_batch=3)
+    want, misaligned = {}, 0
+    for doc, text in enumerate(texts):
+        b, n = base.encode(text, add_special_tokens=False), new.encode(text, add_special_tokens=False)
+        starts = [o[0] for o in b.offsets]
+        for tid, (start, _) in zip(n.ids, n.offsets, strict=True):
+            if tid not in pieces:
+                continue
+            p = starts.index(start) if start in starts else -1
+            if p < 0 or b.ids[p:p + len(pieces[tid])] != pieces[tid]:
+                misaligned += 1
+            else:
+                want[tid, doc] = want.get((tid, doc), 0) + 1
+    got: dict = {}
+    for tid, rows in snips.items():
+        for r in rows:
+            got[tid, r["doc"]] = got.get((tid, r["doc"]), 0) + 1
+    assert got == {key: min(per_doc, c) for key, c in want.items()}
+    assert stats == {"documents": len(texts), "misaligned": misaligned, "too_long": 0}
+
+
 def test_the_student_merges_one_occurrence_and_aligns_it_to_its_last_piece():
     student, align = tokdist.merge([5, 6, 7, 8, 9], 1, 2, 100)
     assert student == [5, 100, 8, 9] and align == [0, 2, 3, 4]
