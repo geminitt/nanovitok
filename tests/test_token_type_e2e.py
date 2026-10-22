@@ -61,6 +61,8 @@ def setup(d):
 def test_the_queue_survives_a_kill_and_matches_an_uninterrupted_run(tmp_path, monkeypatch):
     monkeypatch.setenv("OMP_NUM_THREADS", "1")  # bit-identical CPU results across processes
     monkeypatch.setenv("PYTHONPATH", str(ROOT / "src"))
+    # run_queue's subprocesses inherit this directory: under mutmut, the code root (mutants/), whose config they look up
+    monkeypatch.chdir(ROOT)
     setup(tmp_path)
     conds = ["base", "multisyllable"]
     whole = remote.run_queue(tmp_path / "run.json", conds, tmp_path / "whole", 30)

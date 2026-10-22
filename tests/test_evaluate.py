@@ -123,6 +123,8 @@ def test_a_real_job_scores_a_tiny_model(tmp_path, monkeypatch):
     from test_extend import tiny_qwen3
     from tokenizers import Tokenizer
     monkeypatch.setenv("PYTHONPATH", str(ROOT / "src"))
+    # the job is a subprocess in this directory: under mutmut, the code root (mutants/), whose config it looks up
+    monkeypatch.chdir(ROOT)
     base = qwen_like_base()
     (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
     tiny_qwen3(Tokenizer.from_str(json.dumps(base)).get_vocab_size(with_added_tokens=True)).save_pretrained(
