@@ -33,7 +33,10 @@ JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_secon
         # fp16 scoring measured 3.65x faster than fp32 on the dev set; six models × (11 sets ≈ 383 s, 20 generations
         # ≈ 152 s, loading ≈ 40 s) ≈ 3,450 s; 27 snapshots × (5 bpc sets ≈ 68 s, loading ≈ 40 s) ≈ 2,920 s
         "eval_full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=4200),
-        "eval_curve": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=3600)}
+        "eval_curve": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=3600),
+        # Token Distillation study, owner 2026-10-22 ("thà tốn vài USD chạy trên modal cho nhanh"): the six benchmarks
+        # of one final (token-type basis: 11 sets ≈ 383 s per model at fp16) or the generation speed of four models
+        "bench": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500)}
 
 app = modal.App("nanovitok-tokdist")
 FUNCTION = dict(retries=0, max_containers=1, scaledown_window=2, single_use_containers=True)
@@ -179,3 +182,15 @@ def eval_full(plan: str, jobs: str, approved_max_usd: float = 0.0):
 @app.local_entrypoint()
 def eval_curve(plan: str, jobs: str, approved_max_usd: float = 0.0):
     _launch_eval("eval_curve", eval_curve_queue, plan, jobs, approved_max_usd)
+
+
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **(FUNCTION | {"max_containers": 3}),
+              **_resources("bench"))
+def bench_queue(plan: str, jobs: list[str]) -> dict:
+    return _evaluate(plan, jobs, JOBS["bench"])
+
+
+@app.local_entrypoint()
+def bench(plan: str, jobs: str, approved_max_usd: float = 0.0):
+    """One group of jobs per launch; up to three launches run in parallel containers (each its own bound)."""
+    _launch_eval("bench", bench_queue, plan, jobs, approved_max_usd)
