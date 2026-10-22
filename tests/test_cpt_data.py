@@ -149,6 +149,11 @@ def test_digests_match_exactly_while_the_text_read_matches():
     # the same characters with a document boundary moved
     moved = [{"text": "một hai ba bốn"}, {"text": " năm"}, {"text": "sáu bảy tám chín mười"}]
     assert [s.digest for s in cpt_data.aligned_steps(moved, 8)][1] != da[1]
+    # the chain: the same step after a different history; a piece that ends its document or continues it
+    zero, one = "00" * 16, "11" * 16
+    assert cpt_data.step_digest(zero, [("ab", True)]) != cpt_data.step_digest(one, [("ab", True)])
+    assert cpt_data.step_digest(zero, [("ab", True)]) != cpt_data.step_digest(zero, [("ab", False)])
+    assert len(cpt_data.step_digest(zero, [("ab", True)])) == 32 == len(da[0])
 
 
 def test_documents_are_cut_at_line_breaks_then_spaces_in_the_second_half():
@@ -157,6 +162,7 @@ def test_documents_are_cut_at_line_breaks_then_spaces_in_the_second_half():
     assert cpt_data.cut_point("ab\ncdefgh ij", 10) == 10  # line break at 2 is in the first half; space at 9
     assert cpt_data.cut_point("abcdefghijkl", 10) == 10
     assert cpt_data.cut_point("short", 10) == 5
+    assert cpt_data.cut_point("abc d", 5) == 5  # a text that fits exactly is not cut at its space
     big = "x" * 5000 + "\n" + "y" * 4500 + " " + "z" * 6000  # the window starts at 5,904: line break outside
     assert cpt_data.cut_point(big, 10_000) == 5000 + 1 + 4500 + 1  # the space inside it
     assert cpt_data.cut_point("x" * 9000 + "\n" + "y" * 100 + " " + "z" * 6000, 10_000) == 9001

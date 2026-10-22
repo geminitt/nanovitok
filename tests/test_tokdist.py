@@ -145,3 +145,27 @@ def test_the_auto_weighted_loss_doubles_the_mse_in_value():
     amp = dict(device_type="cpu", enabled=False)
     loss, parts = tokdist.loss_fn(Tiny(), w_old, new, 10, batch, "cpu", True, amp)
     assert float(loss.detach()) == pytest.approx(2 * parts["mse"]) and parts["ce"] > 0
+
+
+def test_the_loss_counts_only_real_positions_and_the_first_new_id_uses_its_new_row():
+    """A batch of a long and a short example (padded) gives the position-weighted mean of the two alone, for the MSE
+    and the cross-entropy; the student's first new id reads its trainable row, not an old one."""
+    torch.manual_seed(0)
+
+    class Tiny(torch.nn.Module):  # hidden state = input embedding, position by position
+        def __init__(self):
+            super().__init__()
+            self.model = lambda inputs_embeds, attention_mask: type("o", (), {"last_hidden_state": inputs_embeds})()
+
+    w_old = torch.randn(10, 4)
+    new = torch.nn.Parameter(torch.randn(2, 4))
+    long = {"student": [1, 10, 3, 5, 6], "align": [0, 2, 3, 4, 5], "teacher": [1, 2, 4, 3, 5, 6]}
+    short = {"student": [11, 7], "align": [1, 2], "teacher": [8, 9, 7]}
+    amp = dict(device_type="cpu", enabled=False)
+    parts = {k: tokdist.loss_fn(Tiny(), w_old, new, 10, b, "cpu", True, amp)[1]
+             for k, b in (("both", [long, short]), ("long", [long]), ("short", [short]))}
+    assert parts["both"]["mse"] == pytest.approx((5 * parts["long"]["mse"] + 2 * parts["short"]["mse"]) / 7)
+    assert parts["both"]["ce"] == pytest.approx((4 * parts["long"]["ce"] + 1 * parts["short"]["ce"]) / 5)
+    # long: only position 1 differs from its teacher (new row 0 against old row 4)
+    expected = float(((new.detach()[0] - w_old[4]) ** 2).sum()) / (5 * 4)
+    assert parts["long"]["mse"] == pytest.approx(expected)
