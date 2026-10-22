@@ -25,10 +25,12 @@ from pathlib import Path
 
 from vitok.adapt import EXIT_INCOMPLETE
 
-TRAIN_KEYS = ("steps", "batch", "micro_batch", "seq_len", "lr", "embed_lr", "warmup", "min_lr_ratio", "weight_decay",
-              "grad_clip", "layers", "dtype", "save_every", "log_every", "dev_every", "dev_batch", "snapshot_dtype",
-              "dev_dtype")
-CONDITION_KEYS = ("tokenizer", "seed", "lr", "embed_lr")  # a learning rate per condition: chosen by the dev sweep
+TRAIN_KEYS = ("steps", "batch", "chars_per_step", "micro_batch", "seq_len", "lr", "embed_lr", "warmup",
+              "min_lr_ratio", "weight_decay", "grad_clip", "layers", "dtype", "save_every", "log_every", "dev_every",
+              "dev_batch", "dev_limit", "snapshot_dtype", "dev_dtype")
+# a learning rate per condition: chosen by the dev sweep; `model`: a ready start folder (e.g. vitok.tokdist's output),
+# which skips the extension
+CONDITION_KEYS = ("tokenizer", "seed", "lr", "embed_lr", "model")
 SCORE_KEYS = ("batch_size", "dtype")
 SPEED_KEYS = ("speed_prompts", "speed_prompt_chars", "new_tokens")  # measured before training and on the final weights
 
@@ -38,7 +40,10 @@ class Incomplete(Exception):
 
 
 def load_config(path: Path) -> dict:
-    cfg = json.loads(path.read_text(encoding="utf-8"))
+    return validate(json.loads(path.read_text(encoding="utf-8")), path)
+
+
+def validate(cfg: dict, path: Path | str = "the config") -> dict:
     missing = [k for k in ("model", "revision", "base_tokenizer", "check_texts", "conditions", "train", "score")
                if k not in cfg]
     if missing:
@@ -72,14 +77,22 @@ def is_extended(cfg: dict, cond: dict) -> bool:
     return Path(cond["tokenizer"]).resolve() != Path(cfg["base_tokenizer"]).resolve()
 
 
+def start_model(cfg: dict, cond: dict, out: Path) -> tuple[str, list[str]]:
+    """The folder or hub id a condition starts from, and its revision flag (only for the hub model)."""
+    if "model" in cond:
+        return cond["model"], []
+    if is_extended(cfg, cond):
+        return str(out / "extended"), []
+    return cfg["model"], ["--revision", cfg["revision"]]
+
+
 def commands(cfg: dict, name: str, work: Path) -> list[tuple[str, Path, list[str]]]:
     """(step, output that marks it done, argv) for one condition, in order."""
     cond, out = cfg["conditions"][name], work / name
     py = [sys.executable, "-m"]
-    model = str(out / "extended") if is_extended(cfg, cond) else cfg["model"]
-    revision = [] if is_extended(cfg, cond) else ["--revision", cfg["revision"]]
+    model, revision = start_model(cfg, cond, out)
     steps = []
-    if is_extended(cfg, cond):
+    if is_extended(cfg, cond) and "model" not in cond:
         steps.append(("extend", out / "extended" / "extend_manifest.json",
                       py + ["vitok.extend", "--model", cfg["model"], "--revision", cfg["revision"],
                             "--base-tokenizer", cfg["base_tokenizer"], "--tokenizer", cond["tokenizer"],
@@ -103,6 +116,8 @@ def commands(cfg: dict, name: str, work: Path) -> list[tuple[str, Path, list[str
     data = (["--stream", cfg["streams"][str(seed)]] if "streams" in cfg
             else ["--shards", *cfg["shards"], "--held-out", *cfg["held_out"]])
     dev = ["--dev-docs", cfg["dev_docs"]] if cfg.get("dev_docs") else []
+    for name, path in cfg.get("dev_sets", {}).items():
+        dev += ["--dev-set", f"{name}={path}"]
     steps.append(("adapt", out / "train" / "final.pt",
                   py + ["vitok.adapt", "--model", model, *revision, "--base-tokenizer", cfg["base_tokenizer"],
                         "--tokenizer", cond["tokenizer"], *data, *dev,
@@ -111,6 +126,8 @@ def commands(cfg: dict, name: str, work: Path) -> list[tuple[str, Path, list[str
                         *(["--snapshot-steps", *map(str, train["snapshot_steps"])]
                           if train.get("snapshot_steps") else [])]))
     snaps = [*(f"step_{s:06d}" for s in train.get("snapshot_steps", []) if cfg["score"].get("snapshots")), "final"]
+    if not cfg["score"].get("after_training", True):
+        snaps = []  # scored elsewhere (the Token Distillation study scores locally)
     for snap in snaps:
         weights = out / "train" / ("final.pt" if snap == "final" else f"snapshots/{snap}.pt")
         steps.append((f"score-{snap}", out / f"score-{snap}" / "summary.json",

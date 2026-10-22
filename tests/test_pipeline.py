@@ -314,3 +314,31 @@ def test_stream_configs_are_checked(tmp_path, change, message):
     (tmp_path / "run.json").write_text(json.dumps(cfg))
     with pytest.raises(ValueError, match=message):
         pipeline.load_config(tmp_path / "run.json")
+
+
+def test_document_aligned_settings_and_dev_sets_reach_every_condition_alike(tmp_path):
+    train = {"steps": 6, "chars_per_step": 5000, "micro_batch": 2, "seq_len": 32, "lr": 3e-3, "dev_every": 3,
+             "dev_limit": 2, "seed": 0}
+    cfg = config(tmp_path, train=train, streams={"0": str(tmp_path / "stream"), "1": str(tmp_path / "stream-1")},
+                 dev_sets={"web": str(tmp_path / "w.jsonl"), "legal": str(tmp_path / "l.jsonl")})
+    del cfg["shards"], cfg["held_out"]
+    pipeline.validate(cfg)
+    a = adapt_argv(cfg, "multisyllable", tmp_path)
+    assert a[a.index("--chars-per-step") + 1] == "5000" and a[a.index("--dev-limit") + 1] == "2"
+    assert "--batch" not in a
+    assert [a[i + 1] for i, x in enumerate(a) if x == "--dev-set"] == \
+        [f"web={tmp_path / 'w.jsonl'}", f"legal={tmp_path / 'l.jsonl'}"]
+    drop = {"--model", "--revision", "--tokenizer", "--out"}
+    same = [[x for i, x in enumerate(adapt_argv(cfg, n, tmp_path)) if x not in drop and
+             adapt_argv(cfg, n, tmp_path)[i - 1] not in drop] for n in ("base", "multisyllable")]
+    assert same[0] == same[1]
+
+
+def test_a_condition_with_its_own_start_model_skips_the_extension(tmp_path):
+    conds = {"tokdist": {"tokenizer": str(tmp_path / "multi.json"), "model": str(tmp_path / "tokdist-model")}}
+    cfg = config(tmp_path, conditions=conds, score={"before_training": False, "after_training": False})
+    pipeline.validate(cfg)
+    steps = pipeline.commands(cfg, "tokdist", tmp_path)
+    assert [s for s, _, _ in steps] == ["adapt"]
+    a = steps[0][2]
+    assert a[a.index("--model") + 1] == str(tmp_path / "tokdist-model") and "--revision" not in a

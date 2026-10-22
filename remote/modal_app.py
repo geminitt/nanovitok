@@ -1,6 +1,7 @@
-"""Modal layer of the token-type experiment: one function per approved job kind. Importing this file launches nothing.
+"""Modal layer of the Token Distillation study (the token-type experiment before it): one function per approved
+job kind. Importing this file launches nothing.
 
-Inputs live on the volume `nanovitok-token-type` (uploaded with `modal volume put`): a run config, the tokenizers,
+Inputs live on the volume `nanovitok-tokdist` (uploaded with `modal volume put`): a run config, the tokenizers,
 the held-out sets and the seed streams, at the paths the config names under /vol. Launch only after the owner has
 approved the job and its spending maximum, e.g.
 
@@ -21,21 +22,22 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 from vitok import remote  # noqa: E402  (after the path: the SDK's Python does not have the package installed)
 
-MODEL = (Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots" / remote.MODEL_REVISION)
+MODEL = (Path.home() / ".cache/huggingface/hub" / f"models--{remote.MODEL_REPO.replace('/', '--')}" / "snapshots"
+         / remote.MODEL_REVISION)
 # timeouts from the smoke run's measurements (history/stage5-smoke-2026-10-13.md); each bound = timeout × listed rates
-JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1200),
+JOBS = {"smoke": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=900),
         "probe_n": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500),
-        "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=2700),
+        "probe_lr": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=1500),
         # one condition per call: 1,526 steps × ≈4.7 s + checkpoints, dev curve, snapshots ≈ 8,014 s measured basis
-        "full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=9300),
+        "full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=9600),
         # fp16 scoring measured 3.65x faster than fp32 on the dev set; six models × (11 sets ≈ 383 s, 20 generations
         # ≈ 152 s, loading ≈ 40 s) ≈ 3,450 s; 27 snapshots × (5 bpc sets ≈ 68 s, loading ≈ 40 s) ≈ 2,920 s
         "eval_full": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=4200),
         "eval_curve": remote.Job(gpu="A100-40GB", cpu=4, memory_gib=32, timeout_seconds=3600)}
 
-app = modal.App("nanovitok-token-type")
+app = modal.App("nanovitok-tokdist")
 FUNCTION = dict(retries=0, max_containers=1, scaledown_window=2, single_use_containers=True)
-volume = modal.Volume.from_name("nanovitok-token-type", create_if_missing=True)
+volume = modal.Volume.from_name("nanovitok-tokdist", create_if_missing=True)
 image = (modal.Image.debian_slim(python_version="3.12")
          .pip_install(*(f"{p}=={v}" for p, v in remote.PACKAGES.items()))
          .env({"PYTHONPATH": "/opt/src", "HF_HUB_OFFLINE": "1", "TOKENIZERS_PARALLELISM": "false",
@@ -101,7 +103,8 @@ def probe_n_queue(config: str, conditions: list[str], queue_minutes: float = 0.0
     return _run(config, conditions, JOBS["probe_n"], queue_minutes)
 
 
-@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **FUNCTION, **_resources("probe_lr"))
+@app.function(image=image, volumes={remote.VOLUME_ROOT: volume}, **(FUNCTION | {"max_containers": 4}),
+              **_resources("probe_lr"))
 def probe_lr_queue(config: str, conditions: list[str], queue_minutes: float = 0.0) -> dict:
     return _run(config, conditions, JOBS["probe_lr"], queue_minutes)
 
@@ -119,6 +122,7 @@ def probe_n(config: str, conditions: str, approved_max_usd: float = 0.0, queue_m
 
 @app.local_entrypoint()
 def probe_lr(config: str, conditions: str, approved_max_usd: float = 0.0, queue_minutes: float = 0.0):
+    """One condition per launch; four launches run in parallel containers (each its own bound)."""
     _launch("probe_lr", probe_lr_queue, config, conditions, approved_max_usd, queue_minutes)
 
 

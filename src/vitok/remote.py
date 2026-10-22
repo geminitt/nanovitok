@@ -22,8 +22,9 @@ from pathlib import Path
 # the gpu environment's versions (`pixi run -e gpu`), which every local test ran with
 PACKAGES = {"torch": "2.14.0", "transformers": "5.19.0", "tokenizers": "0.23.1", "numpy": "2.5.3",
             "pyarrow": "25.0.0", "huggingface_hub": "1.32.0"}
-MODEL_REVISION = "c1899de289a04d12100db370d81485cdf75e47ca"
-# Modal list prices verified 2026-10-12 at https://modal.com/pricing; re-verify before every launch
+# the Token Distillation study's source (PLAN.md); the token-type runs used Qwen/Qwen3-0.6B c1899de2...
+MODEL_REPO, MODEL_REVISION = "Qwen/Qwen3-0.6B-Base", "da87bfb608c14b7cf20ba1ce41287e8de496c0cd"
+# Modal list prices verified 2026-10-12 and again 2026-10-22 at https://modal.com/pricing; re-verify before every launch
 RATES = {"A100-40GB": 0.000583, "cpu_core": 0.0000131, "memory_gib": 0.00000222}  # USD per second
 VOLUME_ROOT = "/vol"
 COMMIT_EVERY_SECONDS = 300
